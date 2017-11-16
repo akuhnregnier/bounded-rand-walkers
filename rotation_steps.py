@@ -9,12 +9,13 @@ import numpy as np
 import numpy.random as rand
 import matplotlib.pyplot as plt
 
-N = 100000
+N = 1000000
 
 # Code for modifying sequence of positions via rotations to make the asymmetry clear
 # Valid for 2D case
 
 data = rand.uniform(0,1,size=(2,N))
+print('Data created') 
 
 def Rot_steps(data):
     """ 
@@ -28,7 +29,7 @@ def Rot_steps(data):
         b = data[:,i+1]
         c = data[:,i+2]
         
-        phi = np.arccos(np.dot(b-a , np.array([0,-1])) / np.linalg.norm(b-a))
+        phi = np.arccos(np.dot(a-b , np.array([0,-1])) / np.linalg.norm(a-b))
         
         if a[0]>b[0]:
             theta = -phi  
@@ -37,13 +38,15 @@ def Rot_steps(data):
         
         R = np.matrix([[np.cos(theta),-np.sin(theta)],[np.sin(theta),np.cos(theta)]])
         
-        c_rot = R.dot(c)
+        #print(R.dot())
+        c_rot = R.dot(c-b)
         
         rot_steps[:,i] = c_rot
-        
-    print('Data created')    
-    #for i in range(N-2):
-    #    plt.scatter(rot_steps[:,i][0],rot_steps[:,i][1])
+           
     plt.figure()
     plt.hist2d(rot_steps[0,:],rot_steps[1,:],bins=50)
+    plt.plot(np.arange(-2,2,0.01), np.array([0 for a in np.arange(-2,2,0.01)]))
+    plt.title('Observed step-size with fixed incoming direction')
     return 
+
+Rot_steps(data)
