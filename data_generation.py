@@ -12,6 +12,7 @@ import scipy.optimize
 import scipy.stats
 from scipy.spatial import Delaunay
 import matplotlib.pyplot as plt
+from time import time
 
 
 class DelaunayArray(np.ndarray):
@@ -136,6 +137,38 @@ def in_bounds(position, bounds):
         return ((position >= bounds[0]) and (position < bounds[1]))
 
 
+def format_time(time_value):
+    """Sensible string formatting of a time variable.
+
+    Output units range from seconds ('s') to minutes ('m')
+    and hours ('h'), depending on the magnitude of the
+    input ``time_value``.
+
+    Args:
+        time_value (float): The time value in seconds
+            that is to be formatted.
+
+    Returns:
+        tuple of float, str: The converted time value,
+            and its associated units are returned.
+
+    """
+    units = 's'
+    rounded_time = int(round(time_value))
+    nr_digits = len(str(rounded_time))
+    if nr_digits > 2:
+        # convert to minutes
+        units = 'm'
+        time_value /= 60.
+        rounded_time = int(round(time_value))
+        nr_digits = len(str(rounded_time))
+        if nr_digits > 2:
+            # convert to hours
+            units = 'h'
+            time_value /= 60.
+    return time_value, units
+
+
 def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
     """
     Trace a random walker given the ``bounds`` and the given
@@ -207,6 +240,12 @@ def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
         ...     # x is length 2
         ...     return (scipy.stats.norm(0, 0.25).pdf(x)
         ...             + scipy.stats.norm(0, 0.25).pdf(y))
+        >>> def f_2D_uniform(x, y):
+        ...     '''Top hat uniform pdf function'''
+        ...     x_lim = 0.1
+        ...     y_lim = 0.1
+        ...     if (abs(x) < x_lim) and (abs(y) < y_lim):
+        ...         return 1.
         >>> bounds = np.array([
         ...     [0, 0],
         ...     [0, 1],
@@ -214,20 +253,40 @@ def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
         ...     [1, 0]]
         ...     )
         >>> step_values, positions = random_walker(
-        ...         f_i=f_2D,
+        ...         f_i=f_2D_uniform,
         ...         bounds=bounds,
-        ...         steps=int(1e4),
+        ...         steps=int(1e6),
         ...         return_positions=True,
         ...         )
-
         >>> fig, axes = plt.subplots(1, 2, squeeze=True)
-        >>> axes[0].hexbin(*step_values.T)
+        >>> fig.subplots_adjust(right=0.8)
+        >>> # bin first time to get the maximum bin counts,
+        >>> # which are used below
+        >>> steps_bin = axes[0].hexbin(*step_values.T)
+        >>> positions_bin = axes[1].hexbin(*positions.T)
+        >>> axes[0].cla()
+        >>> axes[1].cla()
+        >>> # use this max value with the hexbin vmax option
+        >>> # in order to have the same colour scaling for both
+        >>> # hexbin plots, such that the same colorbar may be used
+        >>> max_value = np.max([np.max(steps_bin.get_array()),
+        ...                     np.max(positions_bin.get_array())
+        ...                     ])
+        >>> steps_bin = axes[0].hexbin(*step_values.T, vmin=0, vmax=max_value)
+        >>> steps_bin = axes[0].hexbin(*step_values.T, vmin=0, vmax=max_value)
+        >>> positions_bin = axes[1].hexbin(*positions.T, vmin=0,
+        ...                                vmax=max_value)
+        >>> positions_bin = axes[1].hexbin(*positions.T, vmin=0,
+        ...                                vmax=max_value)
         >>> axes[0].set_title('Step Values')
-        >>> axes[1].hexbin(*positions.T)
         >>> axes[1].set_title('Positions')
-        >>> axes[0].set_aspect('equal')
-        >>> axes[1].set_aspect('equal')
+        >>> for ax in axes:
+        >>>     ax.set_aspect('equal')
+
+        >>> cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
+        >>> fig.colorbar(positions_bin, cax=cbar_ax)
         >>> plt.show()
+
     """
     logger = logging.getLogger(__name__)
     bounds = DelaunayArray(bounds, Delaunay(bounds))
@@ -239,10 +298,19 @@ def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
     step_values = np.zeros((steps, dimensions), dtype=np.float64)
     # give random initial position
     positions[0] = np.random.uniform(low=0.0, high=1.0, size=dimensions)
+    start_time = time()
     for position_index in range(1, steps + 1):
         if (position_index % ((steps + 1) / 10)) == 0 or (steps < 10):
-            logger.info('Position index:{:} out of {:}'.format(position_index,
-                                                               steps + 1))
+            elapsed_time = time() - start_time
+            elapsed_time_per_step = elapsed_time / position_index
+            remaining_time = (steps - position_index) * elapsed_time_per_step
+            elapsed_time, elapsed_time_units = format_time(elapsed_time)
+            remaining_time, remaining_time_units = format_time(remaining_time)
+            logger.info('Position index:{:.1e} out of {:.1e}'
+                        .format(position_index, steps + 1))
+            logger.info('Time elapsed:{:>4.1f} {:} remaining:{:0.1f} {:}'
+                        .format(elapsed_time, elapsed_time_units,
+                                remaining_time, remaining_time_units))
         logger.debug('Current position:{:}'
                      .format(positions[position_index - 1]))
         step_index = position_index - 1
@@ -303,6 +371,13 @@ if __name__ == '__main__':
         return (scipy.stats.norm(0, 0.25).pdf(x)
                 + scipy.stats.norm(0, 0.25).pdf(y))
 
+    def f_2D_uniform(x, y):
+        """Top hat uniform pdf function"""
+        x_lim = 0.1
+        y_lim = 0.1
+        if (abs(x) < x_lim) and (abs(y) < y_lim):
+            return 1.
+
     bounds = np.array([
         [0, 0],
         [0, 1],
@@ -311,18 +386,39 @@ if __name__ == '__main__':
         )
 
     step_values, positions = random_walker(
-            f_i=f_2D,
+            f_i=f_2D_uniform,
             bounds=bounds,
-            steps=int(1e5),
+            steps=int(1e7),
             return_positions=True,
             )
 
     fig, axes = plt.subplots(1, 2, squeeze=True)
-    axes[0].hexbin(*step_values.T)
+    fig.subplots_adjust(right=0.8)
+    # bin first time to get the maximum bin counts,
+    # which are used below
+    steps_bin = axes[0].hexbin(*step_values.T)
+    positions_bin = axes[1].hexbin(*positions.T)
+    axes[0].cla()
+    axes[1].cla()
+
+    # use this max value with the hexbin vmax option
+    # in order to have the same colour scaling for both
+    # hexbin plots, such that the same colorbar may be used
+    max_value = np.max([np.max(steps_bin.get_array()),
+                        np.max(positions_bin.get_array())
+                        ])
+    steps_bin = axes[0].hexbin(*step_values.T, vmin=0, vmax=max_value)
+    steps_bin = axes[0].hexbin(*step_values.T, vmin=0, vmax=max_value)
+    positions_bin = axes[1].hexbin(*positions.T, vmin=0, vmax=max_value)
+    positions_bin = axes[1].hexbin(*positions.T, vmin=0, vmax=max_value)
+
     axes[0].set_title('Step Values')
-    axes[1].hexbin(*positions.T)
     axes[1].set_title('Positions')
-    axes[0].set_aspect('equal')
-    axes[1].set_aspect('equal')
+    for ax in axes:
+        ax.set_aspect('equal')
+
+    cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
+    fig.colorbar(positions_bin, cax=cbar_ax)
+
     plt.show()
 
