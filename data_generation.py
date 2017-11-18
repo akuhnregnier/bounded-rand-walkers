@@ -62,8 +62,9 @@ def generate_random_samples(f_i, position, nr_samples, dimensions=1):
 
     Examples:
         >>> import scipy.stats
-        >>> plt.figure()
+        >>> import matplotlib.pyplot as plt
         >>> from data_generation import generate_random_samples
+        >>> plt.figure()
         >>> plt.hist(generate_random_samples(
         ...     scipy.stats.norm(0.5, 0.1).pdf, 1000))
         >>> plt.show()
@@ -214,6 +215,8 @@ def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
         walker.
 
     Examples:
+        >>> import matplotlib.pyplot as plt
+        >>> import numpy as np
         >>> # 1D examples
         >>> def f_i(x):
         ...     '''very crude uniform distribution'''
