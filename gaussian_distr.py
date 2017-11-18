@@ -7,30 +7,45 @@ Created on Sat Nov 18 16:55:33 2017
 from scipy.stats import norm
 import numpy as np
 
-def gaussian(centre, scale, point, dimensions):
+def gaussian1d(x, centre, scale):
     """
-    This function calculates the probability at point 'point' given a (in 2d
-    roationally symmentric) Gaussian.
+    This function calculates the probability at point x given Gaussian.
     
     Args:
         centre: centre of the Gaussian
         scale: used to scale the Gussian
-        point: the point at which the probability should be found
-        dimensions: dimensions of the space i.e. 1 or 2D
+        x: the x position at which the probability should be found
         
     Result: 
-        prob: probability at 'point'
+        prob: probability at x
     
     """
     
-    if dimensions == 1:
-        prob = norm.pdf(point, loc=centre, scale=scale)
+    prob = norm.pdf(x, loc=centre, scale=scale)
         
-        return prob
+    return prob
+
+
+
+
+def gaussian2d(x, y, centre, scale):
+    """
+    This function calculates the probability at point x,y given a roationally
+    symmentric Gaussian.
     
-    elif dimensions == 2:
-        # symmentric in radius
-        prob = norm.pdf(np.sqrt(point[0]**2 + point[1]**2), loc=centre,
-                        scale=scale)
+    Args:
+        centre: list of x,y position of the centre of the Gaussian
+        scale: used to scale the Gussian
+        x: xposition at which the probability should be found
+        y: yposition at which the probability should be found
         
-        return prob
+    Result: 
+        prob: probability at 'x,y'
+    
+    """
+    
+    # symmentric in radius
+    prob = norm.pdf(np.sqrt((x - centre[0])**2 + (y - centre[1])**2),
+                    scale=scale)
+    
+    return prob
