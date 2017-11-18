@@ -8,6 +8,7 @@ This is a temporary script file.
 import numpy as np
 import numpy.random as rand
 import matplotlib.pyplot as plt
+import scipy as sp
 
 N = 1000
 
@@ -97,6 +98,11 @@ def Pdf_Transform(step,f,geometry):
         
         l = np.linalg.norm(step)
         return f(step) * (2 * np.arccos(l/2) - 0.5 * np.sqrt((4-l**2)*l**2))
+    
+def g1D(x,f):
+    num = sp.integrate.quad(f,-x,1-x)
+    den = sp.integrate.quad(lambda z: sp.integrate.quad(lambda y: f(y), -z,1-z), 0,1)
+    return num/den
                 
     
 
