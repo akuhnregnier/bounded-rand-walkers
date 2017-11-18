@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
+from scipy.stats import norm
 
 
 def tophat_1D(x, width=0.4, centre=0.):
@@ -56,6 +57,46 @@ def tophat_2D(x, y, extent=0.4, x_centre=0., y_centre=0.,
     else:
         raise NotImplementedError('type_2D value {:} not implemented.'
                                   .format(type_2D))
+
+
+def gaussian1d(x, centre, scale):
+    """
+    This function calculates the probability at point x given Gaussian.
+
+    Args:
+        centre: centre of the Gaussian
+        scale: used to scale the Gaussian
+        x: the x position at which the probability should be found
+
+    Returns:
+        prob: probability at x
+
+    """
+    prob = norm.pdf(x, loc=centre, scale=scale)
+
+    return prob
+
+
+def gaussian2d(x, y, centre, scale):
+    """
+    This function calculates the probability at point x,y given a rotationally
+    symmetric Gaussian.
+
+    Args:
+        centre: list of x,y position of the centre of the Gaussian
+        scale: used to scale the Gaussian
+        x: xposition at which the probability should be found
+        y: yposition at which the probability should be found
+
+    Returns:
+        prob: probability at 'x,y'
+
+    """
+    # symmentric in radius
+    prob = norm.pdf(np.sqrt((x - centre[0])**2 + (y - centre[1])**2),
+                    scale=scale)
+
+    return prob
 
 
 if __name__ == '__main__':
