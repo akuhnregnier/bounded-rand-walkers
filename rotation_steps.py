@@ -8,6 +8,7 @@ import numpy as np
 import numpy.random as rand
 import matplotlib.pyplot as plt
 import scipy as sp
+from scipy import integrate
 
 
 def rot_steps(data):
@@ -107,8 +108,8 @@ def Pdf_Transform(step, f, geometry):
 
 
 def g1D(x, f):
-    num = sp.integrate.quad(f, -x, 1 - x)
-    den = sp.integrate.dblquad(lambda x, y: f(
+    num = integrate.quad(f, -x, 1 - x)
+    den = integrate.dblquad(lambda x, y: f(
         x), 0, 1, lambda x: -x, lambda x: 1 - x)
     print(den[0], num[0])
     return num[0] / den[0]

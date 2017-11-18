@@ -59,8 +59,7 @@ def binning1D(binsize, data, normalising):
             flag = False
         else:
             counter += 1
-
-    return convert_array_1D(histogram)
+    return convert_array_1D(histogram, bin_size=binsize)
 
 
 def binning2D(binsize, data, normalising):
@@ -148,7 +147,9 @@ def estimate_gx(binsize, length_list):
 
     """
     # Calculate cumulative list
+    length_list = np.squeeze(length_list)
     cum_array = np.cumsum(length_list, axis=0)
+    print np.min(cum_array), np.max(cum_array)
 
     if len(cum_array.shape) == 1:
         binned = binning1D(binsize, cum_array, True)
@@ -167,7 +168,7 @@ def estimate_gx(binsize, length_list):
     return binned
 
 
-def convert_array_1D(histogram1D):
+def convert_array_1D(histogram1D, bin_size=None):
     """
     Convert [[bin_center1, freq1], ...] lists into an array containing the
     bin centres and an array containing the frequencies.
@@ -184,16 +185,20 @@ def convert_array_1D(histogram1D):
     """
     centres = np.asarray([element[0] for element in histogram1D])
     frequencies = np.asarray([element[1] for element in histogram1D])
-    centre_diffs = np.diff(centres)
-    unique_centre_diffs = np.unique(centre_diffs)
-    occurrences = [(centre_diff, np.sum(
-                    np.isclose(centre_diffs, centre_diff)))
-                   for centre_diff in unique_centre_diffs]
-    sorted_occurrences = sorted(occurrences, key=lambda x: x[1], reverse=True)
-    bin_size = sorted_occurrences[0][0]
-    ratio = (np.max(centres) / bin_size)
-    assert np.isclose(np.round(ratio), ratio), (
-            '{:} {:} {:}'.format(bin_size, np.round(ratio), ratio))
+    if bin_size == None:
+        # try to determine automatically
+        centre_diffs = np.diff(centres)
+        unique_centre_diffs = np.unique(centre_diffs)
+        occurrences = [(centre_diff, np.sum(
+                        np.isclose(centre_diffs, centre_diff)))
+                       for centre_diff in unique_centre_diffs]
+        sorted_occurrences = sorted(occurrences, key=lambda x: x[1],
+                                    reverse=True)
+        bin_size = sorted_occurrences[0][0]
+        ratio = ((np.max(centres) - np.min(centres)) / bin_size)
+        assert np.isclose(np.round(ratio), ratio), (
+                '{:} {:} {:}'.format(bin_size, np.round(ratio), ratio))
+
     bin_centres = np.arange(np.min(centres), np.max(centres) + bin_size,
                             bin_size)
     out_frequencies = np.zeros_like(bin_centres, dtype=np.float64)

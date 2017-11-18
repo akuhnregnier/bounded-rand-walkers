@@ -292,9 +292,10 @@ def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
 
     """
     logger = logging.getLogger(__name__)
-    bounds = DelaunayArray(bounds, Delaunay(bounds))
     if bounds.size == bounds.shape[0]:
         bounds = bounds.reshape(-1, 1)
+    else:
+        bounds = DelaunayArray(bounds, Delaunay(bounds))
 
     dimensions = bounds.shape[1]
     positions = np.zeros((steps + 1, dimensions), dtype=np.float64)
