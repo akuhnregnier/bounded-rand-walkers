@@ -10,15 +10,11 @@ import numpy as np
 from rotation_steps import g1D
 from binning import estimate_gx, estimate_fi
 from data_generation import random_walker
+from functions import tophat
 
+
+logging.basicConfig(level=logging.INFO)
 xs = np.linspace(0, 1, 10)
-
-def tophat(x, width=0.4):
-    """tophat uniform distribution"""
-    if abs(x) < (width/2.):
-        return 1.
-    else:
-        return 0.
 
 g_analytical = []
 for x in xs:
@@ -28,7 +24,7 @@ g_analytical = np.asarray(g_analytical)
 step_values, positions = random_walker(
         f_i=tophat,
         bounds=np.array([0, 1]),
-        steps=int(1e5),
+        steps=int(1e7),
         return_positions=True,
         )
 print step_values.shape, positions.shape
