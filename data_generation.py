@@ -15,6 +15,13 @@ import matplotlib.pyplot as plt
 from time import time
 
 
+def circle_points(radius=0.5, samples=20):
+    angles = np.linspace(0, 2*np.pi, samples, endpoint=False)
+    x = (np.cos(angles) * radius).reshape(-1, 1)
+    y = (np.sin(angles) * radius).reshape(-1, 1)
+    return np.hstack((x, y))
+
+
 class DelaunayArray(np.ndarray):
 
     def __new__(cls, input_array, tri=None):
@@ -71,9 +78,9 @@ def generate_random_samples(f_i, position, nr_samples, dimensions=1):
 
     """
     logger = logging.getLogger(__name__)
-    if hasattr(f_i, 'max_fn_value'):
+    if generate_random_samples.max_fn_value != 0:
         logger.debug('Retrieving max fn value')
-        max_fn = f_i.max_fn_value
+        max_fn = generate_random_samples.max_fn_value
     else:
         logger.debug('Finding maximum of f_i')
         if dimensions == 1:
@@ -83,7 +90,7 @@ def generate_random_samples(f_i, position, nr_samples, dimensions=1):
             max_args = scipy.optimize.fmin(lambda args: -f_i(*args), (0, 0))
             max_fn = f_i(*max_args)
         # fix this value so it does not need to be calculated next time
-        f_i.max_fn_value = max_fn
+        generate_random_samples.max_fn_value = max_fn
 
     # imagine as throwing darts, with a 'height' randomly distributed
     # from 0 to ``max_fn``, and a position randomly along x (1D)
@@ -292,6 +299,7 @@ def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
 
     """
     logger = logging.getLogger(__name__)
+    generate_random_samples.max_fn_value = 0
     if bounds.size == bounds.shape[0]:
         bounds = bounds.reshape(-1, 1)
     else:
@@ -392,7 +400,7 @@ if __name__ == '__main__':
     step_values, positions = random_walker(
             f_i=f_2D_uniform,
             bounds=bounds,
-            steps=int(1e7),
+            steps=int(1e5),
             return_positions=True,
             )
 
@@ -425,4 +433,3 @@ if __name__ == '__main__':
     fig.colorbar(positions_bin, cax=cbar_ax)
 
     plt.show()
-
