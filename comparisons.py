@@ -7,10 +7,10 @@ Compare analytical and numerical stepsize and positions distributions.
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
-from rotation_steps import g1D
+from rotation_steps import g1D, gRadialCircle
+from functions import Tophat_1D
 from binning import estimate_fi
 from data_generation import random_walker, circle_points
-from functions import Tophat_1D
 
 
 def get_centres(bin_edges):
@@ -48,9 +48,16 @@ def compare_2D(pdf, analytical_bins, numerical_bins, num_samples=int(1e4),
                bounds=circle_points(samples=40)):
     logger = logging.getLogger(__name__)
     # TODO: analytical result
-    xs = []
-    ys = []
-    g_analytical = []
+    
+    #use gRadialCircle(r,f)/(2*pi*r)
+    
+    xs = np.linspace(-1,1,analytical_bins,endpoint=False) + 1./analytical_bins
+    ys = np.linspace(-1,1,analytical_bins,endpoint=False) + 1./analytical_bins
+    
+    xcoords, ycoords = np.meshgrid(xs,ys)
+    rads = np.sqrt(xcoords^2 + ycoords^2)
+    
+    g_analytical = gRadialCircle(rads,pdf)/(2*np.pi*rads)
     # xs = np.linspace(0, 1, analytical_bins)
     # g_analytical = []
     # for x in xs:
