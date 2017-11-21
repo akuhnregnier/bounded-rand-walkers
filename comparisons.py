@@ -58,10 +58,10 @@ def compare_2D(pdf, analytical_bins, numerical_bins, num_samples=int(1e4),
     nr_unique_rads = len(unique_rads)
 
     logger.info('integrating for {:} unique radii'
-                 .format(len(unique_rads)))
+                .format(len(unique_rads)))
     for i, rad in enumerate(unique_rads):
         logger.info('{:>5d} out of {:>5d}'
-                     .format(i + 1, nr_unique_rads))
+                    .format(i + 1, nr_unique_rads))
         g_analytical_value = gRadialCircle(rad, pdf) / (2*np.pi*rad)
         mask = np.where(np.isclose(rad, rads))
         g_analytical[mask] = g_analytical_value
@@ -87,10 +87,10 @@ def compare_2D(pdf, analytical_bins, numerical_bins, num_samples=int(1e4),
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-    ONED = False
-    TWOD = True
+    ONE_D = False
+    TWO_D = True
 
-    if ONED:
+    if ONE_D:
         # 1D case
         widths = [0.3, 0.7]
         for width in widths:
@@ -112,7 +112,7 @@ if __name__ == '__main__':
             axes[1].plot(numerical_bin_centres, g_numerical)
             plt.show()
 
-    if TWOD:
+    if TWO_D:
         # 2D case
         pdf = Tophat_2D(extent=20., x_centre=0, y_centre=0,
                         type_2D='circularly-symmetric').pdf
