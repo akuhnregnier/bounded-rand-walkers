@@ -130,9 +130,9 @@ def gRadialCircle(r, f):
 
     """
     return 2*np.pi*r*(
-            sp.integrate.quad(f, 0, 1-r)[0]
+            sp.integrate.quad(lambda d: f(d)*2*np.pi*d, 0, 1-r)[0]
             + sp.integrate.quad(
-                lambda l: f(l)*(1-betaCircle(r, l)/np.pi), 1-r, 1+r)[0]
+                lambda l: 2*np.pi*l*f(l)*(1-betaCircle(r, l)/np.pi), 1-r, 1+r)[0]
             )
 
 
