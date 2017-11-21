@@ -8,7 +8,7 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 from rotation_steps import g1D, gRadialCircle
-from functions import Tophat_1D
+from functions import Tophat_1D, Tophat_2D
 from binning import estimate_fi
 from data_generation import random_walker, circle_points
 
@@ -54,11 +54,19 @@ def compare_2D(pdf, analytical_bins, numerical_bins, num_samples=int(1e4),
     xcoords, ycoords = np.meshgrid(xs, ys)
     rads = np.sqrt(xcoords**2. + ycoords**2.)
     g_analytical = np.zeros_like(rads)
+    unique_rads = np.unique(rads)
+    nr_unique_rads = len(unique_rads)
 
-    for rad in np.unique(rads):
+    logger.info('integrating for {:} unique radii'
+                 .format(len(unique_rads)))
+    for i, rad in enumerate(unique_rads):
+        logger.info('{:>5d} out of {:>5d}'
+                     .format(i + 1, nr_unique_rads))
         g_analytical_value = gRadialCircle(rad, pdf) / (2*np.pi*rad)
         mask = np.where(np.isclose(rad, rads))
         g_analytical[mask] = g_analytical_value
+
+    logger.info('Finished analytical result, starting numerical run')
 
     # numerical result
     step_values, positions = random_walker(
@@ -67,6 +75,7 @@ def compare_2D(pdf, analytical_bins, numerical_bins, num_samples=int(1e4),
             steps=int(num_samples),
             return_positions=True,
             )
+    logger.info('Finished numerical run')
     logger.debug('{:} {:}'.format(step_values.shape, positions.shape))
     probs, xedges, yedges = np.histogram2d(*positions.T, bins=numerical_bins,
                                            normed=True)
@@ -78,26 +87,57 @@ def compare_2D(pdf, analytical_bins, numerical_bins, num_samples=int(1e4),
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
+    ONED = False
+    TWOD = True
 
-    # 1D case
-    widths = [0.3, 0.7]
-    for width in widths:
-        pdf = Tophat_1D(width=width, centre=0.).pdf
+    if ONED:
+        # 1D case
+        widths = [0.3, 0.7]
+        for width in widths:
+            pdf = Tophat_1D(width=width, centre=0.).pdf
 
-        analytical_bins = 5
-        numerical_bins = 5
+            analytical_bins = 5
+            numerical_bins = 5
 
-        (analytical_bin_centres, g_analytical,
-         numerical_bin_centres, g_numerical) = (
-            compare_1D(pdf, analytical_bins, numerical_bins,
-                       num_samples=int(1e4))
-            )
+            (analytical_bin_centres, g_analytical,
+             numerical_bin_centres, g_numerical) = (
+                compare_1D(pdf, analytical_bins, numerical_bins,
+                           num_samples=int(1e4))
+                )
+
+            fig, axes = plt.subplots(1, 2, squeeze=True)
+            axes[0].set_title(r'$Analytical g(x)$')
+            axes[0].plot(analytical_bin_centres, g_analytical)
+            axes[1].set_title(r'$Numerical g(x)$')
+            axes[1].plot(numerical_bin_centres, g_numerical)
+            plt.show()
+
+    if TWOD:
+        # 2D case
+        pdf = Tophat_2D(extent=20., x_centre=0, y_centre=0,
+                        type_2D='circularly-symmetric').pdf
+
+        analytical_bins = 40
+        numerical_bins = 40
+
+        (analytical_bin_centres_x, analytical_bin_centres_y, g_analytical,
+         numerical_bin_centres_x, numerical_bin_centres_y, g_numerical) = (
+                 compare_2D(pdf, analytical_bins, numerical_bins,
+                            num_samples=int(1e5),
+                            bounds=circle_points(samples=20)
+                            ))
 
         fig, axes = plt.subplots(1, 2, squeeze=True)
         axes[0].set_title(r'$Analytical g(x)$')
-        axes[0].plot(analytical_bin_centres, g_analytical)
+        axes[0].pcolormesh(analytical_bin_centres_x,
+                           analytical_bin_centres_y,
+                           g_analytical
+                           )
         axes[1].set_title(r'$Numerical g(x)$')
-        axes[1].plot(numerical_bin_centres, g_numerical)
+        axes[1].pcolormesh(numerical_bin_centres_x,
+                           numerical_bin_centres_y,
+                           g_numerical
+                           )
+        for ax in axes:
+            ax.set_aspect('equal')
         plt.show()
-
-    # 2D case

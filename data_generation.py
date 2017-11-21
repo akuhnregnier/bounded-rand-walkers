@@ -79,7 +79,7 @@ def generate_random_samples(f_i, position, nr_samples, dimensions=1):
     """
     logger = logging.getLogger(__name__)
     if generate_random_samples.max_fn_value != 0:
-        logger.debug('Retrieving max fn value')
+        # logger.debug('Retrieving max fn value')
         max_fn = generate_random_samples.max_fn_value
     else:
         logger.debug('Finding maximum of f_i')
@@ -105,11 +105,21 @@ def generate_random_samples(f_i, position, nr_samples, dimensions=1):
             # get random position and height
             random_p = np.random.uniform(low=0.0, high=max_fn, size=1)
             # bounded between -pos_i and 1 - pos_i
-            random_args = [
-                    np.random.uniform(
-                        low=-pos_i, high=1-pos_i, size=1)
-                    for pos_i in position
-                    ]
+            if dimensions == 1:
+                random_args = [
+                        np.random.uniform(
+                            low=-pos_i, high=1-pos_i, size=1)
+                        for pos_i in position
+                        ]
+            elif dimensions == 2:
+                random_args = [
+                        np.random.uniform(
+                            low=-(1 + pos_i), high=1-pos_i, size=1)
+                        for pos_i in position
+                        ]
+            else:
+                raise NotImplementedError('{:} dimensions not implemented'
+                                          .format(dimensions))
 
             # now test the actual p value at the position
             # given by ``random_args``
@@ -310,8 +320,14 @@ def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
     step_values = np.zeros((steps, dimensions), dtype=np.float64)
     # give random initial position
     positions[0] = np.random.uniform(low=0.0, high=1.0, size=dimensions)
+    while not in_bounds(positions[0], bounds):
+        logger.debug('creating new initial position')
+        positions[0] = np.random.uniform(low=0.0, high=1.0, size=dimensions)
+    logger.info('Initial walker position:{:}'.format(positions[0]))
     start_time = time()
     for position_index in range(1, steps + 1):
+        logger.debug('position index:{:} {:}'
+                     .format(position_index, steps + 1))
         if (position_index % ((steps + 1) / 10)) == 0 or (steps < 10):
             elapsed_time = time() - start_time
             elapsed_time_per_step = elapsed_time / position_index
