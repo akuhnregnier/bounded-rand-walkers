@@ -47,22 +47,18 @@ def compare_1D(pdf, analytical_bins, numerical_bins, num_samples=int(1e4),
 def compare_2D(pdf, analytical_bins, numerical_bins, num_samples=int(1e4),
                bounds=circle_points(samples=40)):
     logger = logging.getLogger(__name__)
-    # TODO: analytical result
-    
-    #use gRadialCircle(r,f)/(2*pi*r)
-    
-    xs = np.linspace(-1,1,analytical_bins,endpoint=False) + 1./analytical_bins
-    ys = np.linspace(-1,1,analytical_bins,endpoint=False) + 1./analytical_bins
-    
-    xcoords, ycoords = np.meshgrid(xs,ys)
-    rads = np.sqrt(xcoords^2 + ycoords^2)
-    
-    g_analytical = gRadialCircle(rads,pdf)/(2*np.pi*rads)
-    # xs = np.linspace(0, 1, analytical_bins)
-    # g_analytical = []
-    # for x in xs:
-    #     g_analytical.append(g1D(x, pdf))
-    # g_analytical = np.asarray(g_analytical)
+
+    xs = np.linspace(-1, 1, analytical_bins, endpoint=True)
+    ys = np.linspace(-1, 1, analytical_bins, endpoint=True)
+
+    xcoords, ycoords = np.meshgrid(xs, ys)
+    rads = np.sqrt(xcoords**2. + ycoords**2.)
+    g_analytical = np.zeros_like(rads)
+
+    for rad in np.unique(rads):
+        g_analytical_value = gRadialCircle(rad, pdf) / (2*np.pi*rad)
+        mask = np.where(np.isclose(rad, rads))
+        g_analytical[mask] = g_analytical_value
 
     # numerical result
     step_values, positions = random_walker(
@@ -83,16 +79,19 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
 
+    # 1D case
     widths = [0.3, 0.7]
     for width in widths:
         pdf = Tophat_1D(width=width, centre=0.).pdf
 
-        analytical_bins = 10
-        numerical_bins = 10
+        analytical_bins = 5
+        numerical_bins = 5
 
         (analytical_bin_centres, g_analytical,
          numerical_bin_centres, g_numerical) = (
-            compare_1D(pdf, analytical_bins, numerical_bins))
+            compare_1D(pdf, analytical_bins, numerical_bins,
+                       num_samples=int(1e4))
+            )
 
         fig, axes = plt.subplots(1, 2, squeeze=True)
         axes[0].set_title(r'$Analytical g(x)$')
@@ -100,3 +99,5 @@ if __name__ == '__main__':
         axes[1].set_title(r'$Numerical g(x)$')
         axes[1].plot(numerical_bin_centres, g_numerical)
         plt.show()
+
+    # 2D case
