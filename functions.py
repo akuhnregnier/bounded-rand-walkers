@@ -84,7 +84,47 @@ class Tophat_2D(object):
             raise NotImplementedError('type_2D value {:} not implemented.'
                                       .format(self.type_2D))
 
+class Power(object):
+    def __init__(self, centre=0., exponent=1.,binsize=0.001):
+        """
+        A rotationally symmentric power law distribution.
+        
+        Args:
+            centre: Center of the power law. For a 2D distribution, give a
+                list of x, y position (ie. [x, y]) of the centre of the
+                exponential.
+            exponent: characteristic exponent of the probability decay.
+            binsize= scale of UV cutoff, should have scale of hist binsize
+            
+        """
+        self.centre = centre
+        self.exponent = exponent
+        self.binsize = binsize
+        
+    def pdf(self, *args):
+        """Calculate the probability at a point.
 
+        Args:
+            *args: The coordinates of the points of interest. For the 1D
+                case, call like pdf(x). In the 2D case, give coordinates
+                like pdf(x, y).
+
+        Returns:
+            prob: probability at the given point
+
+        """
+        
+        if len(args) == 1:
+            x = args[0]
+            prob = 0.5*( (np.abs(x+self.binsize-self.centre))**(-self.exponent) / (self.binsize)**(1-self.exponent))
+            
+        elif len(args) == 2:
+            x, y = args
+            radius = (x+self.binsize-self.centre[0])**2 + (y+self.binsize-self.centre[1])**2
+            prob = 0.5*( radius**(-self.exponent) / (self.binsize)**(1-self.exponent))
+            
+        return prob
+            
 class Gaussian(object):
     def __init__(self, centre=0., scale=1.):
         """A Gaussian distribution.
@@ -122,6 +162,44 @@ class Gaussian(object):
                             scale=self.scale)
         return prob
 
+class Exponential(object):
+    def __init__(self, centre=0., decay_rate=1.):
+        """
+        A rotationally symmentric exponential distribution.
+        
+        Args:
+            centre: Center of the exponential. For a 2D distribution, give a
+                list of x, y position (ie. [x, y]) of the centre of the
+                exponential.
+            decay_rate: the constant governing the decay of the exponential.
+            
+        """
+        
+        self.centre = centre
+        self.decay_rate = decay_rate
+    
+    def pdf(self, *args):
+        """
+        Calculates the probability at a point.
+        
+        Args:
+            *args: The coordinates of the points of interest. For the 1D
+                case, call like pdf(x). In the 2D case, give coordinates
+                like pdf(x, y).
+
+        Returns:
+            prob: probability at the given point
+        
+        """
+        
+        if len(args) == 1:
+            x = args[0]
+            prob = np.random.exponential(x, 1 / self.decay_rate)
+        elif len(args) == 2:
+            x, y = args
+            # symmetric in radius
+            prob = np.random.exponential(np.sqrt(x**2 + y**2), 1 / self.decay_rate)
+        return prob
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
