@@ -86,11 +86,33 @@ class Tophat_2D(object):
 
 class Power(object):
     def __init__(self, centre=0., exponent=1.,binsize=0.001):
+        """
+        A rotationally symmentric power law distribution.
+        
+        Args:
+            centre: Center of the power law. For a 2D distribution, give a
+                list of x, y position (ie. [x, y]) of the centre of the
+                exponential.
+            exponent: characteristic exponent of the probability decay.
+            binsize= scale of UV cutoff, should have scale of hist binsize
+            
+        """
         self.centre = centre
         self.exponent = exponent
         self.binsize = binsize
         
     def pdf(self, *args):
+        """Calculate the probability at a point.
+
+        Args:
+            *args: The coordinates of the points of interest. For the 1D
+                case, call like pdf(x). In the 2D case, give coordinates
+                like pdf(x, y).
+
+        Returns:
+            prob: probability at the given point
+
+        """
         
         if len(args) == 1:
             x = args[0]
