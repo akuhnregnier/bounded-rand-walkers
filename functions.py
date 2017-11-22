@@ -84,7 +84,25 @@ class Tophat_2D(object):
             raise NotImplementedError('type_2D value {:} not implemented.'
                                       .format(self.type_2D))
 
-
+class Power(object):
+    def __init__(self, centre=0., exponent=1.,binsize=0.001):
+        self.centre = centre
+        self.exponent = exponent
+        self.binsize = binsize
+        
+    def pdf(self, *args):
+        
+        if len(args) == 1:
+            x = args[0]
+            prob = 0.5*( (np.abs(x+self.binsize-self.centre))**(-self.exponent) / (self.binsize)**(1-self.exponent))
+            
+        elif len(args) == 2:
+            x, y = args
+            radius = (x+self.binsize-self.centre[0])**2 + (y+self.binsize-self.centre[1])**2
+            prob = 0.5*( radius**(-self.exponent) / (self.binsize)**(1-self.exponent))
+            
+        return prob
+            
 class Gaussian(object):
     def __init__(self, centre=0., scale=1.):
         """A Gaussian distribution.
