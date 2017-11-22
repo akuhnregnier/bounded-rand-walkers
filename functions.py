@@ -140,6 +140,44 @@ class Gaussian(object):
                             scale=self.scale)
         return prob
 
+class Exponential(object):
+    def __init__(self, centre=0., decay_rate=1.):
+        """
+        A rotationally symmentric exponential distribution.
+        
+        Args:
+            centre: Center of the exponential. For a 2D distribution, give a
+                list of x, y position (ie. [x, y]) of the centre of the
+                exponential.
+            decay_rate: the constant governing the decay of the exponential.
+            
+        """
+        
+        self.centre = centre
+        self.decay_rate = decay_rate
+    
+    def pdf(self, *args):
+        """
+        Calculates the probability at a point.
+        
+        Args:
+            *args: The coordinates of the points of interest. For the 1D
+                case, call like pdf(x). In the 2D case, give coordinates
+                like pdf(x, y).
+
+        Returns:
+            prob: probability at the given point
+        
+        """
+        
+        if len(args) == 1:
+            x = args[0]
+            prob = np.random.exponential(x, 1 / self.decay_rate)
+        elif len(args) == 2:
+            x, y = args
+            # symmetric in radius
+            prob = np.random.exponential(np.sqrt(x**2 + y**2), 1 / self.decay_rate)
+        return prob
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
