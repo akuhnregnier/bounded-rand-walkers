@@ -8,7 +8,7 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 from rotation_steps import g1D, gRadialCircle, Pdf_Transform
-from functions import Tophat_1D, Tophat_2D
+from functions import Tophat_1D, Tophat_2D, Power
 import scipy.integrate
 from binning import estimate_fi
 from data_generation import random_walker, circle_points
@@ -22,7 +22,7 @@ def get_centres(bin_edges):
 
 
 def compare_1D(pdf, analytical_bins, numerical_bins, num_samples=int(1e4),
-               bounds=np.array([0, 1])):
+               bounds=np.array([0, 1]), analytical_only=False):
     logger = logging.getLogger(__name__)
     # analytical result
     xs = np.linspace(0, 1, analytical_bins)
@@ -38,26 +38,32 @@ def compare_1D(pdf, analytical_bins, numerical_bins, num_samples=int(1e4),
     g_analytical = np.asarray(g_analytical)
     g_analytical = np.asarray(g_analytical)
 
-    # numerical result
-    step_values, positions = random_walker(
-            f_i=pdf,
-            bounds=bounds,
-            steps=int(num_samples),
-            return_positions=True,
-            )
-    logger.debug('{:} {:}'.format(step_values.shape, positions.shape))
-    probs, bin_edges = np.histogram(
-            positions,
-            bins=numerical_bins,
-            density=True
-            )
-    step_probs, step_bin_edges = np.histogram(
-            step_values,
-            bins=numerical_bins,
-            density=True
-            )
-    bin_centres = get_centres(bin_edges)
-    step_bin_centres = get_centres(step_bin_edges)
+    if not analytical_only:
+        # numerical result
+        step_values, positions = random_walker(
+                f_i=pdf,
+                bounds=bounds,
+                steps=int(num_samples),
+                return_positions=True,
+                )
+        logger.debug('{:} {:}'.format(step_values.shape, positions.shape))
+        probs, bin_edges = np.histogram(
+                positions,
+                bins=numerical_bins,
+                density=True
+                )
+        step_probs, step_bin_edges = np.histogram(
+                step_values,
+                bins=numerical_bins,
+                density=True
+                )
+        bin_centres = get_centres(bin_edges)
+        step_bin_centres = get_centres(step_bin_edges)
+    else:
+        bin_centres = None
+        probs = None
+        step_bin_centres = None
+        step_probs = None
     return (xs, g_analytical,
             ft_xs, f_t_analytical,
             bin_centres, probs,
@@ -154,7 +160,7 @@ def compare_2D(pdf, analytical_bins, numerical_bins, num_samples=int(1e4),
             )
 
 def compare_1D_plotting(pdf, analytical_bins,
-        numerical_bins=None, steps=int(1e3)):
+        numerical_bins=None, steps=int(1e3), analytical_only=False):
 
     if numerical_bins is None:
         numerical_bins == analytical_bins
@@ -164,7 +170,7 @@ def compare_1D_plotting(pdf, analytical_bins,
      numerical_position_bin_centres, g_numerical,
      numerical_f_t_bin_centres, f_t_numerical) = (
         compare_1D(pdf, analytical_bins, numerical_bins,
-                   num_samples=steps)
+                   num_samples=steps, analytical_only=analytical_only)
         )
 
     fig, axes = plt.subplots(1, 2, squeeze=True)
@@ -273,17 +279,18 @@ def compare_2D_plotting(pdf, analytical_bins, numerical_bins=None,
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-    ONE_D = False
-    TWO_D = True
+    ONE_D = True
+    TWO_D = False
 
     if ONE_D:
         # 1D case
         widths = [0.7]
         for width in widths:
-            pdf = Tophat_1D(width=width, centre=0.).pdf
+            # pdf = Tophat_1D(width=width, centre=0.).pdf
+            pdf = Power(centre=0., exponent=1.).pdf
 
-            analytical_bins = 30
-            numerical_bins = 30
+            analytical_bins = 11
+            numerical_bins = 11
 
             compare_1D_plotting(pdf, analytical_bins, numerical_bins,
                                 steps=int(1e4))
@@ -293,8 +300,8 @@ if __name__ == '__main__':
         pdf = Tophat_2D(extent=20., x_centre=0, y_centre=0,
                         type_2D='circularly-symmetric').pdf
 
-        analytical_bins = 60
-        numerical_bins = 60
+        analytical_bins = 61
+        numerical_bins = 61
 
         compare_2D_plotting(pdf, analytical_bins, numerical_bins,
                             steps=int(1e4))
