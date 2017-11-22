@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 from time import time
 
 
-def circle_points(radius=0.5, samples=20):
+def circle_points(radius=1., samples=20):
     angles = np.linspace(0, 2*np.pi, samples, endpoint=False)
     x = (np.cos(angles) * radius).reshape(-1, 1)
     y = (np.sin(angles) * radius).reshape(-1, 1)

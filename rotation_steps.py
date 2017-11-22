@@ -93,7 +93,7 @@ def Pdf_Transform(step, f, geometry):
 
     if geometry == '1Dseg':
 
-        if type(step) != float:
+        if not isinstance(step, float):
             raise TypeError('for 1D pdf use float for step')
 
         return (1 - np.abs(step)) * f(step) * 0.5 * (np.sign(1 - np.abs(step)) + 1)
@@ -104,7 +104,7 @@ def Pdf_Transform(step, f, geometry):
             raise TypeError('for 2D pdf use 1d, 2 entry array, for step')
 
         l = np.linalg.norm(step)
-        return f(step) * (2 * np.arccos(l / 2) - 0.5 * np.sqrt((4 - l**2) * l**2))
+        return f(step, 0) * (2 * np.arccos(l / 2) - 0.5 * np.sqrt((4 - l**2) * l**2))
 
 
 def g1D(x, f):
@@ -129,13 +129,15 @@ def gRadialCircle(r, f):
         grow linearly (as observed).
 
     """
-    return 2*np.pi*r*(
-
+    if np.isclose(r, 0.):
+        return (
             sp.integrate.quad(lambda d: f(d,0)*2*np.pi*d, 0, 1-r)[0]
-            + sp.integrate.quad(
-                lambda l: 2*np.pi*l*f(l,0)*(1-betaCircle(r, l)/np.pi), 1-r, 1+r)[0]
-
             )
+    return (
+        sp.integrate.quad(lambda d: f(d,0)*2*np.pi*d, 0, 1-r)[0]
+         + sp.integrate.quad(
+            lambda l: 2*np.pi*l*f(l,0)*(1-betaCircle(r, l)/np.pi), 1-r, 1+r)[0]
+        )
 
 
 if __name__ == '__main__':
