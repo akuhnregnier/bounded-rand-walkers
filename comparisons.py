@@ -10,7 +10,6 @@ import numpy as np
 from rotation_steps import g1D, gRadialCircle, Pdf_Transform, rot_steps
 from functions import Tophat_1D, Tophat_2D, Power
 import scipy.integrate
-from binning import estimate_fi
 from data_generation import random_walker, circle_points
 
 
@@ -186,7 +185,7 @@ def compare_1D_plotting(pdf, analytical_bins,
     axes[0].set_title(r'$Analytical \ g(x)$')
     axes[0].plot(analytical_bin_centres, g_analytical)
     axes[1].set_title(r'$Numerical \ g(x)$')
-    axes[1].plot(numerical_f_t_bin_centres, g_numerical)
+    axes[1].plot(numerical_position_bin_centres, g_numerical)
     fig2, axes2 = plt.subplots(1, 2, squeeze=True)
     axes2[0].set_title(r'$Analytical \ f_t(x)$')
     axes2[0].plot(analytical_ft_centres,
@@ -196,6 +195,22 @@ def compare_1D_plotting(pdf, analytical_bins,
     axes2[1].plot(numerical_f_t_bin_centres,
                   f_t_numerical,
                   )
+
+    # plot figures on top of each other    
+    fig3 = plt.figure()
+    ax3 = fig3.add_subplot(111)
+    ax3.set_title(r'$Comparing \ Analytical \ and \ Numerical \ g(x)$')
+    ax3.plot(analytical_bin_centres, g_analytical, label='Analytical Solution')
+    ax3.plot(numerical_position_bin_centres, g_numerical, label='Numerical Solution')
+    ax3.legend()
+    
+    fig4 = plt.figure()
+    ax4 = fig4.add_subplot(111)
+    ax4.set_title(r'$Comparing \ Analytical \ and \ Numerical \ f_t(x)$')
+    ax4.plot(analytical_ft_centres, f_t_analytical, label='Analytical Solution')
+    ax4.plot(numerical_f_t_bin_centres, f_t_numerical, label='Numerical Result')
+    ax4.legend()
+    
     plt.show()
 
 
@@ -302,15 +317,15 @@ def compare_2D_plotting(pdf, analytical_bins, numerical_bins=None,
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-    ONE_D = False
-    TWO_D = True
+    ONE_D = True
+    TWO_D = False
 
     if ONE_D:
         # 1D case
         widths = [0.7]
         for width in widths:
             # pdf = Tophat_1D(width=width, centre=0.).pdf
-            pdf = Power(centre=0., exponent=1.).pdf
+            pdf = Power(centre=0.5, exponent=1.).pdf
 
             analytical_bins = 11
             numerical_bins = 11
