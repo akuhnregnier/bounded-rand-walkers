@@ -348,66 +348,70 @@ def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
 
+    ONE_D = True
+    TWO_D = False
     # test the sampling function
     # import scipy.stats
     # plt.figure()
     # plt.hist(generate_random_samples(scipy.stats.norm(0.5, 0.1).pdf, 1000))
     # plt.show()
 
-    # step_values, positions = random_walker(
-    #         f_i=Gaussian().pdf,
-    #         bounds=np.array([0, 1]),
-    #         steps=int(1e5),
-    #         return_positions=True,
-    #         )
+    if ONE_D:
+        step_values, positions = random_walker(
+                f_i=lambda x: 1.,
+                bounds=np.array([0, 1]),
+                steps=int(1e5),
+                return_positions=True,
+                )
 
-    # fig, axes = plt.subplots(1, 2, squeeze=True)
-    # axes[0].hist(step_values, bins='auto')
-    # axes[0].set_title('Step Values')
-    # axes[1].hist(positions, bins='auto')
-    # axes[1].set_title('Positions')
-    # plt.show()
+        fig, axes = plt.subplots(1, 2, squeeze=True)
+        axes[0].hist(step_values, bins='auto')
+        axes[0].set_title('Step Values')
+        axes[1].hist(positions, bins='auto')
+        axes[1].set_title('Positions')
+        plt.show()
 
-    bounds = np.array([
-        [0, 0],
-        [0, 1],
-        [1, 1],
-        [1, 0]]
-        )
-
-    step_values, positions = random_walker(
-            f_i=Tophat_2D().pdf,
-            bounds=bounds,
-            steps=int(1e5),
-            return_positions=True,
+    if TWO_D:
+        bounds = np.array([
+            [0, 0],
+            [0, 1],
+            [1, 1],
+            [1, 0]]
             )
 
-    fig, axes = plt.subplots(1, 2, squeeze=True)
-    fig.subplots_adjust(right=0.8)
-    # bin first time to get the maximum bin counts,
-    # which are used below
-    steps_bin = axes[0].hexbin(*step_values.T)
-    positions_bin = axes[1].hexbin(*positions.T)
-    axes[0].cla()
-    axes[1].cla()
+        step_values, positions = random_walker(
+                f_i=Tophat_2D().pdf,
+                bounds=bounds,
+                steps=int(1e5),
+                return_positions=True,
+                )
 
-    # use this max value with the hexbin vmax option
-    # in order to have the same colour scaling for both
-    # hexbin plots, such that the same colorbar may be used
-    max_value = np.max([np.max(steps_bin.get_array()),
-                        np.max(positions_bin.get_array())
-                        ])
-    steps_bin = axes[0].hexbin(*step_values.T, vmin=0, vmax=max_value)
-    steps_bin = axes[0].hexbin(*step_values.T, vmin=0, vmax=max_value)
-    positions_bin = axes[1].hexbin(*positions.T, vmin=0, vmax=max_value)
-    positions_bin = axes[1].hexbin(*positions.T, vmin=0, vmax=max_value)
+        fig, axes = plt.subplots(1, 2, squeeze=True)
+        fig.subplots_adjust(right=0.8)
+        # bin first time to get the maximum bin counts,
+        # which are used below
+        steps_bin = axes[0].hexbin(*step_values.T)
+        positions_bin = axes[1].hexbin(*positions.T)
+        axes[0].cla()
+        axes[1].cla()
 
-    axes[0].set_title('Step Values')
-    axes[1].set_title('Positions')
-    for ax in axes:
-        ax.set_aspect('equal')
+        # use this max value with the hexbin vmax option
+        # in order to have the same colour scaling for both
+        # hexbin plots, such that the same colorbar may be used
+        max_value = np.max([np.max(steps_bin.get_array()),
+                            np.max(positions_bin.get_array())
+                            ])
+        steps_bin = axes[0].hexbin(*step_values.T, vmin=0, vmax=max_value)
+        steps_bin = axes[0].hexbin(*step_values.T, vmin=0, vmax=max_value)
+        positions_bin = axes[1].hexbin(*positions.T, vmin=0, vmax=max_value)
+        positions_bin = axes[1].hexbin(*positions.T, vmin=0, vmax=max_value)
 
-    cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
-    fig.colorbar(positions_bin, cax=cbar_ax)
+        axes[0].set_title('Step Values')
+        axes[1].set_title('Positions')
+        for ax in axes:
+            ax.set_aspect('equal')
 
-    plt.show()
+        cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
+        fig.colorbar(positions_bin, cax=cbar_ax)
+
+        plt.show()
