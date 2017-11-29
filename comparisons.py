@@ -11,6 +11,7 @@ from rotation_steps import g1D, gRadialCircle, Pdf_Transform, rot_steps
 from functions import Tophat_1D, Tophat_2D, Power, Exponential, Gaussian
 import scipy.integrate
 from data_generation import random_walker, circle_points
+from statsmodels.stats.weightstats import DescrStatsW
 
 
 def get_centres(bin_edges):
@@ -18,6 +19,31 @@ def get_centres(bin_edges):
     right_edges = bin_edges[1:]
     bin_centres = (left_edges + right_edges) / 2.
     return bin_centres
+
+
+def stats(data1, data2, weights=None):
+    """
+    This function calculates the mean difference between the input data sets
+    and the standard deviation of this mean.
+    
+    Args:
+        data1: 1D array of dataset 1
+        data2: 2D array of dataset 2
+        weights: The wheights of each data point. The default are no weights.
+    
+    Returns:
+        weighted_stats.mean: mean difference between data sets
+        weighted_stats.std_mean: standard dev. of mean difference
+    
+    """
+    if data1.size != data2.size:
+        raise Exception('Two data sets have different lengths')
+    
+    abs_difference = np.abs(data2 - data1)
+    weighted_stats = DescrStatsW(abs_difference, weights=weights)
+    
+    return weighted_stats.mean, weighted_stats.std_mean
+    
 
 
 def compare_1D(pdf, analytical_bins, numerical_bins, num_samples=int(1e4),
