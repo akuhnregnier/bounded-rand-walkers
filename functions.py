@@ -116,7 +116,7 @@ class Power(object):
         
         if len(args) == 1:
             x = args[0]
-            prob = 0.5*( (np.abs(x+self.binsize-self.centre))**(-self.exponent) / (self.binsize)**(1-self.exponent))
+            prob = 0.5*( (np.abs(x-self.centre)+self.binsize)**(-self.exponent) / (self.binsize)**(1-self.exponent))
             
         elif len(args) == 2:
             x, y = args
