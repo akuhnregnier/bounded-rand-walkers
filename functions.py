@@ -3,6 +3,11 @@ import numpy as np
 from scipy.stats import norm
 
 
+def get_centres(edges):
+    """Get bin centres from edges."""
+    return (edges[1:] + edges[:-1]) / 2.
+
+
 class Tophat_1D(object):
     def __init__(self, width=0.5, centre=0.):
         """Tophat uniform pdf.
@@ -85,22 +90,21 @@ class Tophat_2D(object):
                                       .format(self.type_2D))
 
 class Power(object):
-    def __init__(self, centre=0., exponent=1.,binsize=0.001):
-        """
-        A rotationally symmentric power law distribution.
-        
+    def __init__(self, centre=0., exponent=1., binsize=0.001):
+        """A rotationally symmetric power law distribution.
+
         Args:
             centre: Center of the power law. For a 2D distribution, give a
                 list of x, y position (ie. [x, y]) of the centre of the
                 exponential.
             exponent: characteristic exponent of the probability decay.
             binsize= scale of UV cutoff, should have scale of hist binsize
-            
+
         """
         self.centre = centre
         self.exponent = exponent
         self.binsize = binsize
-        
+
     def pdf(self, *args):
         """Calculate the probability at a point.
 
@@ -113,18 +117,25 @@ class Power(object):
             prob: probability at the given point
 
         """
-        
+
         if len(args) == 1:
             x = args[0]
-            prob = 0.5*( (np.abs(x-self.centre)+self.binsize)**(-self.exponent) / (self.binsize)**(1-self.exponent))
-            
+            prob = 0.5*(
+                (np.abs(x-self.centre)+self.binsize)
+                **(-self.exponent)
+                / (self.binsize)**(1-self.exponent)
+                )
+
         elif len(args) == 2:
             x, y = args
-            radius = (x+self.binsize-self.centre[0])**2 + (y+self.binsize-self.centre[1])**2
-            prob = 0.5*( radius**(-self.exponent) / (self.binsize)**(1-self.exponent))
-            
+            radius = ((x - self.centre[0])**2
+                      + (y - self.centre[1])**2)**0.5 + self.binsize
+            prob = 0.5*(radius**(-self.exponent)
+                        / (self.binsize)**(1-self.exponent))
+
         return prob
-            
+
+
 class Gaussian(object):
     def __init__(self, centre=0., scale=1.):
         """A Gaussian distribution.
@@ -166,22 +177,22 @@ class Exponential(object):
     def __init__(self, centre=0., decay_rate=1.):
         """
         A rotationally symmentric exponential distribution.
-        
+
         Args:
             centre: Center of the exponential. For a 2D distribution, give a
                 list of x, y position (ie. [x, y]) of the centre of the
                 exponential.
             decay_rate: the constant governing the decay of the exponential.
-            
+
         """
-        
+
         self.centre = centre
         self.decay_rate = decay_rate
-    
+
     def pdf(self, *args):
         """
         Calculates the probability at a point.
-        
+
         Args:
             *args: The coordinates of the points of interest. For the 1D
                 case, call like pdf(x). In the 2D case, give coordinates
@@ -189,60 +200,87 @@ class Exponential(object):
 
         Returns:
             prob: probability at the given point
-        
+
         """
-        
+
         if len(args) == 1:
             x = args[0]
-            prob = np.random.exponential(x, 1 / self.decay_rate)
+            prob = self.decay_rate * np.exp(
+                    - np.abs(x - self.centre) * self.decay_rate
+                    )
         elif len(args) == 2:
             x, y = args
             # symmetric in radius
-            prob = np.random.exponential(np.sqrt(x**2 + y**2), 1 / self.decay_rate)
+            prob = np.exp(
+                     - np.sqrt((x - self.centre[0])**2
+                            + (y - self.centre[1])**2)
+                    * self.decay_rate
+                    )
         return prob
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
-    # Tophat tests
+
     # 1D case
-    x = np.linspace(-1, 1, 100)
-    p = []
-    for v in x:
-        p.append(Tophat_1D(width=0.7, centre=0.3).pdf(v))
-    plt.figure()
-    plt.plot(x, p)
+    pdfs_args_1D = [
+            (Tophat_1D, {'width': 0.7, 'centre': 0.3}),
+            (Gaussian, {'centre': 0.7, 'scale': 0.3}),
+            (Power, {
+                'centre': 0.5,
+                'exponent': 1.,
+                'binsize': 0.5
+                }),
+            (Exponential, {
+                'centre': 0.,
+                'decay_rate': 1.
+                }),
+            ]
+    x = np.linspace(-1, 1, 10000)
+    for PDFClass, kwargs in pdfs_args_1D:
+        p = [PDFClass(**kwargs).pdf(v) for v in x]
+        plt.figure()
+        plt.title(PDFClass.__name__)
+        plt.plot(x, p)
     plt.show()
+
     # 2D case
-    x, y = np.meshgrid(np.linspace(-1, 1, 100), np.linspace(-1, 1, 100))
+    pdfs_args_2D = [
+            (Tophat_2D, {
+                'x_centre': 0.3,
+                'y_centre': -0.4,
+                'extent': 0.6,
+                'type_2D': 'circularly-symmetric'
+                }),
+            (Tophat_2D, {
+                'x_centre': 0.3,
+                'y_centre': -0.4,
+                'extent': 0.6,
+                'type_2D': 'square'
+                }),
+            (Gaussian, {'centre': (0., 0.5), 'scale': 1.}),
+            (Power, {
+                'centre': (0.5, -0.5),
+                'exponent': 0.2,
+                'binsize': 0.8,
+                }),
+            (Exponential, {
+                'centre': (0.5, -0.5),
+                'decay_rate': 0.5,
+                }),
+            ]
+    x_edges = np.linspace(-1, 1, 200)
+    y_edges = np.linspace(-1, 1, 200)
+    x_centres = get_centres(x_edges)
+    y_centres = get_centres(y_edges)
+    x, y = np.meshgrid(x_centres, y_centres)
     C = np.zeros_like(x, dtype=np.float64)
-    for i in range(100):
-        for j in range(100):
-            C[i, j] = (Tophat_2D(x_centre=0.3, y_centre=-0.4, extent=0.6)
-                       .pdf(x[i, j], y[i, j]))
-
-    plt.figure()
-    plt.pcolormesh(x, y, C)
-    plt.gca().set_aspect('equal')
-    plt.show()
-
-    # Gaussian tests
-    # 1D case
-    x = np.linspace(-1, 1, 100)
-    p = []
-    for v in x:
-        p.append(Gaussian(centre=0.7, scale=0.3).pdf(v))
-    plt.figure()
-    plt.plot(x, p)
-    plt.show()
-    # 2D case
-    x, y = np.meshgrid(np.linspace(-1, 1, 100), np.linspace(-1, 1, 100))
-    C = np.zeros_like(x, dtype=np.float64)
-    for i in range(100):
-        for j in range(100):
-            C[i, j] = (Gaussian(centre=(0., 0.5), scale=1.)
-                       .pdf(x[i, j], y[i, j]))
-
-    plt.figure()
-    plt.pcolormesh(x, y, C)
-    plt.gca().set_aspect('equal')
+    for PDFClass, kwargs in pdfs_args_2D:
+        for i in range(x.shape[0]):
+            for j in range(x.shape[1]):
+                C[i, j] = (PDFClass(**kwargs)
+                           .pdf(x[i, j], y[i, j]))
+        plt.figure()
+        plt.title(PDFClass.__name__)
+        plt.pcolormesh(x, y, C)
+        plt.gca().set_aspect('equal')
     plt.show()
