@@ -116,16 +116,16 @@ def binning2D(binsize, data, normalising):
     return histogram2D
 
 
-def estimate_fi(length_list, binsize):
+def estimate_f_t(length_list, binsize):
     """
-    This function uses all lengths lists to estimate the fi(y)
+    This function uses all lengths lists to estimate the f_t(y)
     distribution.
 
     Args:
         length_list: list of all step sizes
 
     Returns:
-        histogram of fi(y)
+        histogram of f_t(y)
 
     """
     histogram = binning1D(binsize, length_list, True)

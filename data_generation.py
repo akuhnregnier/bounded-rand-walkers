@@ -13,6 +13,7 @@ import scipy.stats
 from scipy.spatial import Delaunay
 import matplotlib.pyplot as plt
 from time import time
+from functions import Tophat_1D, Tophat_2D, Gaussian, Power, Exponential
 
 
 def circle_points(radius=1., samples=20):
@@ -208,7 +209,7 @@ def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
             each step size ``l``, where ``l`` should be
             between 0 and 1. For a 1D problem, ``f_i`` should take
             one argument, whereas for a 2D problem, it should take
-            two aguments.
+            two arguments.
         bounds (numpy.ndarray): The bounds for the random walker,
             given as an array. The shape of the array dictates
             the dimensionality of the problem.
@@ -234,16 +235,10 @@ def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
     Examples:
         >>> import matplotlib.pyplot as plt
         >>> import numpy as np
-        >>> # 1D examples
-        >>> def f_i(x):
-        ...     '''very crude uniform distribution'''
-        ...     return 1.
-        >>> def f2_i(x):
-        ...     '''tophat uniform distribution'''
-        ...     if abs(x) < 0.25:
-        ...         return 1.
+        >>> from functions import (Tophat_1D, Tophat_2D, Gaussian,
+        ...                        Power, Exponential)
         >>> step_values, positions = random_walker(
-        ...         f_i=f2_i,
+        ...         f_i=Tophat_1D().pdf,
         ...         bounds=np.array([0, 1]),
         ...         steps=int(1e5),
         ...         return_positions=True,
@@ -254,18 +249,7 @@ def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
         >>> axes[1].hist(positions, bins='auto')
         >>> axes[1].set_title('Positions')
         >>> plt.show()
-        >>> # 2D examples
-        >>> def f_2D(x, y):
-        ...     '''sample 2D pdf function'''
-        ...     # x is length 2
-        ...     return (scipy.stats.norm(0, 0.25).pdf(x)
-        ...             + scipy.stats.norm(0, 0.25).pdf(y))
-        >>> def f_2D_uniform(x, y):
-        ...     '''Top hat uniform pdf function'''
-        ...     x_lim = 0.1
-        ...     y_lim = 0.1
-        ...     if (abs(x) < x_lim) and (abs(y) < y_lim):
-        ...         return 1.
+        >>> #
         >>> bounds = np.array([
         ...     [0, 0],
         ...     [0, 1],
@@ -273,7 +257,7 @@ def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
         ...     [1, 0]]
         ...     )
         >>> step_values, positions = random_walker(
-        ...         f_i=f_2D_uniform,
+        ...         f_i=Tophat_2D().pdf,
         ...         bounds=bounds,
         ...         steps=int(1e6),
         ...         return_positions=True,
@@ -370,17 +354,8 @@ if __name__ == '__main__':
     # plt.hist(generate_random_samples(scipy.stats.norm(0.5, 0.1).pdf, 1000))
     # plt.show()
 
-    # def f_i(x):
-    #     """very crude uniform distribution"""
-    #     return 1.
-
-    # def f2_i(x):
-    #     """tophat uniform distribution"""
-    #     if abs(x) < 0.25:
-    #         return 1.
-
     # step_values, positions = random_walker(
-    #         f_i=f2_i,
+    #         f_i=Gaussian().pdf,
     #         bounds=np.array([0, 1]),
     #         steps=int(1e5),
     #         return_positions=True,
@@ -393,19 +368,6 @@ if __name__ == '__main__':
     # axes[1].set_title('Positions')
     # plt.show()
 
-    def f_2D(x, y):
-        """sample 2D pdf function"""
-        # x is length 2
-        return (scipy.stats.norm(0, 0.25).pdf(x)
-                + scipy.stats.norm(0, 0.25).pdf(y))
-
-    def f_2D_uniform(x, y):
-        """Top hat uniform pdf function"""
-        x_lim = 0.1
-        y_lim = 0.1
-        if (abs(x) < x_lim) and (abs(y) < y_lim):
-            return 1.
-
     bounds = np.array([
         [0, 0],
         [0, 1],
@@ -414,7 +376,7 @@ if __name__ == '__main__':
         )
 
     step_values, positions = random_walker(
-            f_i=f_2D_uniform,
+            f_i=Tophat_2D().pdf,
             bounds=bounds,
             steps=int(1e5),
             return_positions=True,
