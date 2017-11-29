@@ -7,7 +7,7 @@ Compare analytical and numerical stepsize and positions distributions.
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
-from rotation_steps import g1D, gRadialCircle, Pdf_Transform
+from rotation_steps import g1D, gRadialCircle, Pdf_Transform, rot_steps
 from functions import Tophat_1D, Tophat_2D, Power
 import scipy.integrate
 from binning import estimate_fi
@@ -144,8 +144,10 @@ def compare_2D(pdf, analytical_bins, numerical_bins, num_samples=int(1e4),
             )
     logger.info('Finished numerical run')
     logger.debug('{:} {:}'.format(step_values.shape, positions.shape))
-    probs, xedges, yedges = np.histogram2d(*positions.T, bins=numerical_bins,
-                                           normed=True)
+    probs, xedges, yedges = np.histogram2d(
+            *positions.T, bins=numerical_bins,
+            normed=True
+            )
 
     step_probs, step_xedges, step_yedges = np.histogram2d(
             *step_values.T,
@@ -153,10 +155,17 @@ def compare_2D(pdf, analytical_bins, numerical_bins, num_samples=int(1e4),
             normed=True
             )
 
+    rot_steps_data = rot_steps(positions.T)
+    rot_probs, rot_xedges, rot_yedges = np.histogram2d(
+        rot_steps_data[0, :], rot_steps_data[1, :],
+        bins=numerical_bins, normed=True
+        )
+
     return (xs, ys, g_analytical,
             ft_xs, ft_ys, f_t_analytical,
             xedges, yedges, probs,
-            step_xedges, step_yedges, step_probs
+            step_xedges, step_yedges, step_probs,
+            rot_xedges, rot_yedges, rot_probs,
             )
 
 def compare_1D_plotting(pdf, analytical_bins,
@@ -198,11 +207,13 @@ def compare_2D_plotting(pdf, analytical_bins, numerical_bins=None,
     (analytical_bin_centres_x, analytical_bin_centres_y, g_analytical,
      ft_analytical_x, ft_analytical_y, f_t_analytical,
      numerical_edges_x, numerical_edges_y, g_numerical,
-     numerical_step_xedges, numerical_step_yedges, numerical_f_t) = (
-             compare_2D(pdf, analytical_bins, numerical_bins,
-                        num_samples=steps,
-                        bounds=circle_points(samples=20)
-                        ))
+     numerical_step_xedges, numerical_step_yedges, numerical_f_t,
+     rot_xedges, rot_yedges, rot_probs,
+     ) = (
+         compare_2D(pdf, analytical_bins, numerical_bins,
+                    num_samples=steps,
+                    bounds=circle_points(samples=20)
+                    ))
 
     """
     Plot of analytical and numerical g distributions
@@ -218,7 +229,7 @@ def compare_2D_plotting(pdf, analytical_bins, numerical_bins=None,
     min_value = np.min([np.min(g_analytical[~np.isnan(g_analytical)]),
                         np.min(g_numerical[~np.isnan(g_numerical)])
                         ])
-    axes[0].set_title(r'$Analytical \ g(x)$')
+    axes[0].set_title(r'$Analytical \ g(x, y)$')
     analytical_mesh = axes[0].pcolormesh(
                        analytical_bin_centres_x,
                        analytical_bin_centres_y,
@@ -226,7 +237,7 @@ def compare_2D_plotting(pdf, analytical_bins, numerical_bins=None,
                        vmin=min_value,
                        vmax=max_value,
                        )
-    axes[1].set_title(r'$Numerical \ g(x)$')
+    axes[1].set_title(r'$Numerical \ g(x, y)$')
     numerical_mesh = axes[1].pcolormesh(
                        numerical_edges_x,
                        numerical_edges_y,
@@ -253,7 +264,7 @@ def compare_2D_plotting(pdf, analytical_bins, numerical_bins=None,
     min_value = np.min([np.min(f_t_analytical[~np.isnan(f_t_analytical)]),
                         np.min(numerical_f_t[~np.isnan(numerical_f_t)])
                         ])
-    axes[0].set_title(r'$Analytical \ f_t(x)$')
+    axes[0].set_title(r'$Analytical \ f_t(x, y)$')
     analytical_mesh = axes[0].pcolormesh(
                        ft_analytical_x,
                        ft_analytical_y,
@@ -261,7 +272,7 @@ def compare_2D_plotting(pdf, analytical_bins, numerical_bins=None,
                        vmin=min_value,
                        vmax=max_value,
                        )
-    axes[1].set_title(r'$Numerical \ f_t(x)$')
+    axes[1].set_title(r'$Numerical \ f_t(x, y)$')
     numerical_mesh = axes[1].pcolormesh(
                        numerical_step_xedges,
                        numerical_step_yedges,
@@ -273,14 +284,26 @@ def compare_2D_plotting(pdf, analytical_bins, numerical_bins=None,
         ax.set_aspect('equal')
     cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
     fig.colorbar(numerical_mesh, cax=cbar_ax)
+
+    """
+    'teardrop' f_t plot
+    """
+    fig, ax = plt.subplots(1, 1, squeeze=True)
+    ax.set_title(r'$Orientationally\  normalised\  f_t(x, y)$')
+    rot_probs_plot = ax.pcolormesh(rot_xedges, rot_yedges, rot_probs.T)
+    fig.colorbar(rot_probs_plot)
+    ax.hlines((0.,), np.min(rot_xedges), np.max(rot_xedges),
+              colors='b')
+    ax.set_aspect('equal')
+
     plt.show()
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-    ONE_D = True
-    TWO_D = False
+    ONE_D = False
+    TWO_D = True
 
     if ONE_D:
         # 1D case
