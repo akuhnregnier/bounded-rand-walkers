@@ -358,7 +358,7 @@ if __name__ == '__main__':
 
     if ONE_D:
         step_values, positions = random_walker(
-                f_i=lambda x: 1.,
+                f_i=Tophat_1D(width=0.3, centre=0.5).pdf,
                 bounds=np.array([0, 1]),
                 steps=int(1e5),
                 return_positions=True,

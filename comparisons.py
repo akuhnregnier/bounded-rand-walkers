@@ -8,7 +8,7 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 from rotation_steps import g1D, gRadialCircle, Pdf_Transform, rot_steps
-from functions import Tophat_1D, Tophat_2D, Power
+from functions import Tophat_1D, Tophat_2D, Power, Exponential, Gaussian
 import scipy.integrate
 from data_generation import random_walker, circle_points
 
@@ -196,21 +196,21 @@ def compare_1D_plotting(pdf, analytical_bins,
                   f_t_numerical,
                   )
 
-    # plot figures on top of each other    
+    # plot figures on top of each other
     fig3 = plt.figure()
     ax3 = fig3.add_subplot(111)
     ax3.set_title(r'$Comparing \ Analytical \ and \ Numerical \ g(x)$')
     ax3.plot(analytical_bin_centres, g_analytical, label='Analytical Solution')
     ax3.plot(numerical_position_bin_centres, g_numerical, label='Numerical Solution')
     ax3.legend()
-    
+
     fig4 = plt.figure()
     ax4 = fig4.add_subplot(111)
     ax4.set_title(r'$Comparing \ Analytical \ and \ Numerical \ f_t(x)$')
     ax4.plot(analytical_ft_centres, f_t_analytical, label='Analytical Solution')
     ax4.plot(numerical_f_t_bin_centres, f_t_numerical, label='Numerical Result')
     ax4.legend()
-    
+
     plt.show()
 
 
@@ -322,24 +322,59 @@ if __name__ == '__main__':
 
     if ONE_D:
         # 1D case
-        widths = [0.7]
-        for width in widths:
-            # pdf = Tophat_1D(width=width, centre=0.).pdf
-            pdf = Power(centre=0.5, exponent=1.).pdf
-
-            analytical_bins = 11
-            numerical_bins = 11
-
+        pdfs_args_1D = [
+                (Tophat_1D, {
+                    'width': 0.3,
+                    'centre': 0.5
+                    }),
+                # (Gaussian, {'centre': 0.7, 'scale': 0.3}),
+                # (Power, {
+                #     'centre': 0.5,
+                #     'exponent': 1.,
+                #     'binsize': 0.5
+                #     }),
+                # (Exponential, {
+                #     'centre': 0.,
+                #     'decay_rate': 1.
+                #     }),
+                ]
+        analytical_bins = 11
+        numerical_bins = 11
+        for PDFClass, kwargs in pdfs_args_1D:
+            pdf = PDFClass(**kwargs).pdf
             compare_1D_plotting(pdf, analytical_bins, numerical_bins,
                                 steps=int(1e4))
 
     if TWO_D:
         # 2D case
-        pdf = Tophat_2D(extent=20., x_centre=0, y_centre=0,
-                        type_2D='circularly-symmetric').pdf
-
+        pdfs_args_2D = [
+                (Tophat_2D, {
+                    'x_centre': 0.3,
+                    'y_centre': -0.4,
+                    'extent': 0.6,
+                    'type_2D': 'circularly-symmetric'
+                    }),
+                # (Tophat_2D, {
+                #     'x_centre': 0.3,
+                #     'y_centre': -0.4,
+                #     'extent': 0.6,
+                #     'type_2D': 'square'
+                #     }),
+                # (Gaussian, {'centre': (0., 0.5), 'scale': 1.}),
+                # (Power, {
+                #     'centre': (0.5, -0.5),
+                #     'exponent': 0.2,
+                #     'binsize': 0.8,
+                #     }),
+                # (Exponential, {
+                #     'centre': (0.5, -0.5),
+                #     'decay_rate': 0.5,
+                #     }),
+                ]
         analytical_bins = 61
         numerical_bins = 61
+        for PDFClass, kwargs in pdfs_args_2D:
+            pdf = PDFClass(**kwargs).pdf
 
-        compare_2D_plotting(pdf, analytical_bins, numerical_bins,
-                            steps=int(1e4))
+            compare_2D_plotting(pdf, analytical_bins, numerical_bins,
+                                steps=int(1e3))
