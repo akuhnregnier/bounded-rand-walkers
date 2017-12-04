@@ -217,6 +217,56 @@ class Exponential(object):
                     * self.decay_rate
                     )
         return prob
+    
+    
+class Function(object):
+    def __init__(self, centre=0., width=1.):
+        """
+        
+        """
+        self.centre = centre
+        self.width = width
+        self.frequency = 10.
+    
+    def pdf(self, *args):
+        
+        if len(args) == 1:
+            x = args[0]
+            position = np.abs(x - self.centre)
+            power_law = Power(centre=(2/3. * self.width), exponent=0.25)
+            scale = power_law.pdf(2/3. * self.width)
+            
+            const1 = np.abs(np.sinc(1/3. * self.width * self.frequency))
+            const2 = const1 * ( 1 + 20 *  1/3. * self.width)
+            
+            if position == 0:
+                prob = 1.
+            elif position > 0 and position < 1/3. * self.width:
+                prob = np.abs(np.sinc(position * self.frequency))
+            elif position > 1/3. * self.width and position < 2/3. * self.width:
+                prob = const1 * ( 1 + 20 * (position - 1/3. * self.width))
+            elif position > 2/3. * self.width:
+                prob = power_law.pdf(position) / scale * const2
+        
+        if len(args) == 2:
+            x,y = args
+            position = np.sqrt((x - self.centre[0])**2 + (y - self.centre[1])**2)
+            power_law = Power(centre=(2/3. * self.width), exponent=0.25)
+            scale = power_law.pdf(2/3. * self.width)
+            
+            const1 = np.abs(np.sinc(1/3. * self.width * self.frequency))
+            const2 = const1 * ( 1 + 20 *  1/3. * self.width)
+            
+            if position == 0:
+                prob = 1.
+            elif position > 0 and position < 1/3. * self.width:
+                prob = np.abs(np.sinc(position * self.frequency))
+            elif position > 1/3. * self.width and position < 2/3. * self.width:
+                prob = const1 * ( 1 + 20 * (position - 1/3. * self.width))
+            elif position > 2/3. * self.width:
+                prob = power_law.pdf(position) / scale * const2
+                                    
+        return prob
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
@@ -236,13 +286,18 @@ if __name__ == '__main__':
                 }),
             ]
     x = np.linspace(-1, 1, 10000)
-    for PDFClass, kwargs in pdfs_args_1D:
-        p = [PDFClass(**kwargs).pdf(v) for v in x]
-        plt.figure()
-        plt.title(PDFClass.__name__)
-        plt.plot(x, p)
-    plt.show()
-
+    #for PDFClass, kwargs in pdfs_args_1D:
+    ##    p = [PDFClass(**kwargs).pdf(v) for v in x]
+    #    plt.figure()
+    #    plt.title(PDFClass.__name__)
+    #    plt.plot(x, p)
+    #plt.show()
+    a = Function([0,0], width=100.)
+    x = [i/100. for i in range(10000)]
+    y = [a.pdf(*[i/100., i/100.]) for i in range(10000)]
+    #y = [a.pdf(i/100) for i in range(100)]
+    plt.plot(x,y)
+'''
     # 2D case
     pdfs_args_2D = [
             (Tophat_2D, {
@@ -284,3 +339,4 @@ if __name__ == '__main__':
         plt.pcolormesh(x, y, C)
         plt.gca().set_aspect('equal')
     plt.show()
+'''
