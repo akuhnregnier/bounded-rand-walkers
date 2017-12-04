@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 import numpy as np
 from scipy.stats import norm
@@ -217,28 +218,28 @@ class Exponential(object):
                     * self.decay_rate
                     )
         return prob
-    
-    
+
+
 class Function(object):
     def __init__(self, centre=0., width=1.):
         """
-        
+
         """
         self.centre = centre
         self.width = width
         self.frequency = 10.
-    
+
     def pdf(self, *args):
-        
+
         if len(args) == 1:
             x = args[0]
             position = np.abs(x - self.centre)
             power_law = Power(centre=(2/3. * self.width), exponent=0.25)
             scale = power_law.pdf(2/3. * self.width)
-            
+
             const1 = np.abs(np.sinc(1/3. * self.width * self.frequency))
             const2 = const1 * ( 1 + 20 *  1/3. * self.width)
-            
+
             if position == 0:
                 prob = 1.
             elif position > 0 and position < 1/3. * self.width:
@@ -247,16 +248,16 @@ class Function(object):
                 prob = const1 * ( 1 + 20 * (position - 1/3. * self.width))
             elif position > 2/3. * self.width:
                 prob = power_law.pdf(position) / scale * const2
-        
+
         if len(args) == 2:
             x,y = args
             position = np.sqrt((x - self.centre[0])**2 + (y - self.centre[1])**2)
             power_law = Power(centre=(2/3. * self.width), exponent=0.25)
             scale = power_law.pdf(2/3. * self.width)
-            
+
             const1 = np.abs(np.sinc(1/3. * self.width * self.frequency))
             const2 = const1 * ( 1 + 20 *  1/3. * self.width)
-            
+
             if position == 0:
                 prob = 1.
             elif position > 0 and position < 1/3. * self.width:
@@ -265,7 +266,7 @@ class Function(object):
                 prob = const1 * ( 1 + 20 * (position - 1/3. * self.width))
             elif position > 2/3. * self.width:
                 prob = power_law.pdf(position) / scale * const2
-                                    
+
         return prob
 
 if __name__ == '__main__':
