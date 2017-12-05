@@ -5,6 +5,7 @@ Compare analytical and numerical stepsize and positions distributions.
 
 """
 import logging
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 from rotation_steps import g1D, gRadialCircle, Pdf_Transform, rot_steps
@@ -12,8 +13,23 @@ from functions import Tophat_1D, Tophat_2D, Power, Exponential, Gaussian, Funky
 import scipy.integrate
 from data_generation import multi_random_walker, circle_points
 from statsmodels.stats.weightstats import DescrStatsW
+import matplotlib as mpl
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
+mpl.rcParams['savefig.dpi'] = 300
+mpl.rcParams['savefig.bbox'] = 'tight'
 
 N_PROCESSES = 4
+SHOW = False
+output_dir = os.path.abspath(os.path.join(
+    os.path.dirname(__file__),
+    'output'
+    ))
+if not os.path.isdir(output_dir):
+    os.makedirs(output_dir)
 
 
 def get_centres(bin_edges):
@@ -48,8 +64,22 @@ def stats(data1, data2, weights=None):
 
 
 def compare_1D(pdf, nr_bins, num_samples=int(1e4),
-               bounds=np.array([0, 1])):
+               bounds=np.array([0, 1]),
+               pdf_name='tophat',
+               pdf_kwargs={'test': 10}):
     logger = logging.getLogger(__name__)
+
+    pickle_name = ('1D_compare_data_{:}_{:}_{:}_{:}.pickle'
+                   .format(pdf_name, pdf_kwargs, nr_bins, num_samples))
+    pickle_path = os.path.join(output_dir, pickle_name)
+    if os.path.isfile(pickle_path):
+        with open(pickle_path, 'rb') as f:
+            data = pickle.load(f)
+        logger.info('read pickle data from {:}'.format(pickle_path))
+        return data
+    else:
+        logger.info('{:} is not a file (yet)'.format(pickle_path))
+
     # analytical result
     pos_bin_edges = np.linspace(0, 1, nr_bins + 1)
     pos_bin_centres = get_centres(pos_bin_edges)
@@ -85,7 +115,7 @@ def compare_1D(pdf, nr_bins, num_samples=int(1e4),
             density=True
             )
 
-    return (
+    data = (
         pos_bin_centres,
         g_analytical,
         g_numerical,
@@ -94,10 +124,32 @@ def compare_1D(pdf, nr_bins, num_samples=int(1e4),
         f_t_numerical
         )
 
+    with open(pickle_path, 'wb') as f:
+        pickle.dump(data, f, protocol=-1)
+    logger.info('wrote pickle data to {:}'.format(pickle_path))
+
+    return data
+
 
 def compare_2D(pdf, nr_bins, num_samples=int(1e4),
-               bounds=circle_points(samples=40)):
+               bounds=circle_points(samples=40),
+               bounds_name='circle',
+               pdf_name='tophat',
+               pdf_kwargs={'test': 10}):
+
     logger = logging.getLogger(__name__)
+
+    pickle_name = ('2D_compare_data_{:}_{:}_{:}_{:}_{:}.pickle'
+                   .format(pdf_name, pdf_kwargs, bounds_name,
+                           nr_bins, num_samples))
+    pickle_path = os.path.join(output_dir, pickle_name)
+    if os.path.isfile(pickle_path):
+        with open(pickle_path, 'rb') as f:
+            data = pickle.load(f)
+        logger.info('read pickle data from {:}'.format(pickle_path))
+        return data
+    else:
+        logger.info('{:} is not a file (yet)'.format(pickle_path))
 
     x_edges = np.linspace(-1, 1, nr_bins + 1, endpoint=True)
     y_edges = np.linspace(-1, 1, nr_bins + 1, endpoint=True)
@@ -189,7 +241,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
         normed=True
         )
 
-    return ((x_edges, y_edges),
+    data = ((x_edges, y_edges),
             g_analytical,
             g_numerical,
             (ft_xs, ft_ys),
@@ -198,8 +250,15 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
             rot_probs
             )
 
+    with open(pickle_path, 'wb') as f:
+        pickle.dump(data, f, protocol=-1)
+    logger.info('wrote pickle data to {:}'.format(pickle_path))
 
-def compare_1D_plotting(pdf, nr_bins, steps=int(1e3)):
+    return data
+
+
+def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
+                        pdf_kwargs={'test': 10}):
 
     (pos_bin_centres,
      g_analytical,
@@ -208,7 +267,8 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3)):
      f_t_analytical,
      f_t_numerical) = (
         compare_1D(pdf, nr_bins,
-                   num_samples=steps)
+                   num_samples=steps,
+                   pdf_name=pdf_name)
         )
 
     print('g stats (mean, std)')
@@ -216,7 +276,7 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3)):
     print('f_t stats (mean, std)')
     print(stats(f_t_analytical, f_t_numerical))
 
-    fig, axes = plt.subplots(1, 2, squeeze=True)
+    fig1, axes = plt.subplots(1, 2, squeeze=True)
     axes[0].set_title(r'$Analytical \ g(x)$')
     axes[0].plot(pos_bin_centres, g_analytical)
     axes[1].set_title(r'$Numerical \ g(x)$')
@@ -246,10 +306,27 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3)):
     ax4.plot(step_bin_centres, f_t_numerical, label='Numerical Result')
     ax4.legend()
 
-    plt.show()
+    # save all figures
+    suffix = ('{:} {:} {:} {:}.png'
+              .format(pdf_name, pdf_kwargs, nr_bins, steps))
+    name = '1D analytical vs numerical g ' + suffix
+    fig1.savefig(os.path.join(output_dir, name))
+    name = '1D analytical vs numerical f_t ' + suffix
+    fig2.savefig(os.path.join(output_dir, name))
+    name = '1D overplot analytical vs numerical g ' + suffix
+    fig3.savefig(os.path.join(output_dir, name))
+    name = '1D overplot analytical vs numerical f_t ' + suffix
+    fig4.savefig(os.path.join(output_dir, name))
+
+    if SHOW:
+        plt.show()
+    else:
+        plt.close('all')
 
 
-def compare_2D_plotting(pdf, nr_bins, steps=int(1e3)):
+def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
+                        bounds_name='circle', pdf_name='tophat',
+                        pdf_kwargs={'test': 10}):
 
     ((pos_x_edges, pos_y_edges),
      g_analytical,
@@ -261,7 +338,9 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3)):
      ) = (
         compare_2D(pdf, nr_bins,
                    num_samples=steps,
-                   bounds=circle_points(samples=20)
+                   bounds=circle_points(samples=20),
+                   bounds_name=bounds_name,
+                   pdf_name=pdf_name
                    )
         )
 
@@ -273,8 +352,8 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3)):
     """
     Plot of analytical and numerical g distributions
     """
-    fig, axes = plt.subplots(1, 2, squeeze=True)
-    fig.subplots_adjust(right=0.8)
+    fig1, axes = plt.subplots(1, 2, squeeze=True)
+    fig1.subplots_adjust(right=0.8)
     # use this max/min value with the hexbin vmax/vmin option
     # in order to have the same colour scaling for both
     # hexbin plots, such that the same colorbar may be used
@@ -302,14 +381,14 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3)):
                        )
     for ax in axes:
         ax.set_aspect('equal')
-    cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
-    fig.colorbar(numerical_mesh, cax=cbar_ax)
+    cbar_ax = fig1.add_axes([0.85, 0.15, 0.02, 0.7])
+    fig1.colorbar(numerical_mesh, cax=cbar_ax)
 
     """
     Plot of analytical and numerical f_t distributions
     """
-    fig, axes = plt.subplots(1, 2, squeeze=True)
-    fig.subplots_adjust(right=0.8)
+    fig2, axes = plt.subplots(1, 2, squeeze=True)
+    fig2.subplots_adjust(right=0.8)
     # use this max/min value with the hexbin vmax/vmin option
     # in order to have the same colour scaling for both
     # hexbin plots, such that the same colorbar may be used
@@ -337,85 +416,72 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3)):
                        )
     for ax in axes:
         ax.set_aspect('equal')
-    cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
-    fig.colorbar(numerical_mesh, cax=cbar_ax)
+    cbar_ax = fig2.add_axes([0.85, 0.15, 0.02, 0.7])
+    fig2.colorbar(numerical_mesh, cax=cbar_ax)
 
     """
     'teardrop' f_t plot
     """
-    fig, ax = plt.subplots(1, 1, squeeze=True)
+    fig3, ax = plt.subplots(1, 1, squeeze=True)
     ax.set_title(r'$Orientationally\  normalised\  f_t(x, y)$')
     rot_probs_plot = ax.pcolormesh(ft_xs, ft_ys, rot_probs.T)
-    fig.colorbar(rot_probs_plot)
+    fig3.colorbar(rot_probs_plot)
     ax.hlines((0.,), np.min(ft_xs), np.max(ft_xs),
               colors='b')
     ax.set_aspect('equal')
 
-    plt.show()
+    # save all figures
+    suffix = ('{:} {:} {:} {:} {:}.png'
+              .format(pdf_name, pdf_kwargs, bounds_name,
+                      nr_bins, steps)
+              )
+    name = '2D analytical vs numerical g ' + suffix
+    fig1.savefig(os.path.join(output_dir, name))
+    name = '2D analytical vs numerical f_t ' + suffix
+    fig2.savefig(os.path.join(output_dir, name))
+    name = '2D orientationally normalised f_t ' + suffix
+    fig3.savefig(os.path.join(output_dir, name))
+
+    if SHOW:
+        plt.show()
+    else:
+        plt.close('all')
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-    ONE_D = False
+    ONE_D = True
     TWO_D = True
 
     if ONE_D:
         # 1D case
         pdfs_args_1D = [
-                (Tophat_1D, {
-                    'width': 0.3,
+                (Funky, 'funky', {
+                    'width': 2.,
                     'centre': 0.
                     }),
-                # (Gaussian, {'centre': 0.7, 'scale': 0.3}),
-                # (Power, {
-                #     'centre': 0.5,
-                #     'exponent': 1.,
-                #     'binsize': 0.5
-                #     }),
-                # (Exponential, {
-                #     'centre': 0.,
-                #     'decay_rate': 1.
-                #     }),
                 ]
         bins = 11
-        for PDFClass, kwargs in pdfs_args_1D:
+        for PDFClass, pdf_name, kwargs in pdfs_args_1D:
             pdf = PDFClass(**kwargs).pdf
-            compare_1D_plotting(pdf, bins, steps=int(1e4))
+            compare_1D_plotting(pdf, bins, steps=int(1e3),
+                                pdf_name=pdf_name,
+                                pdf_kwargs=kwargs)
 
     if TWO_D:
         # 2D case
         pdfs_args_2D = [
-                # (Tophat_2D, {
-                #     'x_centre': 0.,
-                #     'y_centre': 0.,
-                #     'extent': 1.2,
-                #     'type_2D': 'circularly-symmetric'
-                #     }),
-                (Funky, {
+                (Funky, 'funky', {
                     'centre': (0., 0.),
                     'width': 2.
                     }),
-                # (Tophat_2D, {
-                #     'x_centre': 0.3,
-                #     'y_centre': -0.4,
-                #     'extent': 0.6,
-                #     'type_2D': 'square'
-                #     }),
-                # (Gaussian, {'centre': (0., 0.5), 'scale': 1.}),
-                # (Power, {
-                #     'centre': (0.5, -0.5),
-                #     'exponent': 0.2,
-                #     'binsize': 0.8,
-                #     }),
-                # (Exponential, {
-                #     'centre': (0.5, -0.5),
-                #     'decay_rate': 0.5,
-                #     }),
                 ]
         bins = 61
-        for PDFClass, kwargs in pdfs_args_2D:
+        for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 
-            compare_2D_plotting(pdf, bins, steps=int(1e3))
+            compare_2D_plotting(pdf, bins, steps=int(1e3),
+                                pdf_name=pdf_name,
+                                pdf_kwargs=kwargs)
 
