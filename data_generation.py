@@ -223,7 +223,7 @@ def format_time(time_value):
     return time_value, units
 
 
-def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
+def random_walker(f_i, bounds, steps=int(1e2)):
     """
     Trace a random walker given the ``bounds`` and the given
     intrinsic step size distribution ``f_i``.
@@ -235,7 +235,8 @@ def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
 
     note::
 
-        All lengths and bounds are to be given in the range [0, 1]!
+        All lengths and bounds are to be given in the range [0, 1] for the
+        1D case!
 
     Args:
         f_i (function): The intrinsic step size distribution,
@@ -255,10 +256,6 @@ def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
             where each row contains the (x, y) coordinates of a point.
         steps (int): The number of steps to take. The function will return
             ``steps`` number of step sizes. Defaults to ``int(1e4)``.
-        return_positions (bool): If False (default), return an array
-            of step sizes taken by the random walker. If True,
-            return a tuple of the step size array, as well as an array
-            containing the positions the random walker visited.
 
     Returns:
         numpy.ndarray: 1D array of length ``steps``, containing the
@@ -276,7 +273,6 @@ def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
         ...         f_i=Tophat_1D().pdf,
         ...         bounds=np.array([0, 1]),
         ...         steps=int(1e5),
-        ...         return_positions=True,
         ...         )
         >>> fig, axes = plt.subplots(1, 2, squeeze=True)
         >>> axes[0].hist(step_values, bins='auto')
@@ -295,7 +291,6 @@ def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
         ...         f_i=Tophat_2D().pdf,
         ...         bounds=bounds,
         ...         steps=int(1e6),
-        ...         return_positions=True,
         ...         )
         >>> fig, axes = plt.subplots(1, 2, squeeze=True)
         >>> fig.subplots_adjust(right=0.8)
@@ -374,18 +369,79 @@ def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
                 positions[position_index] = next_position
                 step_values[step_index] = step
                 found = True
-    if return_positions:
-        return step_values, positions
-    else:
-        return step_values
+    return step_values, positions
+
+
+def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2)):
+    """Generate random walks in multiple processes concurrently.
+
+    If the ``n_processes==1``, the ``random_walker`` function is called in
+    the standard way, as if it was called directly.
+
+    Args:
+        n_processes (int): The number of processes to run in parallel. The
+            generated data will be joined together at the end.
+
+    For an explanation of the other arguments, see ``random_walker``.
+
+    Note that the generated position series have no causal relationship -
+    they are completely random, since each random_walker execution has no
+    information about any of the other executions run in parallel.
+    Therefore, generating steps from the returned positions produces an
+    error at the point where the different datasets are joined together.
+    However, this error will approach 0 as ``steps`` is increased, since
+    the ratio of 'contiguous' data to erroneous data (at the boundary of
+    the contiguous random walks) increases.
+
+    """
+    assert n_processes >= 1
+    if n_processes == 1:
+        # simply execute random_walker while ignoring the multiprocessing
+        return random_walker(
+                f_i=f_i,
+                bounds=bounds,
+                steps=steps,
+                )
+    def rand_walk_worker(procnum, return_dict):
+        """Worker function which executes the random_walker"""
+        print(str(procnum) + ' present!')
+        step_values, positions = random_walker(
+                f_i=f_i,
+                bounds=bounds,
+                steps=steps,
+                )
+        return_dict[procnum] = (step_values, positions)
+
+    manager = multiprocessing.Manager()
+    return_dict = manager.dict()
+    jobs = []
+    for i in range(4):
+        np.random.seed(i)
+        p = multiprocessing.Process(target=rand_walk_worker,
+                                    args=(i, return_dict))
+        jobs.append(p)
+        p.start()
+
+    for proc in jobs:
+        proc.join()
+
+    step_values = [i[0] for i in return_dict.values()]
+    positions = [i[1] for i in return_dict.values()]
+    step_values = np.vstack(step_values)
+    positions = np.vstack(positions)
+
+    print('data shapes (steps, positions)')
+    print(step_values.shape, positions.shape)
+
+    return step_values, positions
 
 
 if __name__ == '__main__':
     import multiprocessing
     logging.basicConfig(level=logging.INFO)
 
-    ONE_D = True
-    TWO_D = False
+    ONE_D = False
+    TWO_D = True
     # test the sampling function
     # import scipy.stats
     # plt.figure()
@@ -394,32 +450,15 @@ if __name__ == '__main__':
 
     if ONE_D:
 
-        def worker(procnum, return_dict):
-            """worker function"""
-            print str(procnum) + ' present!'
-            step_values, positions = random_walker(
-                    f_i=Tophat_1D(width=0.5, centre=0.2).pdf,
-                    bounds=np.array([0, 1]),
-                    steps=int(9e3),
-                    return_positions=True,
-                    )
-            return_dict[procnum] = (step_values, positions)
+        step_values, positions = multi_random_walker(
+                n_processes=4,
+                f_i=Tophat_1D(width=0.5, centre=0.2).pdf,
+                bounds=np.array([0, 1]),
+                steps=int(1e3),
+                )
 
-        manager = multiprocessing.Manager()
-        return_dict = manager.dict()
-        jobs = []
-        for i in range(4):
-            p = multiprocessing.Process(target=worker, args=(i, return_dict))
-            jobs.append(p)
-            p.start()
-
-        for proc in jobs:
-            proc.join()
-
-        step_values = [i[0] for i in return_dict.values()]
-        positions = [i[1] for i in return_dict.values()]
-        step_values = np.vstack(step_values)
-        positions = np.vstack(positions)
+        print('data shapes')
+        print(step_values.shape, positions.shape)
 
         fig, axes = plt.subplots(1, 2, squeeze=True)
         axes[0].hist(step_values, bins='auto')
@@ -442,32 +481,12 @@ if __name__ == '__main__':
             [-1, -1]]
             )
 
-        def worker(procnum, return_dict):
-            """worker function"""
-            print str(procnum) + ' present!'
-            step_values, positions = random_walker(
-                    f_i=Tophat_2D(extent=1.).pdf,
-                    bounds=bounds,
-                    steps=int(5e5),
-                    return_positions=True,
-                    )
-            return_dict[procnum] = (step_values, positions)
-
-        manager = multiprocessing.Manager()
-        return_dict = manager.dict()
-        jobs = []
-        for i in range(4):
-            p = multiprocessing.Process(target=worker, args=(i, return_dict))
-            jobs.append(p)
-            p.start()
-
-        for proc in jobs:
-            proc.join()
-
-        step_values = [i[0] for i in return_dict.values()]
-        positions = [i[1] for i in return_dict.values()]
-        step_values = np.vstack(step_values)
-        positions = np.vstack(positions)
+        step_values, positions = multi_random_walker(
+                n_processes=4,
+                f_i=Tophat_2D(extent=1.).pdf,
+                bounds=bounds,
+                steps=int(5e3),
+                )
 
         fig, axes = plt.subplots(1, 2, squeeze=True)
         fig.subplots_adjust(right=0.8)

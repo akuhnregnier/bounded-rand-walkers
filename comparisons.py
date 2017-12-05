@@ -69,7 +69,6 @@ def compare_1D(pdf, nr_bins, num_samples=int(1e4),
             f_i=pdf,
             bounds=bounds,
             steps=int(num_samples),
-            return_positions=True,
             )
     logger.debug('{:} {:}'.format(step_values.shape, positions.shape))
     g_numerical, pos_bin_edges = np.histogram(
@@ -164,7 +163,6 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
             f_i=pdf,
             bounds=bounds,
             steps=int(num_samples),
-            return_positions=True,
             )
     logger.info('Finished numerical run')
     logger.debug('{:} {:}'.format(step_values.shape, positions.shape))
