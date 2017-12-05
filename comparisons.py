@@ -10,8 +10,10 @@ import numpy as np
 from rotation_steps import g1D, gRadialCircle, Pdf_Transform, rot_steps
 from functions import Tophat_1D, Tophat_2D, Power, Exponential, Gaussian, Funky
 import scipy.integrate
-from data_generation import random_walker, circle_points
+from data_generation import multi_random_walker, circle_points
 from statsmodels.stats.weightstats import DescrStatsW
+
+N_PROCESSES = 4
 
 
 def get_centres(bin_edges):
@@ -65,7 +67,8 @@ def compare_1D(pdf, nr_bins, num_samples=int(1e4),
     f_t_analytical = np.asarray(f_t_analytical)
 
     # numerical result
-    step_values, positions = random_walker(
+    step_values, positions = multi_random_walker(
+            n_processes=N_PROCESSES,
             f_i=pdf,
             bounds=bounds,
             steps=int(num_samples),
@@ -159,7 +162,8 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
     logger.info('Finished analytical result, starting numerical run')
 
     # numerical result
-    step_values, positions = random_walker(
+    step_values, positions = multi_random_walker(
+            n_processes=N_PROCESSES,
             f_i=pdf,
             bounds=bounds,
             steps=int(num_samples),

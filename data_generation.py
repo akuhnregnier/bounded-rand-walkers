@@ -7,6 +7,7 @@ size distributions numerically.
 
 """
 import logging
+import multiprocessing
 import numpy as np
 import scipy.optimize
 import scipy.stats
@@ -437,7 +438,6 @@ def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2)):
 
 
 if __name__ == '__main__':
-    import multiprocessing
     logging.basicConfig(level=logging.INFO)
 
     ONE_D = False
