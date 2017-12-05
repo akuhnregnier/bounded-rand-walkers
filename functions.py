@@ -227,7 +227,8 @@ class Function(object):
         """
         self.centre = centre
         self.width = width
-        self.frequency = 10.
+        self.frequency = 3.7
+        self.grad = 1.
 
     def pdf(self, *args):
 
@@ -237,15 +238,19 @@ class Function(object):
             power_law = Power(centre=(2/3. * self.width), exponent=0.25)
             scale = power_law.pdf(2/3. * self.width)
 
-            const1 = np.abs(np.sinc(1/3. * self.width * self.frequency))
-            const2 = const1 * ( 1 + 20 *  1/3. * self.width)
+            const1 = np.abs(np.sinc(1/3. * self.width * self.frequency)) * (1 + 5 * 1/3. * self.width)
+            const2 = const1 * ( 1 + self.grad *  1/3. * self.width)
 
             if position == 0:
                 prob = 1.
             elif position > 0 and position < 1/3. * self.width:
                 prob = np.abs(np.sinc(position * self.frequency))
+                
+                # multiply by linear factor
+                prob = prob * ( 1 + 5 * position)
+                
             elif position > 1/3. * self.width and position < 2/3. * self.width:
-                prob = const1 * ( 1 + 20 * (position - 1/3. * self.width))
+                prob = const1 * ( 1 + self.grad * (position - 1/3. * self.width))
             elif position > 2/3. * self.width:
                 prob = power_law.pdf(position) / scale * const2
 
@@ -255,15 +260,19 @@ class Function(object):
             power_law = Power(centre=(2/3. * self.width), exponent=0.25)
             scale = power_law.pdf(2/3. * self.width)
 
-            const1 = np.abs(np.sinc(1/3. * self.width * self.frequency))
-            const2 = const1 * ( 1 + 20 *  1/3. * self.width)
+            const1 = np.abs(np.sinc(1/3. * self.width * self.frequency)) * (1 + 5 * 1/3. * self.width)
+            const2 = const1 * ( 1 + self.grad *  1/3. * self.width)
 
             if position == 0:
                 prob = 1.
             elif position > 0 and position < 1/3. * self.width:
                 prob = np.abs(np.sinc(position * self.frequency))
+                
+                 # multiply by linear factor
+                prob = prob * ( 1 + 5 * position)
+            
             elif position > 1/3. * self.width and position < 2/3. * self.width:
-                prob = const1 * ( 1 + 20 * (position - 1/3. * self.width))
+                prob = const1 * ( 1 + self.grad * (position - 1/3. * self.width))
             elif position > 2/3. * self.width:
                 prob = power_law.pdf(position) / scale * const2
 
@@ -293,9 +302,9 @@ if __name__ == '__main__':
     #    plt.title(PDFClass.__name__)
     #    plt.plot(x, p)
     #plt.show()
-    a = Function([0,0], width=100.)
-    x = [i/100. for i in range(10000)]
-    y = [a.pdf(*[i/100., i/100.]) for i in range(10000)]
+    a = Function([0.5,0.5], width=2.)
+    x = [np.sqrt(2) * i/100. for i in range(200)]
+    y = [a.pdf(*[i/100., i/100.]) for i in range(200)]
     #y = [a.pdf(i/100) for i in range(100)]
     plt.plot(x,y)
 '''
