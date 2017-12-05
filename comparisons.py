@@ -8,7 +8,7 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 from rotation_steps import g1D, gRadialCircle, Pdf_Transform, rot_steps
-from functions import Tophat_1D, Tophat_2D, Power, Exponential, Gaussian
+from functions import Tophat_1D, Tophat_2D, Power, Exponential, Gaussian, Funky
 import scipy.integrate
 from data_generation import random_walker, circle_points
 from statsmodels.stats.weightstats import DescrStatsW
@@ -25,91 +25,90 @@ def stats(data1, data2, weights=None):
     """
     This function calculates the mean difference between the input data sets
     and the standard deviation of this mean.
-    
+
     Args:
         data1: 1D array of dataset 1
         data2: 2D array of dataset 2
         weights: The wheights of each data point. The default are no weights.
-    
+
     Returns:
         weighted_stats.mean: mean difference between data sets
         weighted_stats.std_mean: standard dev. of mean difference
-    
+
     """
-    if data1.size != data2.size:
+    if len(data1) != len(data2):
         raise Exception('Two data sets have different lengths')
-    
+
     abs_difference = np.abs(data2 - data1)
     weighted_stats = DescrStatsW(abs_difference, weights=weights)
-    
+
     return weighted_stats.mean, weighted_stats.std_mean
-    
 
 
-def compare_1D(pdf, analytical_bins, numerical_bins, num_samples=int(1e4),
-               bounds=np.array([0, 1]), analytical_only=False):
+def compare_1D(pdf, nr_bins, num_samples=int(1e4),
+               bounds=np.array([0, 1])):
     logger = logging.getLogger(__name__)
     # analytical result
-    xs = np.linspace(0, 1, analytical_bins)
+    pos_bin_edges = np.linspace(0, 1, nr_bins + 1)
+    pos_bin_centres = get_centres(pos_bin_edges)
     g_analytical = []
-    for x in xs:
+    for x in pos_bin_centres:
         g_analytical.append(g1D(x, pdf))
 
-    ft_xs = np.linspace(-1, 1, analytical_bins)
+    step_bin_edges = np.linspace(-1, 1, nr_bins + 1)
+    step_bin_centres = get_centres(step_bin_edges)
     f_t_analytical = []
-    for x in ft_xs:
+    for x in step_bin_centres:
         f_t_analytical.append(Pdf_Transform(x, pdf, '1Dseg'))
 
     g_analytical = np.asarray(g_analytical)
-    g_analytical = np.asarray(g_analytical)
+    f_t_analytical = np.asarray(f_t_analytical)
 
-    if not analytical_only:
-        # numerical result
-        step_values, positions = random_walker(
-                f_i=pdf,
-                bounds=bounds,
-                steps=int(num_samples),
-                return_positions=True,
-                )
-        logger.debug('{:} {:}'.format(step_values.shape, positions.shape))
-        probs, bin_edges = np.histogram(
-                positions,
-                bins=numerical_bins,
-                density=True
-                )
-        step_probs, step_bin_edges = np.histogram(
-                step_values,
-                bins=numerical_bins,
-                density=True
-                )
-        bin_centres = get_centres(bin_edges)
-        step_bin_centres = get_centres(step_bin_edges)
-    else:
-        bin_centres = None
-        probs = None
-        step_bin_centres = None
-        step_probs = None
-    return (xs, g_analytical,
-            ft_xs, f_t_analytical,
-            bin_centres, probs,
-            step_bin_centres, step_probs
+    # numerical result
+    step_values, positions = random_walker(
+            f_i=pdf,
+            bounds=bounds,
+            steps=int(num_samples),
+            return_positions=True,
+            )
+    logger.debug('{:} {:}'.format(step_values.shape, positions.shape))
+    g_numerical, pos_bin_edges = np.histogram(
+            positions,
+            bins=pos_bin_edges,
+            density=True
+            )
+    f_t_numerical, step_bin_edges = np.histogram(
+            step_values,
+            bins=step_bin_edges,
+            density=True
             )
 
+    return (
+        pos_bin_centres,
+        g_analytical,
+        g_numerical,
+        step_bin_centres,
+        f_t_analytical,
+        f_t_numerical
+        )
 
-def compare_2D(pdf, analytical_bins, numerical_bins, num_samples=int(1e4),
+
+def compare_2D(pdf, nr_bins, num_samples=int(1e4),
                bounds=circle_points(samples=40)):
     logger = logging.getLogger(__name__)
 
-    xs = np.linspace(-1, 1, analytical_bins, endpoint=True)
-    ys = np.linspace(-1, 1, analytical_bins, endpoint=True)
-    x_values = (xs[1:] + xs[:-1]) / 2.
-    y_values = (ys[1:] + ys[:-1]) / 2.
-    xcoords, ycoords = np.meshgrid(x_values, y_values)
+    x_edges = np.linspace(-1, 1, nr_bins + 1, endpoint=True)
+    y_edges = np.linspace(-1, 1, nr_bins + 1, endpoint=True)
+    x_centres = get_centres(x_edges)
+    y_centres = get_centres(y_edges)
+    xcoords, ycoords = np.meshgrid(x_centres, y_centres)
     rads = np.sqrt(xcoords**2. + ycoords**2.)
     unique_rads = np.unique(rads)
 
     total_mask = np.zeros_like(rads, dtype=bool)
+
     g_analytical = np.zeros_like(rads)
+
     nr_unique_rads = len(unique_rads)
     logger.info('integrating for {:} unique radii'
                 .format(len(unique_rads)))
@@ -129,10 +128,10 @@ def compare_2D(pdf, analytical_bins, numerical_bins, num_samples=int(1e4),
 
     g_analytical[~total_mask] = 0.
 
-    ft_xs = np.linspace(-2, 2, analytical_bins, endpoint=True)
-    ft_ys = np.linspace(-2, 2, analytical_bins, endpoint=True)
-    ft_x_values = (ft_xs[1:] + ft_xs[:-1]) / 2.
-    ft_y_values = (ft_ys[1:] + ft_ys[:-1]) / 2.
+    ft_xs = np.linspace(-2, 2, nr_bins + 1, endpoint=True)
+    ft_ys = np.linspace(-2, 2, nr_bins + 1, endpoint=True)
+    ft_x_values = get_centres(ft_xs)
+    ft_y_values = get_centres(ft_ys)
     ft_xcoords, ft_ycoords = np.meshgrid(ft_x_values, ft_y_values)
     ft_rads = np.sqrt(ft_xcoords**2. + ft_ycoords**2.)
     ft_total_mask = np.zeros_like(ft_rads, dtype=bool)
@@ -169,56 +168,64 @@ def compare_2D(pdf, analytical_bins, numerical_bins, num_samples=int(1e4),
             )
     logger.info('Finished numerical run')
     logger.debug('{:} {:}'.format(step_values.shape, positions.shape))
-    probs, xedges, yedges = np.histogram2d(
-            *positions.T, bins=numerical_bins,
+    g_numerical, _, _ = np.histogram2d(
+            *positions.T, bins=[x_edges, y_edges],
             normed=True
             )
 
-    step_probs, step_xedges, step_yedges = np.histogram2d(
+    f_t_numerical, _, _ = np.histogram2d(
             *step_values.T,
-            bins=numerical_bins,
+            bins=[ft_xs, ft_ys],
             normed=True
             )
 
     rot_steps_data = rot_steps(positions.T)
-    rot_probs, rot_xedges, rot_yedges = np.histogram2d(
-        rot_steps_data[0, :], rot_steps_data[1, :],
-        bins=numerical_bins, normed=True
+    rot_probs, _, _ = np.histogram2d(
+        rot_steps_data[0, :],
+        rot_steps_data[1, :],
+        bins=[ft_xs, ft_ys],
+        normed=True
         )
 
-    return (xs, ys, g_analytical,
-            ft_xs, ft_ys, f_t_analytical,
-            xedges, yedges, probs,
-            step_xedges, step_yedges, step_probs,
-            rot_xedges, rot_yedges, rot_probs,
+    return ((x_edges, y_edges),
+            g_analytical,
+            g_numerical,
+            (ft_xs, ft_ys),
+            f_t_analytical,
+            f_t_numerical,
+            rot_probs
             )
 
-def compare_1D_plotting(pdf, analytical_bins,
-        numerical_bins=None, steps=int(1e3), analytical_only=False):
 
-    if numerical_bins is None:
-        numerical_bins == analytical_bins
+def compare_1D_plotting(pdf, nr_bins, steps=int(1e3)):
 
-    (analytical_bin_centres, g_analytical,
-     analytical_ft_centres, f_t_analytical,
-     numerical_position_bin_centres, g_numerical,
-     numerical_f_t_bin_centres, f_t_numerical) = (
-        compare_1D(pdf, analytical_bins, numerical_bins,
-                   num_samples=steps, analytical_only=analytical_only)
+    (pos_bin_centres,
+     g_analytical,
+     g_numerical,
+     step_bin_centres,
+     f_t_analytical,
+     f_t_numerical) = (
+        compare_1D(pdf, nr_bins,
+                   num_samples=steps)
         )
+
+    print('g stats (mean, std)')
+    print(stats(g_analytical, g_numerical))
+    print('f_t stats (mean, std)')
+    print(stats(f_t_analytical, f_t_numerical))
 
     fig, axes = plt.subplots(1, 2, squeeze=True)
     axes[0].set_title(r'$Analytical \ g(x)$')
-    axes[0].plot(analytical_bin_centres, g_analytical)
+    axes[0].plot(pos_bin_centres, g_analytical)
     axes[1].set_title(r'$Numerical \ g(x)$')
-    axes[1].plot(numerical_position_bin_centres, g_numerical)
+    axes[1].plot(pos_bin_centres, g_numerical)
     fig2, axes2 = plt.subplots(1, 2, squeeze=True)
     axes2[0].set_title(r'$Analytical \ f_t(x)$')
-    axes2[0].plot(analytical_ft_centres,
+    axes2[0].plot(step_bin_centres,
                   f_t_analytical,
                   )
     axes2[1].set_title(r'$Numerical \ f_t(x)$')
-    axes2[1].plot(numerical_f_t_bin_centres,
+    axes2[1].plot(step_bin_centres,
                   f_t_numerical,
                   )
 
@@ -226,35 +233,40 @@ def compare_1D_plotting(pdf, analytical_bins,
     fig3 = plt.figure()
     ax3 = fig3.add_subplot(111)
     ax3.set_title(r'$Comparing \ Analytical \ and \ Numerical \ g(x)$')
-    ax3.plot(analytical_bin_centres, g_analytical, label='Analytical Solution')
-    ax3.plot(numerical_position_bin_centres, g_numerical, label='Numerical Solution')
+    ax3.plot(pos_bin_centres, g_analytical, label='Analytical Solution')
+    ax3.plot(pos_bin_centres, g_numerical, label='Numerical Solution')
     ax3.legend()
 
     fig4 = plt.figure()
     ax4 = fig4.add_subplot(111)
     ax4.set_title(r'$Comparing \ Analytical \ and \ Numerical \ f_t(x)$')
-    ax4.plot(analytical_ft_centres, f_t_analytical, label='Analytical Solution')
-    ax4.plot(numerical_f_t_bin_centres, f_t_numerical, label='Numerical Result')
+    ax4.plot(step_bin_centres, f_t_analytical, label='Analytical Solution')
+    ax4.plot(step_bin_centres, f_t_numerical, label='Numerical Result')
     ax4.legend()
 
     plt.show()
 
 
-def compare_2D_plotting(pdf, analytical_bins, numerical_bins=None,
-                        steps=int(1e3)):
-    if numerical_bins is None:
-        numerical_bins == analytical_bins
+def compare_2D_plotting(pdf, nr_bins, steps=int(1e3)):
 
-    (analytical_bin_centres_x, analytical_bin_centres_y, g_analytical,
-     ft_analytical_x, ft_analytical_y, f_t_analytical,
-     numerical_edges_x, numerical_edges_y, g_numerical,
-     numerical_step_xedges, numerical_step_yedges, numerical_f_t,
-     rot_xedges, rot_yedges, rot_probs,
+    ((pos_x_edges, pos_y_edges),
+     g_analytical,
+     g_numerical,
+     (ft_xs, ft_ys),
+     f_t_analytical,
+     f_t_numerical,
+     rot_probs
      ) = (
-         compare_2D(pdf, analytical_bins, numerical_bins,
-                    num_samples=steps,
-                    bounds=circle_points(samples=20)
-                    ))
+        compare_2D(pdf, nr_bins,
+                   num_samples=steps,
+                   bounds=circle_points(samples=20)
+                   )
+        )
+
+    print('g stats (mean, std)')
+    print(stats(g_analytical.flatten(), g_numerical.flatten()))
+    print('f_t stats (mean, std)')
+    print(stats(f_t_analytical.flatten(), f_t_numerical.flatten()))
 
     """
     Plot of analytical and numerical g distributions
@@ -272,16 +284,16 @@ def compare_2D_plotting(pdf, analytical_bins, numerical_bins=None,
                         ])
     axes[0].set_title(r'$Analytical \ g(x, y)$')
     analytical_mesh = axes[0].pcolormesh(
-                       analytical_bin_centres_x,
-                       analytical_bin_centres_y,
+                       pos_x_edges,
+                       pos_y_edges,
                        g_analytical,
                        vmin=min_value,
                        vmax=max_value,
                        )
     axes[1].set_title(r'$Numerical \ g(x, y)$')
     numerical_mesh = axes[1].pcolormesh(
-                       numerical_edges_x,
-                       numerical_edges_y,
+                       pos_x_edges,
+                       pos_y_edges,
                        g_numerical,
                        vmin=min_value,
                        vmax=max_value,
@@ -300,24 +312,24 @@ def compare_2D_plotting(pdf, analytical_bins, numerical_bins=None,
     # in order to have the same colour scaling for both
     # hexbin plots, such that the same colorbar may be used
     max_value = np.max([np.max(f_t_analytical[~np.isnan(f_t_analytical)]),
-                        np.max(numerical_f_t[~np.isnan(numerical_f_t)])
+                        np.max(f_t_numerical[~np.isnan(f_t_numerical)])
                         ])
     min_value = np.min([np.min(f_t_analytical[~np.isnan(f_t_analytical)]),
-                        np.min(numerical_f_t[~np.isnan(numerical_f_t)])
+                        np.min(f_t_numerical[~np.isnan(f_t_numerical)])
                         ])
     axes[0].set_title(r'$Analytical \ f_t(x, y)$')
     analytical_mesh = axes[0].pcolormesh(
-                       ft_analytical_x,
-                       ft_analytical_y,
+                       ft_xs,
+                       ft_ys,
                        f_t_analytical,
                        vmin=min_value,
                        vmax=max_value,
                        )
     axes[1].set_title(r'$Numerical \ f_t(x, y)$')
     numerical_mesh = axes[1].pcolormesh(
-                       numerical_step_xedges,
-                       numerical_step_yedges,
-                       numerical_f_t,
+                       ft_xs,
+                       ft_ys,
+                       f_t_numerical,
                        vmin=min_value,
                        vmax=max_value,
                        )
@@ -331,9 +343,9 @@ def compare_2D_plotting(pdf, analytical_bins, numerical_bins=None,
     """
     fig, ax = plt.subplots(1, 1, squeeze=True)
     ax.set_title(r'$Orientationally\  normalised\  f_t(x, y)$')
-    rot_probs_plot = ax.pcolormesh(rot_xedges, rot_yedges, rot_probs.T)
+    rot_probs_plot = ax.pcolormesh(ft_xs, ft_ys, rot_probs.T)
     fig.colorbar(rot_probs_plot)
-    ax.hlines((0.,), np.min(rot_xedges), np.max(rot_xedges),
+    ax.hlines((0.,), np.min(ft_xs), np.max(ft_xs),
               colors='b')
     ax.set_aspect('equal')
 
@@ -343,15 +355,15 @@ def compare_2D_plotting(pdf, analytical_bins, numerical_bins=None,
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-    ONE_D = True
-    TWO_D = False
+    ONE_D = False
+    TWO_D = True
 
     if ONE_D:
         # 1D case
         pdfs_args_1D = [
                 (Tophat_1D, {
                     'width': 0.3,
-                    'centre': 0.5
+                    'centre': 0.
                     }),
                 # (Gaussian, {'centre': 0.7, 'scale': 0.3}),
                 # (Power, {
@@ -364,21 +376,23 @@ if __name__ == '__main__':
                 #     'decay_rate': 1.
                 #     }),
                 ]
-        analytical_bins = 11
-        numerical_bins = 11
+        bins = 11
         for PDFClass, kwargs in pdfs_args_1D:
             pdf = PDFClass(**kwargs).pdf
-            compare_1D_plotting(pdf, analytical_bins, numerical_bins,
-                                steps=int(1e4))
+            compare_1D_plotting(pdf, bins, steps=int(1e4))
 
     if TWO_D:
         # 2D case
         pdfs_args_2D = [
-                (Tophat_2D, {
-                    'x_centre': 0.3,
-                    'y_centre': -0.4,
-                    'extent': 0.6,
-                    'type_2D': 'circularly-symmetric'
+                # (Tophat_2D, {
+                #     'x_centre': 0.,
+                #     'y_centre': 0.,
+                #     'extent': 1.2,
+                #     'type_2D': 'circularly-symmetric'
+                #     }),
+                (Funky, {
+                    'centre': (0., 0.),
+                    'width': 2.
                     }),
                 # (Tophat_2D, {
                 #     'x_centre': 0.3,
@@ -397,10 +411,9 @@ if __name__ == '__main__':
                 #     'decay_rate': 0.5,
                 #     }),
                 ]
-        analytical_bins = 61
-        numerical_bins = 61
+        bins = 61
         for PDFClass, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 
-            compare_2D_plotting(pdf, analytical_bins, numerical_bins,
-                                steps=int(1e3))
+            compare_2D_plotting(pdf, bins, steps=int(1e3))
+
