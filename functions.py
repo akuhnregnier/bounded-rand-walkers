@@ -220,7 +220,7 @@ class Exponential(object):
         return prob
 
 
-class Function(object):
+class Funky(object):
     def __init__(self, centre=0., width=1.):
         """
 
@@ -245,10 +245,10 @@ class Function(object):
                 prob = 1.
             elif position > 0 and position < 1/3. * self.width:
                 prob = np.abs(np.sinc(position * self.frequency))
-                
+
                 # multiply by linear factor
                 prob = prob * ( 1 + 5 * position)
-                
+
             elif position > 1/3. * self.width and position < 2/3. * self.width:
                 prob = const1 * ( 1 + self.grad * (position - 1/3. * self.width))
             elif position > 2/3. * self.width:
@@ -267,10 +267,10 @@ class Function(object):
                 prob = 1.
             elif position > 0 and position < 1/3. * self.width:
                 prob = np.abs(np.sinc(position * self.frequency))
-                
+
                  # multiply by linear factor
                 prob = prob * ( 1 + 5 * position)
-            
+
             elif position > 1/3. * self.width and position < 2/3. * self.width:
                 prob = const1 * ( 1 + self.grad * (position - 1/3. * self.width))
             elif position > 2/3. * self.width:
@@ -302,7 +302,7 @@ if __name__ == '__main__':
     #    plt.title(PDFClass.__name__)
     #    plt.plot(x, p)
     #plt.show()
-    a = Function([0.5,0.5], width=2.)
+    a = Funky([0.5,0.5], width=2.)
     x = [np.sqrt(2) * i/100. for i in range(200)]
     y = [a.pdf(*[i/100., i/100.]) for i in range(200)]
     #y = [a.pdf(i/100) for i in range(100)]
