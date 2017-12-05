@@ -71,7 +71,7 @@ def compare_1D(pdf, nr_bins, num_samples=int(1e4),
 
     pickle_name = ('1D_compare_data_{:}_{:}_{:}_{:}.pickle'
                    .format(pdf_name, pdf_kwargs, nr_bins,
-                           num_samples * N_PROCESSES))
+                           num_samples))
     pickle_path = os.path.join(output_dir, pickle_name)
     if os.path.isfile(pickle_path):
         with open(pickle_path, 'rb') as f:
@@ -142,7 +142,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
 
     pickle_name = ('2D_compare_data_{:}_{:}_{:}_{:}_{:}.pickle'
                    .format(pdf_name, pdf_kwargs, bounds_name,
-                           nr_bins, num_samples * N_PROCESSES))
+                           nr_bins, num_samples))
     pickle_path = os.path.join(output_dir, pickle_name)
     if os.path.isfile(pickle_path):
         with open(pickle_path, 'rb') as f:
@@ -309,7 +309,7 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
 
     # save all figures
     suffix = ('{:} {:} {:} {:}.png'
-              .format(pdf_name, pdf_kwargs, nr_bins, steps * N_PROCESSES))
+              .format(pdf_name, pdf_kwargs, nr_bins, steps))
     name = '1D analytical vs numerical g ' + suffix
     fig1.savefig(os.path.join(output_dir, name))
     name = '1D analytical vs numerical f_t ' + suffix
@@ -435,7 +435,7 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     # save all figures
     suffix = ('{:} {:} {:} {:} {:}.png'
               .format(pdf_name, pdf_kwargs, bounds_name,
-                      nr_bins, steps * N_PROCESSES)
+                      nr_bins, steps)
               )
     name = '2D analytical vs numerical g ' + suffix
     fig1.savefig(os.path.join(output_dir, name))

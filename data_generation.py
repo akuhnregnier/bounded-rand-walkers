@@ -409,7 +409,7 @@ def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2)):
         step_values, positions = random_walker(
                 f_i=f_i,
                 bounds=bounds,
-                steps=steps,
+                steps=int(steps / n_processes),
                 )
         return_dict[procnum] = (step_values, positions)
 
