@@ -80,18 +80,46 @@ def generate_random_samples(f_i, position, nr_samples, dimensions=1):
     """
     logger = logging.getLogger(__name__)
     if generate_random_samples.max_fn_value != 0:
-        # logger.debug('Retrieving max fn value')
+        logger.debug('Retrieving max fn value')
         max_fn = generate_random_samples.max_fn_value
+        logger.debug('Got:{:}'.format(max_fn))
     else:
         logger.debug('Finding maximum of f_i')
+        # need to be careful, since the minimiser might never find the
+        # minimum if the function is like a tophat function - ie. if it is
+        # flat in some regions!
         if dimensions == 1:
-            max_x = scipy.optimize.fmin(lambda x: -f_i(x), 0)
+            # look at the function value at many positions and then find
+            # the minimum around the minimum of the points discovered so
+            # far
+            trial_x_coords = np.linspace(0, 1, 1000)
+            fn_values = [f_i(x) for x in trial_x_coords]
+            trial_max_x = trial_x_coords[np.argmax(fn_values)]
+            max_x = scipy.optimize.fmin(lambda x: -f_i(x), trial_max_x)
             max_fn = f_i(max_x)
         elif dimensions == 2:
-            max_args = scipy.optimize.fmin(lambda args: -f_i(*args), (0, 0))
+            # look at the function value at many positions and then find
+            # the minimum around the minimum of the points discovered so
+            # far
+            N = 1000
+            trial_coords = np.linspace(-1, 1, N)
+            fn_values = np.zeros((N, N), dtype=np.float64)
+            for i in range(N):
+                for j in range(N):
+                    fn_values[i, j] = f_i(trial_coords[i], trial_coords[j])
+
+            max_index = np.unravel_index(np.argmax(fn_values),
+                                         fn_values.shape)
+            trial_max_x = trial_coords[max_index[0]]
+            trial_max_y = trial_coords[max_index[1]]
+            max_args = scipy.optimize.fmin(lambda args: -f_i(*args),
+                                           (trial_max_x, trial_max_y)
+                                           )
             max_fn = f_i(*max_args)
         # fix this value so it does not need to be calculated next time
+        logger.debug('Fixing maximum fn')
         generate_random_samples.max_fn_value = max_fn
+        logger.debug('max_fn:{:}'.format(generate_random_samples.max_fn_value))
 
     # imagine as throwing darts, with a 'height' randomly distributed
     # from 0 to ``max_fn``, and a position randomly along x (1D)
@@ -99,10 +127,15 @@ def generate_random_samples(f_i, position, nr_samples, dimensions=1):
     # of ``f_i`` at the randomly chosen point, keep the point.
     # If not, randomly sample position and 'height' again.
 
-    distribution = np.zeros((nr_samples, dimensions), dtype=np.float64)
+    logger.debug('position:{:}'.format(position))
+
+    distribution = np.zeros((nr_samples, dimensions), dtype=np.float64) - 9999
     for sample in range(nr_samples):
         found = False
+        tries = 0
         while not found:
+            tries += 1
+            logger.debug('tries:{:}'.format(tries))
             # get random position and height
             random_p = np.random.uniform(low=0.0, high=max_fn, size=1)
             # bounded between -pos_i and 1 - pos_i
@@ -126,6 +159,8 @@ def generate_random_samples(f_i, position, nr_samples, dimensions=1):
             # given by ``random_args``
 
             actual_p = f_i(*random_args)
+            logger.debug('args: {:} actual p: {:} random p:{:}'
+                         .format(random_args, actual_p, random_p))
             if random_p < actual_p:
                 # add to record
                 distribution[sample] = random_args
@@ -346,6 +381,7 @@ def random_walker(f_i, bounds, steps=int(1e2), return_positions=False):
 
 
 if __name__ == '__main__':
+    import multiprocessing
     logging.basicConfig(level=logging.INFO)
 
     ONE_D = True
@@ -357,12 +393,33 @@ if __name__ == '__main__':
     # plt.show()
 
     if ONE_D:
-        step_values, positions = random_walker(
-                f_i=Tophat_1D(width=0.3, centre=0.5).pdf,
-                bounds=np.array([0, 1]),
-                steps=int(1e5),
-                return_positions=True,
-                )
+
+        def worker(procnum, return_dict):
+            """worker function"""
+            print str(procnum) + ' present!'
+            step_values, positions = random_walker(
+                    f_i=Tophat_1D(width=0.5, centre=0.2).pdf,
+                    bounds=np.array([0, 1]),
+                    steps=int(9e3),
+                    return_positions=True,
+                    )
+            return_dict[procnum] = (step_values, positions)
+
+        manager = multiprocessing.Manager()
+        return_dict = manager.dict()
+        jobs = []
+        for i in range(4):
+            p = multiprocessing.Process(target=worker, args=(i, return_dict))
+            jobs.append(p)
+            p.start()
+
+        for proc in jobs:
+            proc.join()
+
+        step_values = [i[0] for i in return_dict.values()]
+        positions = [i[1] for i in return_dict.values()]
+        step_values = np.vstack(step_values)
+        positions = np.vstack(positions)
 
         fig, axes = plt.subplots(1, 2, squeeze=True)
         axes[0].hist(step_values, bins='auto')
@@ -372,19 +429,45 @@ if __name__ == '__main__':
         plt.show()
 
     if TWO_D:
+        # bounds = np.array([
+        #     [0, 0],
+        #     [0, 1],
+        #     [1, 1],
+        #     [1, 0]],
+        #     dtype=np.float64
+        #     )
         bounds = np.array([
-            [0, 0],
-            [0, 1],
-            [1, 1],
-            [1, 0]]
+            [1, 0],
+            [-1, 1],
+            [-1, -1]]
             )
 
-        step_values, positions = random_walker(
-                f_i=Tophat_2D().pdf,
-                bounds=bounds,
-                steps=int(1e5),
-                return_positions=True,
-                )
+        def worker(procnum, return_dict):
+            """worker function"""
+            print str(procnum) + ' present!'
+            step_values, positions = random_walker(
+                    f_i=Tophat_2D(extent=1.).pdf,
+                    bounds=bounds,
+                    steps=int(5e5),
+                    return_positions=True,
+                    )
+            return_dict[procnum] = (step_values, positions)
+
+        manager = multiprocessing.Manager()
+        return_dict = manager.dict()
+        jobs = []
+        for i in range(4):
+            p = multiprocessing.Process(target=worker, args=(i, return_dict))
+            jobs.append(p)
+            p.start()
+
+        for proc in jobs:
+            proc.join()
+
+        step_values = [i[0] for i in return_dict.values()]
+        positions = [i[1] for i in return_dict.values()]
+        step_values = np.vstack(step_values)
+        positions = np.vstack(positions)
 
         fig, axes = plt.subplots(1, 2, squeeze=True)
         fig.subplots_adjust(right=0.8)
