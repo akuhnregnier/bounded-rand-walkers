@@ -1,15 +1,24 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Dec  5 11:57:15 2017
+
+@author: luca
+"""
+
 import numpy as np
-import mtplotlib.pyplot as plt
+import matplotlib
+import matplotlib.pyplot as plt
 from scipy.integrate import dblquad
 
-def 2dTheta(x,y, m,c,side,k=30):
+def Theta2D(x,y, m,c,side,k=10):
 	'''
 	Return value of 2D Heaviside Theta with separator being line (m,c)
 	'''
-	if side = 'upper':
-		return 0.5 + 1/np.pi * np.arctan(+k* (-mx -c +y))
-	if side = 'lower':
-		return 0.5 + 1/np.pi * np.arctan(-k* (-mx -c +y))
+	if side == 'upper':
+		return 0.5 + 1/np.pi * np.arctan(+k* (-m*x -c +y))
+	if side == 'lower':
+		return 0.5 + 1/np.pi * np.arctan(-k* (-m*x -c +y))
 	else:
 		raise Exception('invalid choice of half plane argument for 2d Theta')
 
@@ -22,27 +31,63 @@ def SelectorFn(x,y,vertices):
 	CoM = np.array([np.mean(vertices[:,0]), np.mean(vertices[:,1])])
 	
 	flagf = 1
-	for nside in (len(vertices[:,0]) - 1):
+	for nside in range(len(vertices[:,0]) - 1):
 	
 		m = (vertices[nside+1,1] - vertices[nside,1])/(vertices[nside+1,0] - vertices[nside,0])
 		c = vertices[nside,1] - m * vertices[nside,0]
 		
-		if np.sign(-m*Com[0] - c + CoM[1]) >= 0: 
-			flagf *= 2dTheta(x,y,m,c,'upper')
+		if np.sign(-m*CoM[0] - c + CoM[1]) >= 0: 
+			flagf *= Theta2D(x,y,m,c,'upper')
 			
-		if np.sign(-m*Com[0] - c + CoM[1]) < 0: 
-			flagf *= 2dTheta(x,y,m,c,'lower')
+		else: 
+			flagf *= Theta2D(x,y,m,c,'lower')
 			
 	return flagf
 	
 def genShaper(x,y,vertices):
-	#rescale x coordinates to fit in 1x1 square
-	vertices[:,0] += min(vertices[:,0])
-	vertices[:,0] /= max(vertices[:,0])
+    '''
+    #rescale x coordinates to fit in 1x1 square
+    vertices[:,0] += min(vertices[:,0])
+    vertices[:,0] /= max(vertices[:,0])
+    	
+    #rescale y coordinates to fit in 1x1 square
+    vertices[:,1] += min(vertices[:,1])
+    vertices[:,1] /= max(vertices[:,1])
+    	'''
+    shaper = dblquad(lambda a, b: SelectorFn(a,b,vertices)*SelectorFn(x+a,y+b,vertices), 0, 1, lambda x: 0, lambda x: 1)
+    return shaper[0]
+
+vertices = np.array([0.1,0,0,1,1,0.5])
+vertices = vertices.reshape(3,2)
+resc_vertices = np.copy(vertices)
+
+#rescale x coordinates to fit in 1x1 square
+resc_vertices[:,0] += min(vertices[:,0])
+resc_vertices[:,0] /= max(resc_vertices[:,0])
 	
-	#rescale y coordinates to fit in 1x1 square
-	vertices[:,1] += min(vertices[:,1])
-	vertices[:,1] /= max(vertices[:,1])
-	
-	shaper = dblquad(lambda a, b: SelectorFn(a,b,vertices)*SelectorFn(x+a,y+b,vertices)), 0, 1, lambda x: 0, lambda x: 1)
-	return shaper
+#rescale y coordinates to fit in 1x1 square
+resc_vertices[:,1] += min(vertices[:,1])
+resc_vertices[:,1] /= max(resc_vertices[:,1])
+
+delta = 0.1
+x = np.arange(-np.sqrt(2), np.sqrt(2), delta) + delta/2.
+y = np.arange(-np.sqrt(2), np.sqrt(2), delta) + delta/2.
+X, Y = np.meshgrid(x, y)
+
+Z = np.zeros((len(x),len(y)))
+
+for i,xi in enumerate(x):
+    print('xstep='+str(xi))
+    for j,yi in enumerate(y):
+        print('ystep='+str(yi))
+
+        Z[i,j] = genShaper(xi,yi,resc_vertices) #gSquare2D(xi+delta/2.,yi+delta/2.,30)
+        
+print('calculations done')
+
+matplotlib.rcParams['contour.negative_linestyle'] = 'solid'
+#plt.figure()
+CS = plt.contour(X, Y, Z, 7,
+                 colors='b',  # negative contours will be dashed by default
+                 )
+plt.clabel(CS, fontsize=9, inline=1)
