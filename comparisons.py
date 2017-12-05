@@ -70,7 +70,8 @@ def compare_1D(pdf, nr_bins, num_samples=int(1e4),
     logger = logging.getLogger(__name__)
 
     pickle_name = ('1D_compare_data_{:}_{:}_{:}_{:}.pickle'
-                   .format(pdf_name, pdf_kwargs, nr_bins, num_samples))
+                   .format(pdf_name, pdf_kwargs, nr_bins,
+                           num_samples * N_PROCESSES))
     pickle_path = os.path.join(output_dir, pickle_name)
     if os.path.isfile(pickle_path):
         with open(pickle_path, 'rb') as f:
@@ -141,7 +142,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
 
     pickle_name = ('2D_compare_data_{:}_{:}_{:}_{:}_{:}.pickle'
                    .format(pdf_name, pdf_kwargs, bounds_name,
-                           nr_bins, num_samples))
+                           nr_bins, num_samples * N_PROCESSES))
     pickle_path = os.path.join(output_dir, pickle_name)
     if os.path.isfile(pickle_path):
         with open(pickle_path, 'rb') as f:
@@ -308,7 +309,7 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
 
     # save all figures
     suffix = ('{:} {:} {:} {:}.png'
-              .format(pdf_name, pdf_kwargs, nr_bins, steps))
+              .format(pdf_name, pdf_kwargs, nr_bins, steps * N_PROCESSES))
     name = '1D analytical vs numerical g ' + suffix
     fig1.savefig(os.path.join(output_dir, name))
     name = '1D analytical vs numerical f_t ' + suffix
@@ -325,6 +326,7 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
 
 
 def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
+                        bounds=circle_points(samples=20),
                         bounds_name='circle', pdf_name='tophat',
                         pdf_kwargs={'test': 10}):
 
@@ -338,7 +340,7 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
      ) = (
         compare_2D(pdf, nr_bins,
                    num_samples=steps,
-                   bounds=circle_points(samples=20),
+                   bounds=bounds,
                    bounds_name=bounds_name,
                    pdf_name=pdf_name
                    )
@@ -433,7 +435,7 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     # save all figures
     suffix = ('{:} {:} {:} {:} {:}.png'
               .format(pdf_name, pdf_kwargs, bounds_name,
-                      nr_bins, steps)
+                      nr_bins, steps * N_PROCESSES)
               )
     name = '2D analytical vs numerical g ' + suffix
     fig1.savefig(os.path.join(output_dir, name))
@@ -451,7 +453,7 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-    ONE_D = True
+    ONE_D = False
     TWO_D = True
 
     if ONE_D:
@@ -471,17 +473,28 @@ if __name__ == '__main__':
 
     if TWO_D:
         # 2D case
+
+        weird_bounds = np.array([
+            [0.1, 0.3],
+            [0.25, 0.98],
+            [0.9, 0.9],
+            [0.7, 0.4],
+            [0.4, 0.05]]
+            )
+
         pdfs_args_2D = [
                 (Funky, 'funky', {
                     'centre': (0., 0.),
                     'width': 2.
                     }),
                 ]
-        bins = 61
+        bins = 51
         for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 
             compare_2D_plotting(pdf, bins, steps=int(1e3),
                                 pdf_name=pdf_name,
-                                pdf_kwargs=kwargs)
+                                pdf_kwargs=kwargs,
+                                bounds=weird_bounds,
+                                bounds_name='weird')
 

@@ -90,6 +90,7 @@ class Tophat_2D(object):
             raise NotImplementedError('type_2D value {:} not implemented.'
                                       .format(self.type_2D))
 
+
 class Power(object):
     def __init__(self, centre=0., exponent=1., binsize=0.001):
         """A rotationally symmetric power law distribution.
@@ -243,13 +244,13 @@ class Funky(object):
 
             if position == 0:
                 prob = 1.
-            elif position > 0 and position < 1/3. * self.width:
+            elif position > 0 and position <= 1/3. * self.width:
                 prob = np.abs(np.sinc(position * self.frequency))
 
                 # multiply by linear factor
                 prob = prob * ( 1 + 5 * position)
 
-            elif position > 1/3. * self.width and position < 2/3. * self.width:
+            elif position > 1/3. * self.width and position <= 2/3. * self.width:
                 prob = const1 * ( 1 + self.grad * (position - 1/3. * self.width))
             elif position > 2/3. * self.width:
                 prob = power_law.pdf(position) / scale * const2
@@ -265,13 +266,13 @@ class Funky(object):
 
             if position == 0:
                 prob = 1.
-            elif position > 0 and position < 1/3. * self.width:
+            elif position > 0 and position <= 1/3. * self.width:
                 prob = np.abs(np.sinc(position * self.frequency))
 
                  # multiply by linear factor
                 prob = prob * ( 1 + 5 * position)
 
-            elif position > 1/3. * self.width and position < 2/3. * self.width:
+            elif position > 1/3. * self.width and position <= 2/3. * self.width:
                 prob = const1 * ( 1 + self.grad * (position - 1/3. * self.width))
             elif position > 2/3. * self.width:
                 prob = power_law.pdf(position) / scale * const2
