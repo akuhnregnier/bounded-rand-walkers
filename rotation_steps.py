@@ -9,6 +9,9 @@ import numpy.random as rand
 import matplotlib.pyplot as plt
 import scipy as sp
 from scipy import integrate
+from data_generation import in_bounds, DelaunayArray, weird_bounds
+from scipy.spatial import Delaunay
+from utils import get_centres
 
 
 def rot_steps(data):
@@ -142,6 +145,46 @@ def gRadialCircle(r, f):
             lambda l: 2*np.pi*l*f(l,0)*(1-betaCircle(r, l)/np.pi), 1-r, 1+r)[0]
         )
 
+def g2D(f, xs_edges, ys_edges, bounds=weird_bounds):
+    """2D position probability."""
+    print('G2D')
+    bounds = DelaunayArray(weird_bounds, Delaunay(weird_bounds))
+    xs_centres = get_centres(xs_edges)
+    ys_centres = get_centres(ys_edges)
+    g_values = np.zeros((xs_centres.shape[0], ys_centres.shape[0]),
+                        dtype=np.float64)
+    # should be True if the region is within the bounds
+    position_mask = np.zeros_like(g_values, dtype=bool)
+    for i, x in enumerate(xs_centres):
+        for j, y in enumerate(ys_centres):
+            is_in_bounds = in_bounds(np.array([x, y]), bounds)
+            position_mask[i, j] = is_in_bounds
+    x_indices, y_indices = np.where(position_mask)
+
+    counter = 0
+    max_counter = len(x_indices)
+    for mask_x_index, mask_y_index in zip(x_indices, y_indices):
+        # evaluate the pdf at each position relative to the current
+        # positions. But only iterate over the positions that are
+        # actually in the boundary.
+        if max_counter < 20:
+            print('counter:', counter, 'out of:', max_counter)
+        else:
+            if ((counter) % (max_counter / 10)) == 0:
+                print('{:06.2%}'.format(float(counter) / max_counter))
+        counter += 1
+        x, y = (xs_centres[mask_x_index],
+                ys_centres[mask_y_index])
+        x_mod = xs_centres - x
+        y_mod = ys_centres - y
+
+        for mask_x_index, mask_y_index in zip(x_indices, y_indices):
+            relative_position = (x_mod[mask_x_index],
+                                 y_mod[mask_y_index])
+            g_values[mask_x_index, mask_y_index] += f(*relative_position)
+
+    return g_values
+
 
 if __name__ == '__main__':
     N = 100000
@@ -153,4 +196,20 @@ if __name__ == '__main__':
              np.array([0 for a in np.arange(-2, 2, 0.01)]))
     plt.title('Observed step-size with fixed incoming direction')
     plt.gca().set_aspect('equal')
+
+    from functions import Funky
+
+    pdf = Funky(centre=(0., 0.)).pdf
+    bins = 81
+    min_x = -1
+    max_x = 1
+    min_y = -1
+    max_y = 1
+    xs_edges = np.linspace(min_x, max_x, bins + 1)
+    ys_edges = np.linspace(min_y, max_y, bins + 1)
+    g_values = g2D(pdf, xs_edges, ys_edges)
+    plt.figure()
+    plt.pcolormesh(xs_edges, ys_edges, g_values)
+    plt.gca().set_aspect('equal')
     plt.show()
+

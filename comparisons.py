@@ -12,56 +12,26 @@ from rotation_steps import (g1D, gRadialCircle, Pdf_Transform,
                             rot_steps, g1D_norm)
 from functions import Tophat_1D, Tophat_2D, Power, Exponential, Gaussian, Funky
 import scipy.integrate
-from data_generation import multi_random_walker, circle_points
-from statsmodels.stats.weightstats import DescrStatsW
+from data_generation import multi_random_walker, circle_points, weird_bounds
+from utils import get_centres, stats
 import matplotlib as mpl
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
 
+
 mpl.rcParams['savefig.dpi'] = 300
 mpl.rcParams['savefig.bbox'] = 'tight'
 
 N_PROCESSES = 4
-SHOW = False
+SHOW = True
 output_dir = os.path.abspath(os.path.join(
     os.path.dirname(__file__),
     'output'
     ))
 if not os.path.isdir(output_dir):
     os.makedirs(output_dir)
-
-
-def get_centres(bin_edges):
-    left_edges = bin_edges[:-1]
-    right_edges = bin_edges[1:]
-    bin_centres = (left_edges + right_edges) / 2.
-    return bin_centres
-
-
-def stats(data1, data2, weights=None):
-    """
-    This function calculates the mean difference between the input data sets
-    and the standard deviation of this mean.
-
-    Args:
-        data1: 1D array of dataset 1
-        data2: 2D array of dataset 2
-        weights: The wheights of each data point. The default are no weights.
-
-    Returns:
-        weighted_stats.mean: mean difference between data sets
-        weighted_stats.std_mean: standard dev. of mean difference
-
-    """
-    if len(data1) != len(data2):
-        raise Exception('Two data sets have different lengths')
-
-    abs_difference = np.abs(data2 - data1)
-    weighted_stats = DescrStatsW(abs_difference, weights=weights)
-
-    return weighted_stats.mean, weighted_stats.std_mean
 
 
 def compare_1D(pdf, nr_bins, num_samples=int(1e4),
@@ -471,8 +441,8 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-    ONE_D = False
-    TWO_D = True
+    ONE_D = True
+    TWO_D = False
 
     if ONE_D:
         # 1D case
@@ -482,23 +452,15 @@ if __name__ == '__main__':
                     'centre': 0.
                     }),
                 ]
-        bins = 11
+        bins = 31
         for PDFClass, pdf_name, kwargs in pdfs_args_1D:
             pdf = PDFClass(**kwargs).pdf
-            compare_1D_plotting(pdf, bins, steps=int(1e3),
+            compare_1D_plotting(pdf, bins, steps=int(1e5),
                                 pdf_name=pdf_name,
                                 pdf_kwargs=kwargs)
 
     if TWO_D:
         # 2D case
-
-        weird_bounds = np.array([
-            [0.1, 0.3],
-            [0.25, 0.98],
-            [0.9, 0.9],
-            [0.7, 0.4],
-            [0.4, 0.05]]
-            )
 
         pdfs_args_2D = [
                 (Funky, 'funky', {

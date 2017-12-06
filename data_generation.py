@@ -17,6 +17,16 @@ from time import time
 from functions import Tophat_1D, Tophat_2D, Gaussian, Power, Exponential
 
 
+# bounds with x coords in the first column and y coords in the second
+weird_bounds = np.array([
+    [0.1, 0.3],
+    [0.25, 0.98],
+    [0.9, 0.9],
+    [0.7, 0.4],
+    [0.4, 0.05]]
+    )
+
+
 def circle_points(radius=1., samples=20):
     angles = np.linspace(0, 2*np.pi, samples, endpoint=False)
     x = (np.cos(angles) * radius).reshape(-1, 1)
