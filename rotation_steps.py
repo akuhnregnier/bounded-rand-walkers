@@ -168,10 +168,10 @@ def g2D(f, xs_edges, ys_edges, bounds=weird_bounds):
         # positions. But only iterate over the positions that are
         # actually in the boundary.
         if max_counter < 20:
-            print('counter:', counter, 'out of:', max_counter)
+            print('counter:', counter + 1, 'out of:', max_counter)
         else:
             if ((counter) % (max_counter / 10)) == 0:
-                print('{:06.2%}'.format(float(counter) / max_counter))
+                print('{:07.2%}'.format(float(counter) / (max_counter - 1)))
         counter += 1
         x, y = (xs_centres[mask_x_index],
                 ys_centres[mask_y_index])
@@ -183,6 +183,13 @@ def g2D(f, xs_edges, ys_edges, bounds=weird_bounds):
                                  y_mod[mask_y_index])
             g_values[mask_x_index, mask_y_index] += f(*relative_position)
 
+    cell_areas = ((xs_edges[1:] - xs_edges[:-1]).reshape(-1, 1)
+                  * (ys_edges[1:] - ys_edges[:-1]).reshape(1, -1)
+                  )
+    total_prob = cell_areas * g_values
+    g_mask = np.isclose(g_values, 0)
+    # return the normalised g values
+    g_values[~g_mask] /= np.sum(total_prob[~g_mask])
     return g_values
 
 

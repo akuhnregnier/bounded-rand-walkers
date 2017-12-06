@@ -9,7 +9,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from rotation_steps import (g1D, gRadialCircle, Pdf_Transform,
-                            rot_steps, g1D_norm)
+                            rot_steps, g1D_norm, g2D)
 from functions import Tophat_1D, Tophat_2D, Power, Exponential, Gaussian, Funky
 import scipy.integrate
 from data_generation import multi_random_walker, circle_points, weird_bounds
@@ -145,31 +145,8 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
     x_centres = get_centres(x_edges)
     y_centres = get_centres(y_edges)
     xcoords, ycoords = np.meshgrid(x_centres, y_centres)
-    rads = np.sqrt(xcoords**2. + ycoords**2.)
-    unique_rads = np.unique(rads)
 
-    total_mask = np.zeros_like(rads, dtype=bool)
-
-    g_analytical = np.zeros_like(rads)
-
-    nr_unique_rads = len(unique_rads)
-    logger.info('integrating for {:} unique radii'
-                .format(len(unique_rads)))
-
-    for i, rad in enumerate(unique_rads):
-        logger.info('{:>5d} out of {:>5d}'
-                    .format(i + 1, nr_unique_rads))
-        g_analytical_value = gRadialCircle(rad, pdf)
-        mask = np.where(np.isclose(rad, rads))
-        if not np.isnan(g_analytical_value):
-            total_mask |= np.isclose(rad, rads)
-        g_analytical[mask] = g_analytical_value
-
-    g_analytical /= scipy.integrate.quad(
-            lambda x: (2*np.pi*x) * gRadialCircle(x, pdf), 0, 1
-            )[0]
-
-    g_analytical[~total_mask] = 0.
+    g_analytical = g2D(pdf, x_edges, y_edges, bounds)
 
     ft_xs = np.linspace(-2, 2, nr_bins + 1, endpoint=True)
     ft_ys = np.linspace(-2, 2, nr_bins + 1, endpoint=True)
@@ -197,8 +174,8 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
     in this case, the cells have equal areas
     """
     cell_area = np.abs((ft_xs[1] - ft_xs[0]) * (ft_ys[1] - ft_ys[0]))
-    total_integral = np.sum(f_t_analytical) * cell_area
-    f_t_analytical /= total_integral
+    total_p = np.sum(f_t_analytical) * cell_area
+    f_t_analytical /= total_p
 
     logger.info('Finished analytical result, starting numerical run')
 
@@ -214,6 +191,15 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
     g_numerical, _, _ = np.histogram2d(
             *positions.T, bins=[x_edges, y_edges],
             normed=True
+            )
+
+    # normalise g_numerical
+    g_mask = np.isclose(g_numerical, 0)  # avoid dividing by 0
+    g_numerical[~g_mask] /= np.sum(
+            (g_numerical
+             * ((x_edges[1:] - x_edges[:-1]).reshape(-1, 1))
+                * (y_edges[1:] - y_edges[:-1]).reshape(1, -1)
+             )[~g_mask]
             )
 
     f_t_numerical, _, _ = np.histogram2d(
@@ -441,8 +427,8 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-    ONE_D = True
-    TWO_D = False
+    ONE_D = False
+    TWO_D = True
 
     if ONE_D:
         # 1D case
@@ -468,7 +454,7 @@ if __name__ == '__main__':
                     'width': 2.
                     }),
                 ]
-        bins = 51
+        bins = 81
         for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 

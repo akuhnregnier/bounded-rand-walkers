@@ -95,7 +95,7 @@ def generate_random_samples(f_i, position, nr_samples, dimensions=1):
         max_fn = generate_random_samples.max_fn_value
         logger.debug('Got:{:}'.format(max_fn))
     else:
-        logger.debug('Finding maximum of f_i')
+        logger.info('Finding maximum of f_i')
         # need to be careful, since the minimiser might never find the
         # minimum if the function is like a tophat function - ie. if it is
         # flat in some regions!
@@ -112,7 +112,7 @@ def generate_random_samples(f_i, position, nr_samples, dimensions=1):
             # look at the function value at many positions and then find
             # the minimum around the minimum of the points discovered so
             # far
-            N = 1000
+            N = 100
             trial_coords = np.linspace(-1, 1, N)
             fn_values = np.zeros((N, N), dtype=np.float64)
             for i in range(N):
@@ -128,7 +128,7 @@ def generate_random_samples(f_i, position, nr_samples, dimensions=1):
                                            )
             max_fn = f_i(*max_args)
         # fix this value so it does not need to be calculated next time
-        logger.debug('Fixing maximum fn')
+        logger.info('storing maximum fn value')
         generate_random_samples.max_fn_value = max_fn
         logger.debug('max_fn:{:}'.format(generate_random_samples.max_fn_value))
 
@@ -415,7 +415,7 @@ def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2)):
                 )
     def rand_walk_worker(procnum, return_dict):
         """Worker function which executes the random_walker"""
-        print(str(procnum) + ' present!')
+        print('process ' + str(procnum) + ' has started!')
         step_values, positions = random_walker(
                 f_i=f_i,
                 bounds=bounds,
