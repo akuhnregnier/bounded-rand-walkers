@@ -15,7 +15,7 @@ import time
 def disPtLn(m,c,x,y):
     return (-m*x+y-c)/np.sqrt(m**2+1)
 
-def Theta2D(x,y, m,c,side,k=55):
+def Theta2D(x,y, m,c,side,k=120):
 	'''
 	Return value of 2D Heaviside Theta with separator being line (m,c)
 	'''
@@ -28,7 +28,7 @@ def Theta2D(x,y, m,c,side,k=55):
 
 def SelectorFn(x,y,vertices):
     '''
-    Returns 1 for points inside boundary specified by arbitrary vertices and 0 otherwise       #problem with distance from line being suppressed in vertical lines!!!
+    Returns 1 for points inside boundary specified by arbitrary vertices and 0 otherwise
     The points are assumed to define a convex bounded space
     vertices := n by 2 array of coordinates
     '''
@@ -76,7 +76,7 @@ def genShaper(x,y,vertices):
 vertices = np.array([0.1,0.3,0.25,0.98,0.9,0.9,0.7,0.4,0.4,0.05])
 vertices = vertices.reshape(int(len(vertices)/2),2)
 resc_vertices = np.copy(vertices)
-
+'''
 #rescale x coordinates to fit in 1x1 square
 resc_vertices[:,0] += min(vertices[:,0])
 resc_vertices[:,0] /= max(resc_vertices[:,0])
@@ -84,7 +84,7 @@ resc_vertices[:,0] /= max(resc_vertices[:,0])
 #rescale y coordinates to fit in 1x1 square
 resc_vertices[:,1] += min(vertices[:,1])
 resc_vertices[:,1] /= max(resc_vertices[:,1])
-
+'''
 delta = 0.05
 x = np.arange(-np.sqrt(2), np.sqrt(2), delta) + delta/2.
 y = np.arange(-np.sqrt(2), np.sqrt(2), delta) + delta/2.
@@ -100,14 +100,20 @@ for i,xi in enumerate(x):
             stop = time.time()
             print('Predicted runtime: '+str(int(len(x)*len(y)/10.*(stop-start)/60.*5))+' minutes')
 
-        Z[i,j] = round(genShaper(xi,yi,resc_vertices), 3) #gSquare2D(xi+delta/2.,yi+delta/2.,30)
-        #Z[i,j] = SelectorFn(xi,yi,resc_vertices)
+        #Z[i,j] = round(genShaper(xi,yi,resc_vertices), 3) #gSquare2D(xi+delta/2.,yi+delta/2.,30)
+        Z[i,j] = SelectorFn(xi,yi,resc_vertices)
         
 print('calculations done')
 
 matplotlib.rcParams['contour.negative_linestyle'] = 'solid'
 plt.figure()
 CS = plt.contour(X, Y, Z, 7,
-                 colors='b',  # negative contours will be dashed by default
+                 colors='b',
                  )
 plt.clabel(CS, fontsize=9, inline=1)
+
+plt.figure()
+plt.contourf(X,Y,Z)
+plt.colorbar()
+print(vertices[:,0],vertices[:,1])
+plt.scatter(vertices[:,0],vertices[:,1])
