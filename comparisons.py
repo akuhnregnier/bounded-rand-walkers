@@ -8,7 +8,8 @@ import logging
 import os
 import matplotlib.pyplot as plt
 import numpy as np
-from rotation_steps import g1D, gRadialCircle, Pdf_Transform, rot_steps
+from rotation_steps import (g1D, gRadialCircle, Pdf_Transform,
+                            rot_steps, g1D_norm)
 from functions import Tophat_1D, Tophat_2D, Power, Exponential, Gaussian, Funky
 import scipy.integrate
 from data_generation import multi_random_walker, circle_points
@@ -68,6 +69,7 @@ def compare_1D(pdf, nr_bins, num_samples=int(1e4),
                pdf_name='tophat',
                pdf_kwargs={'test': 10}):
     logger = logging.getLogger(__name__)
+    logger.info('Starting 1D')
 
     pickle_name = ('1D_compare_data_{:}_{:}_{:}_{:}.pickle'
                    .format(pdf_name, pdf_kwargs, nr_bins,
@@ -85,17 +87,33 @@ def compare_1D(pdf, nr_bins, num_samples=int(1e4),
     pos_bin_edges = np.linspace(0, 1, nr_bins + 1)
     pos_bin_centres = get_centres(pos_bin_edges)
     g_analytical = []
+    logger.debug('Getting analytical g')
     for x in pos_bin_centres:
         g_analytical.append(g1D(x, pdf))
+    logger.debug('Got analytical g')
+
+    g_analytical = np.asarray(g_analytical)
+    # now normalise g_analytical
+    norm_const = g1D_norm(pdf)
+    g_analytical /= norm_const
+    logger.debug('normalised analytical g')
 
     step_bin_edges = np.linspace(-1, 1, nr_bins + 1)
     step_bin_centres = get_centres(step_bin_edges)
     f_t_analytical = []
+    logger.debug('getting analytical f_t')
     for x in step_bin_centres:
         f_t_analytical.append(Pdf_Transform(x, pdf, '1Dseg'))
+    logger.debug('got analytical f_t')
 
-    g_analytical = np.asarray(g_analytical)
     f_t_analytical = np.asarray(f_t_analytical)
+
+    # normalise f_t_analytical
+    # using the bins specified in ``step_bin_edges``
+    f_t_analytical /= np.sum(f_t_analytical
+                             * (step_bin_edges[1:]
+                                - step_bin_edges[:-1])
+                             )
 
     # numerical result
     step_values, positions = multi_random_walker(

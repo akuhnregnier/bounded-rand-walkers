@@ -109,10 +109,13 @@ def Pdf_Transform(step, f, geometry):
 
 def g1D(x, f):
     num = integrate.quad(f, -x, 1 - x)
-    den = integrate.dblquad(lambda x, y: f(
-        x), 0, 1, lambda x: -x, lambda x: 1 - x)
-    print(den[0], num[0])
-    return num[0] / den[0]
+    return num[0]
+
+
+def g1D_norm(f):
+    den = integrate.dblquad(lambda z, y: f(
+        z), 0, 1, lambda z: -z, lambda z: 1 - z)
+    return den[0]
 
 
 def betaCircle(r, l):
