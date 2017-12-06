@@ -33,41 +33,41 @@ def SelectorFn(x,y,vertices):
     vertices := n by 2 array of coordinates
     '''
     CoM = np.array([np.mean(vertices[:,0]), np.mean(vertices[:,1])])
-	
+
     flagf = 1
     for nside in range(len(vertices[:,0]) - 1):
-	
+
         m = (vertices[nside+1,1] - vertices[nside,1])/(vertices[nside+1,0] - vertices[nside,0])
         c = vertices[nside,1] - m * vertices[nside,0]
-		
-        if np.sign(-m*CoM[0] - c + CoM[1]) >= 0: 
+
+        if np.sign(-m*CoM[0] - c + CoM[1]) >= 0:
             flagf *= Theta2D(x,y,m,c,'upper')
-			
-        else: 
+
+        else:
             flagf *= Theta2D(x,y,m,c,'lower')
-            
+
     m = (vertices[0,1] - vertices[-1,1])/(vertices[0,0] - vertices[-1,0])
     c = vertices[0,1] - m * vertices[0,0]
-        		
-    if np.sign(-m*CoM[0] - c + CoM[1]) >= 0: 
+
+    if np.sign(-m*CoM[0] - c + CoM[1]) >= 0:
         flagf *= Theta2D(x,y,m,c,'upper')
-        			
-    else: 
+
+    else:
         flagf *= Theta2D(x,y,m,c,'lower')
-        
+
     return flagf
-	
+
 def genShaper(x,y,vertices):
     '''
     #rescale x coordinates to fit in 1x1 square
     vertices[:,0] += min(vertices[:,0])
     vertices[:,0] /= max(vertices[:,0])
-    	
+
     #rescale y coordinates to fit in 1x1 square
     vertices[:,1] += min(vertices[:,1])
     vertices[:,1] /= max(vertices[:,1])
     	'''
-    shaper = dblquad(lambda a, b: SelectorFn(a,b,vertices)*SelectorFn(x+a,y+b,vertices), 
+    shaper = dblquad(lambda a, b: SelectorFn(a,b,vertices)*SelectorFn(x+a,y+b,vertices),
                      0, 1, lambda x: 0, lambda x: 1, epsabs=1e-3)
     return shaper[0]
 
@@ -80,13 +80,13 @@ def genShaper(x,y,vertices):
 #rescale x coordinates to fit in 1x1 square
 resc_vertices[:,0] += min(vertices[:,0])
 resc_vertices[:,0] /= max(resc_vertices[:,0])
-	
+
 #rescale y coordinates to fit in 1x1 square
 resc_vertices[:,1] += min(vertices[:,1])
 resc_vertices[:,1] /= max(resc_vertices[:,1])
 '''
-'''
-delta = 0.05
+
+delta = 2 * np.sqrt(2) / 121.
 x = np.arange(-np.sqrt(2), np.sqrt(2), delta) + delta/2.
 y = np.arange(-np.sqrt(2), np.sqrt(2), delta) + delta/2.
 X, Y = np.meshgrid(x, y)
@@ -96,26 +96,27 @@ start = time.time()
 for i,xi in enumerate(x):
     for j,yi in enumerate(y):
         print(str(j + len(y)*i)+' over '+str(len(x)*len(y)))
-        
+
         if j + len(y)*i == 10:
             stop = time.time()
             print('Predicted runtime: '+str(int(len(x)*len(y)/10.*(stop-start)/60.*5))+' minutes')
 
-        #Z[i,j] = round(genShaper(xi,yi,resc_vertices), 3) #gSquare2D(xi+delta/2.,yi+delta/2.,30)
-        Z[i,j] = SelectorFn(xi,yi,resc_vertices)
-        
+        Z[i,j] = round(genShaper(xi,yi,resc_vertices), 3) #gSquare2D(xi+delta/2.,yi+delta/2.,30)
+        # Z[i,j] = SelectorFn(xi,yi,resc_vertices)
+
 print('calculations done')
 
-matplotlib.rcParams['contour.negative_linestyle'] = 'solid'
-plt.figure()
-CS = plt.contour(X, Y, Z, 7,
-                 colors='b',
-                 )
-plt.clabel(CS, fontsize=9, inline=1)
+np.save('weird_Z_{:}'.format(len(x)), Z)
 
-plt.figure()
-plt.contourf(X,Y,Z)
-plt.colorbar()
-print(vertices[:,0],vertices[:,1])
-plt.scatter(vertices[:,0],vertices[:,1])
-'''
+# matplotlib.rcParams['contour.negative_linestyle'] = 'solid'
+# plt.figure()
+# CS = plt.contour(X, Y, Z, 7,
+#                  colors='b',
+#                  )
+# plt.clabel(CS, fontsize=9, inline=1)
+#
+# plt.figure()
+# plt.contourf(X,Y,Z)
+# plt.colorbar()
+# print(vertices[:,0],vertices[:,1])
+# plt.scatter(vertices[:,0],vertices[:,1])
