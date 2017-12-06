@@ -73,9 +73,9 @@ def genShaper(x,y,vertices):
 
 #vertices = np.array([0.01,0,0,1,0.99,1,1,0.01]) #squre
 #vertices= np.array([0,0,0.01,1,1,0.5]) #triangle
-vertices = np.array([0.1,0.3,0.25,0.98,0.9,0.9,0.7,0.4,0.4,0.05])
-vertices = vertices.reshape(int(len(vertices)/2),2)
-resc_vertices = np.copy(vertices)
+#vertices = np.array([0.1,0.3,0.25,0.98,0.9,0.9,0.7,0.4,0.4,0.05])
+#vertices = vertices.reshape(int(len(vertices)/2),2)
+#resc_vertices = np.copy(vertices)
 '''
 #rescale x coordinates to fit in 1x1 square
 resc_vertices[:,0] += min(vertices[:,0])
@@ -84,6 +84,7 @@ resc_vertices[:,0] /= max(resc_vertices[:,0])
 #rescale y coordinates to fit in 1x1 square
 resc_vertices[:,1] += min(vertices[:,1])
 resc_vertices[:,1] /= max(resc_vertices[:,1])
+'''
 '''
 delta = 0.05
 x = np.arange(-np.sqrt(2), np.sqrt(2), delta) + delta/2.
@@ -117,3 +118,4 @@ plt.contourf(X,Y,Z)
 plt.colorbar()
 print(vertices[:,0],vertices[:,1])
 plt.scatter(vertices[:,0],vertices[:,1])
+'''

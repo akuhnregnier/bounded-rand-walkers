@@ -15,6 +15,8 @@ import scipy.integrate
 from data_generation import multi_random_walker, circle_points, weird_bounds
 from utils import get_centres, stats
 import matplotlib as mpl
+from shaperGeneral2D import genShaper
+import matplotlib.colors as colors
 try:
     import cPickle as pickle
 except ImportError:
@@ -24,7 +26,7 @@ except ImportError:
 mpl.rcParams['savefig.dpi'] = 300
 mpl.rcParams['savefig.bbox'] = 'tight'
 
-N_PROCESSES = 4
+N_PROCESSES = 1
 SHOW = True
 output_dir = os.path.abspath(os.path.join(
     os.path.dirname(__file__),
@@ -154,18 +156,50 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
     ft_y_values = get_centres(ft_ys)
     ft_xcoords, ft_ycoords = np.meshgrid(ft_x_values, ft_y_values)
     ft_rads = np.sqrt(ft_xcoords**2. + ft_ycoords**2.)
-    ft_total_mask = np.zeros_like(ft_rads, dtype=bool)
     f_t_analytical = np.zeros_like(ft_rads)
-    ft_unique_rads = np.unique(ft_rads)
 
-    for i, rad in enumerate(ft_unique_rads):
-        mask = np.isclose(rad, ft_rads)
-        f_t_analytical_value = Pdf_Transform(np.array([rad]), pdf, '1circle')
-        f_t_analytical[mask] = f_t_analytical_value
-        if not np.isnan(f_t_analytical_value):
-            ft_total_mask |= mask
-
-    f_t_analytical[~ft_total_mask] = 0.
+    # Analytical: multiply f_i with shaper to get f_t for Funky shape only
+    print(pdf_name)
+    if pdf_name == "funky":
+        print('Alex is wr0ng')
+        '''
+        f_t_analytical_new = np.zeros((f_t_analytical.shape))
+        
+        for row in range(f_t_analytical.shape[0]):
+            for col in range(f_t_analytical.shape[1]):
+                value = genShaper(ft_xs[col], ft_ys[row], bounds)
+                f_t_analytical_new[row, col] = f_t_analytical[row, col] * value
+        
+        f_t_analytical = f_t_analytical_new
+        '''
+        # load data
+        z = np.load('Z_funkyShape.npy')
+        
+        ft_total_mask = np.zeros_like(ft_rads, dtype=bool)
+        ft_unique_rads = np.unique(ft_rads)
+    
+        for i, rad in enumerate(ft_unique_rads):
+            mask = np.isclose(rad, ft_rads)
+            f_t_analytical_value = pdf(rad, 0)
+            f_t_analytical[mask] = f_t_analytical_value
+            if not np.isnan(f_t_analytical_value):
+                ft_total_mask |= mask
+    
+        f_t_analytical[~ft_total_mask] = 0.
+        
+        f_t_analytical =  f_t_analytical * z
+    else:
+        ft_total_mask = np.zeros_like(ft_rads, dtype=bool)
+        ft_unique_rads = np.unique(ft_rads)
+    
+        for i, rad in enumerate(ft_unique_rads):
+            mask = np.isclose(rad, ft_rads)
+            f_t_analytical_value = Pdf_Transform(np.array([rad]), pdf, '1circle')
+            f_t_analytical[mask] = f_t_analytical_value
+            if not np.isnan(f_t_analytical_value):
+                ft_total_mask |= mask
+    
+        f_t_analytical[~ft_total_mask] = 0.
 
     """
     do normalisation of the f_t_analytical probabilities
@@ -359,6 +393,7 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
         ax.set_aspect('equal')
     cbar_ax = fig1.add_axes([0.85, 0.15, 0.02, 0.7])
     fig1.colorbar(numerical_mesh, cax=cbar_ax)
+     
 
     """
     Plot of analytical and numerical f_t distributions
@@ -379,6 +414,7 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
                        ft_xs,
                        ft_ys,
                        f_t_analytical,
+                       norm=colors.PowerNorm(gamma=0.5),
                        vmin=min_value,
                        vmax=max_value,
                        )
@@ -387,6 +423,7 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
                        ft_xs,
                        ft_ys,
                        f_t_numerical,
+                       norm=colors.PowerNorm(gamma=0.5),
                        vmin=min_value,
                        vmax=max_value,
                        )
@@ -407,16 +444,16 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     ax.set_aspect('equal')
 
     # save all figures
-    suffix = ('{:} {:} {:} {:} {:}.png'
-              .format(pdf_name, pdf_kwargs, bounds_name,
-                      nr_bins, steps)
-              )
-    name = '2D analytical vs numerical g ' + suffix
-    fig1.savefig(os.path.join(output_dir, name))
-    name = '2D analytical vs numerical f_t ' + suffix
-    fig2.savefig(os.path.join(output_dir, name))
-    name = '2D orientationally normalised f_t ' + suffix
-    fig3.savefig(os.path.join(output_dir, name))
+   # suffix = ('{:} {:} {:} {:} {:}.png'
+   #           .format(pdf_name, pdf_kwargs, bounds_name,
+   #                   nr_bins, steps)
+    #          )
+    #name = '2D analytical vs numerical g ' + suffix
+    #fig1.savefig(os.path.join(output_dir, name))
+    #name = '2D analytical vs numerical f_t ' + suffix
+    #fig2.savefig(os.path.join(output_dir, name))
+    #name = '2D orientationally normalised f_t ' + suffix
+    #fig3.savefig(os.path.join(output_dir, name))
 
     if SHOW:
         plt.show()
@@ -454,7 +491,8 @@ if __name__ == '__main__':
                     'width': 2.
                     }),
                 ]
-        bins = 81
+
+        bins = 57
         for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 
