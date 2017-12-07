@@ -82,8 +82,12 @@ def compare_1D(pdf, nr_bins, num_samples=int(1e4),
     step_bin_centres = get_centres(step_bin_edges)
     f_t_analytical = []
     logger.debug('getting analytical f_t')
-    for x in step_bin_centres:
-        f_t_analytical.append(Pdf_Transform(x, pdf, '1Dseg'))
+    shaper = get_pdf_transform_shaper(step_bin_centres, '1Dseg')
+    f_i_analytical = np.array(
+            [pdf(x_coord) for x_coord in step_bin_centres],
+            dtype=np.float64
+            )
+    f_t_analytical = f_i_analytical * shaper
     logger.debug('got analytical f_t')
 
     f_t_analytical = np.asarray(f_t_analytical)
