@@ -375,6 +375,19 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     """
     fig1, axes = plt.subplots(1, 2, squeeze=True)
     fig1.subplots_adjust(right=0.8)
+    # rewrite the values close to 0 to nan, such that they are ignored when
+    # performing the colormapping.
+    analytical_mask = g_analytical < 1e-2
+    numerical_mask = g_numerical < 1e-2
+    g_analytical[analytical_mask] = np.nan
+    g_numerical[numerical_mask] = np.nan
+
+    # get the bounding box from the masks defined above
+    overall_mask = ~analytical_mask | ~numerical_mask
+    mask_x_indices, mask_y_indices = np.where(overall_mask)
+    x_lims = (np.min(mask_x_indices), np.max(mask_x_indices))
+    y_lims = (np.min(mask_y_indices), np.max(mask_y_indices))
+
     # use this max/min value with the hexbin vmax/vmin option
     # in order to have the same colour scaling for both
     # hexbin plots, such that the same colorbar may be used
@@ -385,26 +398,30 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
                         np.min(g_numerical[~np.isnan(g_numerical)])
                         ])
     axes[0].set_title(r'$Analytical \ g(x, y)$')
+
     analytical_mesh = axes[0].pcolormesh(
-                       pos_x_edges,
-                       pos_y_edges,
-                       g_analytical,
-                       vmin=min_value,
-                       vmax=max_value,
-                       )
+            pos_x_edges[x_lims[0]: x_lims[1] + 2],
+            pos_y_edges[y_lims[0]: y_lims[1] + 2],
+            g_analytical[x_lims[0]: x_lims[1] + 1,
+                         y_lims[0]: y_lims[1] + 1].T,
+            norm=colors.PowerNorm(gamma=2.),
+            vmin=min_value,
+            vmax=max_value,
+            )
     axes[1].set_title(r'$Numerical \ g(x, y)$')
     numerical_mesh = axes[1].pcolormesh(
-                       pos_x_edges,
-                       pos_y_edges,
-                       g_numerical,
-                       vmin=min_value,
-                       vmax=max_value,
-                       )
+            pos_x_edges[x_lims[0]: x_lims[1] + 2],
+            pos_y_edges[y_lims[0]: y_lims[1] + 2],
+            g_numerical[x_lims[0]: x_lims[1] + 1,
+                        y_lims[0]: y_lims[1] + 1].T,
+            norm=colors.PowerNorm(gamma=2.),
+            vmin=min_value,
+            vmax=max_value,
+            )
     for ax in axes:
         ax.set_aspect('equal')
     cbar_ax = fig1.add_axes([0.85, 0.15, 0.02, 0.7])
     fig1.colorbar(numerical_mesh, cax=cbar_ax)
-
 
     """
     Plot of analytical and numerical f_t distributions
@@ -424,8 +441,8 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     analytical_mesh = axes[0].pcolormesh(
                        ft_xs,
                        ft_ys,
-                       f_t_analytical,
-                       norm=colors.PowerNorm(gamma=0.5),
+                       f_t_analytical.T,
+                       norm=colors.PowerNorm(gamma=0.75),
                        vmin=min_value,
                        vmax=max_value,
                        )
@@ -433,8 +450,8 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     numerical_mesh = axes[1].pcolormesh(
                        ft_xs,
                        ft_ys,
-                       f_t_numerical,
-                       norm=colors.PowerNorm(gamma=0.5),
+                       f_t_numerical.T,
+                       norm=colors.PowerNorm(gamma=0.75),
                        vmin=min_value,
                        vmax=max_value,
                        )
