@@ -9,8 +9,6 @@ import os
 import numpy as np
 import matplotlib as mpl
 import matplotlib.colors as colors
-mpl.rc('text', usetex = True)
-mpl.rc('font', family = 'serif', size = 15)
 try:
     import cPickle as pickle
 except ImportError:
@@ -20,6 +18,8 @@ N_PROCESSES = 1
 SHOW = True
 mpl.rcParams['savefig.dpi'] = 600
 mpl.rcParams['savefig.bbox'] = 'tight'
+mpl.rc('text', usetex=True)
+mpl.rc('font', family='serif', size=15)
 if not SHOW:
     mpl.use('Agg')
 import matplotlib.pyplot as plt
@@ -417,11 +417,11 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     for ax in axes:
         ax.set_aspect('equal')
     cbar_ax = fig1.add_axes([0.85, 0.15, 0.02, 0.7])
-    
+
     axes[0].set_ylabel('y')
     axes[0].set_xlabel('x')
     axes[1].set_xlabel('x')
-    
+
     fig1.colorbar(numerical_mesh, cax=cbar_ax, label='P(x,y)')
 
     """
@@ -459,11 +459,11 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     for ax in axes:
         ax.set_aspect('equal')
     cbar_ax = fig2.add_axes([0.85, 0.15, 0.02, 0.7])
-    
+
     axes[0].set_ylabel('y (step size)')
     axes[0].set_xlabel('x (step size)')
     axes[1].set_xlabel('x (step size)')
-    
+
     fig2.colorbar(numerical_mesh, cax=cbar_ax, label='P(x,y)')
 
     """
@@ -484,7 +484,6 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     ax.set_ylabel('y (step size)')
     ax.set_xlabel('x (step size)')
 
-
     """
     Plot Malte's most incredible, astonishing, brilliant, amazong, Im running
     out of adjacctives, cool radial function stuff
@@ -496,16 +495,18 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     plt.ylabel('y (step size)')
 
     # save all figures
-    #suffix = ('{:} {:} {:} {:} {:}.png'
-    #          .format(pdf_name, pdf_kwargs, bounds_name,
-    #                  nr_bins, steps)
-    #          )
-    #name = '2D analytical vs numerical g ' + suffix
-    #fig1.savefig(os.path.join(output_dir, name))
-    #name = '2D analytical vs numerical f_t ' + suffix
-    #fig2.savefig(os.path.join(output_dir, name))
-    #name = '2D orientationally normalised f_t ' + suffix
-    #fig3.savefig(os.path.join(output_dir, name))
+    suffix = ('{:} {:} {:} {:} {:}.png'
+              .format(pdf_name, pdf_kwargs, bounds_name,
+                      nr_bins, steps)
+              )
+    name = '2D analytical vs numerical g ' + suffix
+    fig1.savefig(os.path.join(output_dir, name))
+    name = '2D analytical vs numerical f_t ' + suffix
+    fig2.savefig(os.path.join(output_dir, name))
+    name = '2D orientationally normalised f_t ' + suffix
+    fig3.savefig(os.path.join(output_dir, name))
+    name = '2D cross section f_t ' + suffix
+    fig4.savefig(os.path.join(output_dir, name))
 
     if SHOW:
         plt.show()
