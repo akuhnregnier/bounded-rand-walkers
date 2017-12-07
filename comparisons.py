@@ -277,7 +277,8 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
      f_t_numerical) = (
         compare_1D(pdf, nr_bins,
                    num_samples=steps,
-                   pdf_name=pdf_name)
+                   pdf_name=pdf_name,
+                   pdf_kwargs=pdf_kwargs)
         )
 
     print('g stats (mean, std)')
@@ -350,7 +351,8 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
                    num_samples=steps,
                    bounds=bounds,
                    bounds_name=bounds_name,
-                   pdf_name=pdf_name
+                   pdf_name=pdf_name,
+                   pdf_kwargs=pdf_kwargs
                    )
         )
 
