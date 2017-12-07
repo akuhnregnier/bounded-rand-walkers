@@ -9,6 +9,7 @@ import os
 import numpy as np
 import matplotlib as mpl
 import matplotlib.colors as colors
+from rad_interp import radial_interp
 try:
     import cPickle as pickle
 except ImportError:
@@ -255,6 +256,9 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
         bins=[ft_xs, ft_ys],
         normed=True
         )
+    
+    # try radiall calculation
+    avg, radii = radial_interp(f_t_numerical, ft_x_values, ft_y_values, 400,200, dtype='float')
 
     data = ((x_edges, y_edges),
             g_analytical,
@@ -262,7 +266,9 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
             (ft_xs, ft_ys),
             f_t_analytical,
             f_t_numerical,
-            rot_probs
+            rot_probs,
+            radii,
+            avg
             )
 
     with open(pickle_path, 'wb') as f:
@@ -353,7 +359,9 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
      (ft_xs, ft_ys),
      f_t_analytical,
      f_t_numerical,
-     rot_probs
+     rot_probs,
+     radii,
+     avg
      ) = (
         compare_2D(pdf, nr_bins,
                    num_samples=steps,
@@ -369,6 +377,7 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     print(stats(g_analytical.flatten(), g_numerical.flatten()))
     print('f_t stats (mean, std)')
     print(stats(f_t_analytical.flatten(), f_t_numerical.flatten()))
+    
 
     """
     Plot of analytical and numerical g distributions
@@ -477,16 +486,16 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     ax.set_aspect('equal')
 
     # save all figures
-    suffix = ('{:} {:} {:} {:} {:}.png'
-              .format(pdf_name, pdf_kwargs, bounds_name,
-                      nr_bins, steps)
-              )
-    name = '2D analytical vs numerical g ' + suffix
-    fig1.savefig(os.path.join(output_dir, name))
-    name = '2D analytical vs numerical f_t ' + suffix
-    fig2.savefig(os.path.join(output_dir, name))
-    name = '2D orientationally normalised f_t ' + suffix
-    fig3.savefig(os.path.join(output_dir, name))
+    #suffix = ('{:} {:} {:} {:} {:}.png'
+    #          .format(pdf_name, pdf_kwargs, bounds_name,
+    #                  nr_bins, steps)
+    #          )
+    #name = '2D analytical vs numerical g ' + suffix
+    #fig1.savefig(os.path.join(output_dir, name))
+    #name = '2D analytical vs numerical f_t ' + suffix
+    #fig2.savefig(os.path.join(output_dir, name))
+    #name = '2D orientationally normalised f_t ' + suffix
+    #fig3.savefig(os.path.join(output_dir, name))
 
     if SHOW:
         plt.show()
