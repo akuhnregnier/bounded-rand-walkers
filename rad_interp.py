@@ -41,14 +41,17 @@ def radial_interp(data, xcentre, ycentre, num_radii, num_points_per_radius, dtyp
     # generate mask
     filled_array = np.zeros((data_copy.shape[0]+2, data_copy.shape[1]+2), np.uint8)
     cv2.floodFill(data_copy, filled_array, (0,0), newVal=255)
-
-    mask = np.zeros((xcentre.size,ycentre.size), dtype=bool)
-    for row in range(data.shape[0]):
-        for col in range(data.shape[1]):
-            if data_copy[row,col] != 255:
-                mask[row,col] = True
-            else:
-                mask[row,col] = False
+    
+    if np.all(data_copy == 255):
+        mask = np.ones(data_copy.shape, np.int64)
+    else:
+        mask = np.zeros((xcentre.size,ycentre.size), dtype=bool)
+        for row in range(data.shape[0]):
+            for col in range(data.shape[1]):
+                if data_copy[row,col] != 255:
+                    mask[row,col] = True
+                else:
+                    mask[row,col] = False
 
     data_array = data[mask]
 
