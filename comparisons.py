@@ -292,33 +292,46 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
     print(stats(f_t_analytical, f_t_numerical))
 
     fig1, axes = plt.subplots(1, 2, squeeze=True)
-    axes[0].set_title(r'$Analytical \ g(x)$')
+    axes[0].set_title(r'Analytical $g(x)$')
     axes[0].plot(pos_bin_centres, g_analytical)
-    axes[1].set_title(r'$Numerical \ g(x)$')
+    axes[1].set_title(r'Numerical $g(x)$')
     axes[1].plot(pos_bin_centres, g_numerical)
+    axes[0].set_xlabel('x')
+    axes[0].set_ylabel('$g(x)$')
+    axes[1].set_xlabel('x')
+    
     fig2, axes2 = plt.subplots(1, 2, squeeze=True)
-    axes2[0].set_title(r'$Analytical \ f_t(x)$')
+    axes2[0].set_title(r'Analytical $f_t(x)$')
     axes2[0].plot(step_bin_centres,
                   f_t_analytical,
                   )
-    axes2[1].set_title(r'$Numerical \ f_t(x)$')
+    axes2[1].set_title(r'Numerical $f_t(x)$')
     axes2[1].plot(step_bin_centres,
                   f_t_numerical,
                   )
+    axes2[0].set_xlabel('x (step size)')
+    axes2[0].set_ylabel('$f_t(x)$')
+    axes2[1].set_xlabel('x (step size)')
 
     # plot figures on top of each other
     fig3 = plt.figure()
     ax3 = fig3.add_subplot(111)
-    ax3.set_title(r'$Comparing \ Analytical \ and \ Numerical \ g(x)$')
+    ax3.set_title(r'Comparing Analytical and Numerical $g(x)$')
     ax3.plot(pos_bin_centres, g_analytical, label='Analytical Solution')
     ax3.plot(pos_bin_centres, g_numerical, label='Numerical Solution')
+    ax3.set_xlabel('x')
+    ax3.set_ylabel('$g(x)$')
+    ax3.set_xlabel('x')
     ax3.legend()
 
     fig4 = plt.figure()
     ax4 = fig4.add_subplot(111)
-    ax4.set_title(r'$Comparing \ Analytical \ and \ Numerical \ f_t(x)$')
+    ax4.set_title(r'Comparing Analytical and Numerical $f_t(x)$')
     ax4.plot(step_bin_centres, f_t_analytical, label='Analytical Solution')
     ax4.plot(step_bin_centres, f_t_numerical, label='Numerical Result')
+    ax4.set_xlabel('x (step size)')
+    ax4.set_ylabel('$f_t(x)$')
+    ax4.set_xlabel('x (step size)')
     ax4.legend()
 
     # save all figures
@@ -495,8 +508,8 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     fig4, axis = plt.subplots(1,1, squeeze=True)
     plt.plot(radii, avg)
     plt.title(r'Average Radial Distribution of the numerical $f_t$')
-    plt.xlabel('x (step size)')
-    plt.ylabel('y (step size)')
+    plt.xlabel('r (step size)')
+    plt.ylabel('P(r)')
 
     # save all figures
     suffix = ('{:} {:} {:} {:} {:}.png'

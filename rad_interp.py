@@ -26,7 +26,6 @@ def radial_interp(data, xcentre, ycentre, num_radii, num_points_per_radius, dtyp
     given grid shape
     centre is the centre from which the radial process starts
 
-    the DATA array must be not normalised and INTEGERS
     """
     if dtype=='float':
         data_copy = np.zeros(data.shape, dtype=np.int32)
@@ -52,7 +51,6 @@ def radial_interp(data, xcentre, ycentre, num_radii, num_points_per_radius, dtyp
                 mask[row,col] = False
 
     data_array = data[mask]
-    # print('data_array',data_array, 'mask', mask)
 
     pos = np.zeros((data_array.size,2)) - 9
 
@@ -99,9 +97,9 @@ def radial_interp(data, xcentre, ycentre, num_radii, num_points_per_radius, dtyp
             avg[i] = 0.
         start += 1
 
-    # normalising averages
-    total = np.sum(avg)
-    avg= avg / total
+    # normalising averages weighted by area
+    total = np.sum(avg) * max_rad / float(num_radii)
+    avg /= total
 
     return avg, radii
 
