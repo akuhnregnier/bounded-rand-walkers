@@ -24,10 +24,10 @@ except ImportError:
     import pickle
 
 
-mpl.rcParams['savefig.dpi'] = 300
+mpl.rcParams['savefig.dpi'] = 600
 mpl.rcParams['savefig.bbox'] = 'tight'
 
-N_PROCESSES = 4
+N_PROCESSES = 8
 SHOW = True
 output_dir = os.path.abspath(os.path.join(
     os.path.dirname(__file__),
@@ -478,21 +478,33 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-    ONE_D = False
-    TWO_D = True
+    ONE_D = True
+    TWO_D = False
 
     if ONE_D:
         # 1D case
         pdfs_args_1D = [
-                (Funky, 'funky', {
-                    'width': 2.,
+                (Gaussian, 'gauss', {
+                    'width': 2.0,
+                    'centre': 0.
+                    }),
+                (Gaussian, 'gauss', {
+                    'width': 1.5,
+                    'centre': 0.
+                    }),
+                (Gaussian, 'gauss', {
+                    'width': 1.0,
+                    'centre': 0.
+                    }),
+                (Gaussian, 'gauss', {
+                    'width': 0.5,
                     'centre': 0.
                     }),
                 ]
         bins = 31
         for PDFClass, pdf_name, kwargs in pdfs_args_1D:
             pdf = PDFClass(**kwargs).pdf
-            compare_1D_plotting(pdf, bins, steps=int(1e5),
+            compare_1D_plotting(pdf, bins, steps=int(1e6),
                                 pdf_name=pdf_name,
                                 pdf_kwargs=kwargs)
 
