@@ -6,29 +6,31 @@ Compare analytical and numerical stepsize and positions distributions.
 """
 import logging
 import os
-import matplotlib.pyplot as plt
 import numpy as np
-from rotation_steps import (g1D, gRadialCircle, Pdf_Transform,
-                            rot_steps, g1D_norm, g2D)
-from functions import Tophat_1D, Tophat_2D, Power, Exponential, Gaussian, Funky
-import scipy.integrate
-from data_generation import multi_random_walker, circle_points, weird_bounds
-from utils import get_centres, stats
 import matplotlib as mpl
-from shaperGeneral2D import genShaper
 import matplotlib.colors as colors
-from shaperGeneral2D import get_weird_shaper
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
 
-
+N_PROCESSES = 1
+SHOW = True
 mpl.rcParams['savefig.dpi'] = 600
 mpl.rcParams['savefig.bbox'] = 'tight'
+if not SHOW:
+    mpl.use('Agg')
+import matplotlib.pyplot as plt
 
-N_PROCESSES = 8
-SHOW = True
+from rotation_steps import (g1D, gRadialCircle, Pdf_Transform,
+                            rot_steps, g1D_norm, g2D)
+from functions import Tophat_1D, Tophat_2D, Power, Exponential, Gaussian, Funky
+from data_generation import multi_random_walker, circle_points, weird_bounds
+from utils import get_centres, stats
+from shaperGeneral2D import genShaper
+from shaperGeneral2D import get_weird_shaper
+
+
 output_dir = os.path.abspath(os.path.join(
     os.path.dirname(__file__),
     'output'
@@ -518,13 +520,14 @@ if __name__ == '__main__':
                     }),
                 ]
 
-        bins = 57
+        bins = 61
         for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 
-            compare_2D_plotting(pdf, bins, steps=int(4e4),
+            compare_2D_plotting(pdf, bins, steps=int(8e3),
                                 pdf_name=pdf_name,
                                 pdf_kwargs=kwargs,
                                 bounds=weird_bounds,
-                                bounds_name='weird')
+                                bounds_name='weird',
+                                load=False)
 
