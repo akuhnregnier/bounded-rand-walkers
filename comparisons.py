@@ -39,7 +39,8 @@ if not os.path.isdir(output_dir):
 def compare_1D(pdf, nr_bins, num_samples=int(1e4),
                bounds=np.array([0, 1]),
                pdf_name='tophat',
-               pdf_kwargs={'test': 10}):
+               pdf_kwargs={'test': 10},
+               load=True):
     logger = logging.getLogger(__name__)
     logger.info('Starting 1D')
 
@@ -47,13 +48,13 @@ def compare_1D(pdf, nr_bins, num_samples=int(1e4),
                    .format(pdf_name, pdf_kwargs, nr_bins,
                            num_samples))
     pickle_path = os.path.join(output_dir, pickle_name)
-    if os.path.isfile(pickle_path):
+    if os.path.isfile(pickle_path) and load:
         with open(pickle_path, 'rb') as f:
             data = pickle.load(f)
         logger.info('read pickle data from {:}'.format(pickle_path))
         return data
     else:
-        logger.info('{:} is not a file (yet)'.format(pickle_path))
+        logger.info('not loading {:}'.format(pickle_path))
 
     # analytical result
     pos_bin_edges = np.linspace(0, 1, nr_bins + 1)
@@ -126,7 +127,8 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
                bounds=circle_points(samples=40),
                bounds_name='circle',
                pdf_name='tophat',
-               pdf_kwargs={'test': 10}):
+               pdf_kwargs={'test': 10},
+               load=True):
 
     logger = logging.getLogger(__name__)
 
@@ -134,13 +136,13 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
                    .format(pdf_name, pdf_kwargs, bounds_name,
                            nr_bins, num_samples))
     pickle_path = os.path.join(output_dir, pickle_name)
-    if os.path.isfile(pickle_path):
+    if os.path.isfile(pickle_path) and load:
         with open(pickle_path, 'rb') as f:
             data = pickle.load(f)
         logger.info('read pickle data from {:}'.format(pickle_path))
         return data
     else:
-        logger.info('{:} is not a file (yet)'.format(pickle_path))
+        logger.info('not loading {:}'.format(pickle_path))
 
     x_edges = np.linspace(-1, 1, nr_bins + 1, endpoint=True)
     y_edges = np.linspace(-1, 1, nr_bins + 1, endpoint=True)
@@ -267,7 +269,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
 
 
 def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
-                        pdf_kwargs={'test': 10}):
+                        pdf_kwargs={'test': 10}, load=True):
 
     (pos_bin_centres,
      g_analytical,
@@ -278,6 +280,7 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
         compare_1D(pdf, nr_bins,
                    num_samples=steps,
                    pdf_name=pdf_name,
+                   load=load,
                    pdf_kwargs=pdf_kwargs)
         )
 
@@ -337,7 +340,8 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
 def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
                         bounds=circle_points(samples=20),
                         bounds_name='circle', pdf_name='tophat',
-                        pdf_kwargs={'test': 10}):
+                        pdf_kwargs={'test': 10},
+                        load=True):
 
     ((pos_x_edges, pos_y_edges),
      g_analytical,
@@ -352,6 +356,7 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
                    bounds=bounds,
                    bounds_name=bounds_name,
                    pdf_name=pdf_name,
+                   load=load,
                    pdf_kwargs=pdf_kwargs
                    )
         )
