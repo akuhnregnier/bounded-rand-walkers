@@ -9,7 +9,6 @@ import os
 import numpy as np
 import matplotlib as mpl
 import matplotlib.colors as colors
-from rad_interp import radial_interp
 mpl.rc('text', usetex = True)
 mpl.rc('font', family = 'serif', size = 15)
 try:
@@ -26,12 +25,14 @@ if not SHOW:
 import matplotlib.pyplot as plt
 
 from rotation_steps import (g1D, gRadialCircle, Pdf_Transform,
-                            rot_steps, g1D_norm, g2D)
+                            rot_steps, g1D_norm, g2D,
+                            get_pdf_transform_shaper)
 from functions import Tophat_1D, Tophat_2D, Power, Exponential, Gaussian, Funky
 from data_generation import multi_random_walker, circle_points, weird_bounds
 from utils import get_centres, stats
 from shaperGeneral2D import genShaper
 from shaperGeneral2D import get_weird_shaper
+from rad_interp import radial_interp
 
 
 output_dir = os.path.abspath(os.path.join(
@@ -156,7 +157,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
     y_centres = get_centres(y_edges)
     xcoords, ycoords = np.meshgrid(x_centres, y_centres)
 
-    g_analytical = g2D(pdf, x_edges, y_edges, bounds)
+    g_analytical = g2D(pdf, x_edges, y_edges, bounds=bounds)
 
     ft_xs = np.linspace(-2, 2, nr_bins + 1, endpoint=True)
     ft_ys = np.linspace(-2, 2, nr_bins + 1, endpoint=True)
@@ -166,49 +167,33 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
     ft_rads = np.sqrt(ft_xcoords**2. + ft_ycoords**2.)
     f_t_analytical = np.zeros_like(ft_rads)
 
-    # Analytical: multiply f_i with shaper to get f_t for Funky shape only
-    print(pdf_name)
-    if pdf_name == "funky":
-        print('Malte has f00t')
-        '''
-        f_t_analytical_new = np.zeros((f_t_analytical.shape))
+    # Analytical: multiply f_i with shaper to get f_t
+    ft_total_mask = np.zeros_like(ft_rads, dtype=bool)
+    ft_unique_rads = np.unique(ft_rads)
 
-        for row in range(f_t_analytical.shape[0]):
-            for col in range(f_t_analytical.shape[1]):
-                value = genShaper(ft_xs[col], ft_ys[row], bounds)
-                f_t_analytical_new[row, col] = f_t_analytical[row, col] * value
+    for rad in ft_unique_rads:
+        mask = np.isclose(rad, ft_rads)
+        f_t_analytical_value = pdf(rad, 0)
+        f_t_analytical[mask] = f_t_analytical_value
+        if not np.isnan(f_t_analytical_value):
+            ft_total_mask |= mask
 
-        f_t_analytical = f_t_analytical_new
-        '''
-        # load data
-        # z = np.load('Z_funkyShape.npy')
-        z = get_weird_shaper(ft_x_values, ft_y_values)
+    f_t_analytical[~ft_total_mask] = 0.
 
-        ft_total_mask = np.zeros_like(ft_rads, dtype=bool)
-        ft_unique_rads = np.unique(ft_rads)
-
-        for i, rad in enumerate(ft_unique_rads):
-            mask = np.isclose(rad, ft_rads)
-            f_t_analytical_value = pdf(rad, 0)
-            f_t_analytical[mask] = f_t_analytical_value
-            if not np.isnan(f_t_analytical_value):
-                ft_total_mask |= mask
-
-        f_t_analytical[~ft_total_mask] = 0.
-
-        f_t_analytical *= z
+    if bounds_name == "weird":
+        shaper = get_weird_shaper(ft_x_values, ft_y_values)
     else:
-        ft_total_mask = np.zeros_like(ft_rads, dtype=bool)
-        ft_unique_rads = np.unique(ft_rads)
-
-        for i, rad in enumerate(ft_unique_rads):
+        shaper = np.zeros_like(f_t_analytical, dtype=np.float64)
+        rad_shaper_values = get_pdf_transform_shaper(ft_unique_rads, '1circle')
+        for rad, shaper_value in zip(ft_unique_rads, rad_shaper_values):
             mask = np.isclose(rad, ft_rads)
-            f_t_analytical_value = Pdf_Transform(np.array([rad]), pdf, '1circle')
-            f_t_analytical[mask] = f_t_analytical_value
-            if not np.isnan(f_t_analytical_value):
+            shaper[mask] = shaper_value
+            if not np.isnan(shaper_value):
                 ft_total_mask |= mask
 
         f_t_analytical[~ft_total_mask] = 0.
+
+    f_t_analytical *= shaper
 
     """
     do normalisation of the f_t_analytical probabilities
@@ -258,9 +243,10 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
         bins=[ft_xs, ft_ys],
         normed=True
         )
-    
-    # try radiall calculation
-    avg, radii = radial_interp(f_t_numerical, ft_x_values, ft_y_values, 400,200, dtype='float')
+
+    # try radial calculation
+    avg, radii = radial_interp(f_t_numerical, ft_x_values, ft_y_values,
+                               400, 200, dtype='float')
 
     data = ((x_edges, y_edges),
             g_analytical,
@@ -273,9 +259,9 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
             avg
             )
 
-    #with open(pickle_path, 'wb') as f:
-    #    pickle.dump(data, f, protocol=-1)
-    #logger.info('wrote pickle data to {:}'.format(pickle_path))
+    with open(pickle_path, 'wb') as f:
+        pickle.dump(data, f, protocol=-1)
+    logger.info('wrote pickle data to {:}'.format(pickle_path))
 
     return data
 
@@ -379,7 +365,6 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     print(stats(g_analytical.flatten(), g_numerical.flatten()))
     print('f_t stats (mean, std)')
     print(stats(f_t_analytical.flatten(), f_t_numerical.flatten()))
-    
 
     """
     Plot of analytical and numerical g distributions

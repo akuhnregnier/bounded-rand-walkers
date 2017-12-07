@@ -93,21 +93,38 @@ def Pdf_Transform(step, f, geometry):
     steps) & '1circle' (takes 2 element arrays)
 
     """
-
     if geometry == '1Dseg':
-
         if not isinstance(step, float):
             raise TypeError('for 1D pdf use float for step')
 
-        return (1 - np.abs(step)) * f(step) * 0.5 * (np.sign(1 - np.abs(step)) + 1)
+        return f(step) * (1 - np.abs(step)) * 0.5 * (np.sign(1 - np.abs(step)) + 1)
 
     if geometry == '1circle':
-
         if type(step) != np.ndarray:
             raise TypeError('for 2D pdf use 1d, 2 entry array, for step')
 
         l = np.linalg.norm(step)
         return f(step, 0) * (2 * np.arccos(l / 2) - 0.5 * np.sqrt((4 - l**2) * l**2))
+
+
+def get_pdf_transform_shaper(steps, geometry):
+    """
+    For given intrinsic step sizes, get the shaper function at those radial
+    distances from the centre.
+    pdf f gives probability p(stepsize) of
+    transformed pdf Geometry is a str, choices atm '1Dseg' (takes float
+    steps) & '1circle' (takes 2 element arrays)
+
+    """
+    if geometry == '1Dseg':
+        return (1 - np.abs(steps)) * 0.5 * (np.sign(1 - np.abs(steps)) + 1)
+
+    if geometry == '1circle':
+        shaper = np.zeros_like(steps, dtype=np.float64)
+        mask = steps < 2.
+        shaper[mask] = (2 * np.arccos(steps[mask] / 2)
+                        - 0.5 * np.sqrt((4 - steps[mask]**2) * steps[mask]**2))
+        return shaper
 
 
 def g1D(x, f):
@@ -148,7 +165,7 @@ def gRadialCircle(r, f):
 def g2D(f, xs_edges, ys_edges, bounds=weird_bounds):
     """2D position probability."""
     print('G2D')
-    bounds = DelaunayArray(weird_bounds, Delaunay(weird_bounds))
+    bounds = DelaunayArray(bounds, Delaunay(bounds))
     xs_centres = get_centres(xs_edges)
     ys_centres = get_centres(ys_edges)
     g_values = np.zeros((xs_centres.shape[0], ys_centres.shape[0]),
