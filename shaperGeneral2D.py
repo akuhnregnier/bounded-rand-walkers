@@ -5,26 +5,49 @@ Created on Tue Dec  5 11:57:15 2017
 
 @author: luca
 """
-
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
 from scipy.integrate import dblquad
+from scipy.interpolate import RegularGridInterpolator
 import time
+from data_generation import in_bounds, DelaunayArray, weird_bounds, Delaunay
+
+
+def get_weird_shaper(x_centres, y_centres):
+    """Load a saved shaper function and then interpolate this to the
+    desired grid.
+
+    """
+    delta = 2 * np.sqrt(2) / 121.
+    x_centres_orig = np.arange(-np.sqrt(2), np.sqrt(2), delta) + delta/2.
+    y_centres_orig = np.arange(-np.sqrt(2), np.sqrt(2), delta) + delta/2.
+    Z_orig = np.load('weird_Z_121.npy')
+    interp = RegularGridInterpolator(
+            (x_centres_orig, y_centres_orig),
+            Z_orig,
+            method='linear',
+            bounds_error=False,
+            fill_value=0.
+            )
+    X, Y = np.meshgrid(x_centres, y_centres, indexing='ij')
+    interp_shaper = interp((X, Y))
+
+    return interp_shaper
+
 
 def disPtLn(m,c,x,y):
     return (-m*x+y-c)/np.sqrt(m**2+1)
 
 def Theta2D(x,y, m,c,side,k=120):
-	'''
-	Return value of 2D Heaviside Theta with separator being line (m,c)
-	'''
-	if side == 'upper':
-		return 0.5 + 1/np.pi * np.arctan(+k* disPtLn(m,c,x,y))#(-m*x -c +y))
-	if side == 'lower':
-		return 0.5 + 1/np.pi * np.arctan(-k* disPtLn(m,c,x,y))#(-m*x -c +y))
-	else:
-		raise Exception('invalid choice of half plane argument for 2d Theta')
+    '''
+    Return value of 2D Heaviside Theta with separator being line (m,c)
+    '''
+    if side == 'upper':
+        return 0.5 + 1/np.pi * np.arctan(+k* disPtLn(m,c,x,y))#(-m*x -c +y))
+        if side == 'lower':
+            return 0.5 + 1/np.pi * np.arctan(-k* disPtLn(m,c,x,y))#(-m*x -c +y))
+    else:
+        raise Exception('invalid choice of half plane argument for 2d Theta')
 
 def SelectorFn(x,y,vertices):
     '''

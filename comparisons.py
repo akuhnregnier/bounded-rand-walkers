@@ -17,6 +17,7 @@ from utils import get_centres, stats
 import matplotlib as mpl
 from shaperGeneral2D import genShaper
 import matplotlib.colors as colors
+from shaperGeneral2D import get_weird_shaper
 try:
     import cPickle as pickle
 except ImportError:
@@ -175,7 +176,8 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
         f_t_analytical = f_t_analytical_new
         '''
         # load data
-        z = np.load('Z_funkyShape.npy')
+        # z = np.load('Z_funkyShape.npy')
+        z = get_weird_shaper(ft_x_values, ft_y_values)
 
         ft_total_mask = np.zeros_like(ft_rads, dtype=bool)
         ft_unique_rads = np.unique(ft_rads)
@@ -189,7 +191,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
 
         f_t_analytical[~ft_total_mask] = 0.
 
-        f_t_analytical =  f_t_analytical * z
+        f_t_analytical *= z
     else:
         ft_total_mask = np.zeros_like(ft_rads, dtype=bool)
         ft_unique_rads = np.unique(ft_rads)
