@@ -71,11 +71,11 @@ def genShaper(x,y,vertices):
                      0, 1, lambda x: 0, lambda x: 1, epsabs=1e-3)
     return shaper[0]
 
-#vertices = np.array([0.01,0,0,1,0.99,1,1,0.01]) #squre
-#vertices= np.array([0,0,0.01,1,1,0.5]) #triangle
-#vertices = np.array([0.1,0.3,0.25,0.98,0.9,0.9,0.7,0.4,0.4,0.05])
-#vertices = vertices.reshape(int(len(vertices)/2),2)
-#resc_vertices = np.copy(vertices)
+# vertices = np.array([0.01,0,0,1,0.99,1,1,0.01]) #squre
+# vertices= np.array([0,0,0.01,1,1,0.5]) #triangle
+vertices = np.array([0.1,0.3,0.25,0.98,0.9,0.9,0.7,0.4,0.4,0.05])
+vertices = vertices.reshape(int(len(vertices)/2),2)
+resc_vertices = np.copy(vertices)
 '''
 #rescale x coordinates to fit in 1x1 square
 resc_vertices[:,0] += min(vertices[:,0])
