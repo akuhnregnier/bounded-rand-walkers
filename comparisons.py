@@ -15,7 +15,7 @@ except ImportError:
     import pickle
 
 N_PROCESSES = 1
-SHOW = True
+SHOW = False
 mpl.rcParams['savefig.dpi'] = 600
 mpl.rcParams['savefig.bbox'] = 'tight'
 if not SHOW:
@@ -487,19 +487,19 @@ if __name__ == '__main__':
         # 1D case
         pdfs_args_1D = [
                 (Gaussian, 'gauss', {
-                    'width': 2.0,
+                    'scale': 2.0,
                     'centre': 0.
                     }),
                 (Gaussian, 'gauss', {
-                    'width': 1.5,
+                    'scale': 1.5,
                     'centre': 0.
                     }),
                 (Gaussian, 'gauss', {
-                    'width': 1.0,
+                    'scale': 1.0,
                     'centre': 0.
                     }),
                 (Gaussian, 'gauss', {
-                    'width': 0.5,
+                    'scale': 0.5,
                     'centre': 0.
                     }),
                 ]
