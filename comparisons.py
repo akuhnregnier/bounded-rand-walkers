@@ -10,13 +10,15 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.colors as colors
 from rad_interp import radial_interp
+mpl.rc('text', usetex = True)
+mpl.rc('font', family = 'serif', size = 15)
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
 
 N_PROCESSES = 1
-SHOW = False
+SHOW = True
 mpl.rcParams['savefig.dpi'] = 600
 mpl.rcParams['savefig.bbox'] = 'tight'
 if not SHOW:
@@ -271,9 +273,9 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
             avg
             )
 
-    with open(pickle_path, 'wb') as f:
-        pickle.dump(data, f, protocol=-1)
-    logger.info('wrote pickle data to {:}'.format(pickle_path))
+    #with open(pickle_path, 'wb') as f:
+    #    pickle.dump(data, f, protocol=-1)
+    #logger.info('wrote pickle data to {:}'.format(pickle_path))
 
     return data
 
@@ -406,7 +408,7 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     min_value = np.min([np.min(g_analytical[~np.isnan(g_analytical)]),
                         np.min(g_numerical[~np.isnan(g_numerical)])
                         ])
-    axes[0].set_title(r'$Analytical \ g(x, y)$')
+    axes[0].set_title(r'Analytical $g(x, y)$')
 
     analytical_mesh = axes[0].pcolormesh(
             pos_x_edges[x_lims[0]: x_lims[1] + 2],
@@ -417,7 +419,7 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
             vmin=min_value,
             vmax=max_value,
             )
-    axes[1].set_title(r'$Numerical \ g(x, y)$')
+    axes[1].set_title(r'Numerical $g(x, y)$')
     numerical_mesh = axes[1].pcolormesh(
             pos_x_edges[x_lims[0]: x_lims[1] + 2],
             pos_y_edges[y_lims[0]: y_lims[1] + 2],
@@ -430,7 +432,12 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     for ax in axes:
         ax.set_aspect('equal')
     cbar_ax = fig1.add_axes([0.85, 0.15, 0.02, 0.7])
-    fig1.colorbar(numerical_mesh, cax=cbar_ax)
+    
+    axes[0].set_ylabel('y')
+    axes[0].set_xlabel('x')
+    axes[1].set_xlabel('x')
+    
+    fig1.colorbar(numerical_mesh, cax=cbar_ax, label='P(x,y)')
 
     """
     Plot of analytical and numerical f_t distributions
@@ -446,7 +453,7 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     min_value = np.min([np.min(f_t_analytical[~np.isnan(f_t_analytical)]),
                         np.min(f_t_numerical[~np.isnan(f_t_numerical)])
                         ])
-    axes[0].set_title(r'$Analytical \ f_t(x, y)$')
+    axes[0].set_title(r'Analytical $f_t(x, y)$')
     analytical_mesh = axes[0].pcolormesh(
                        ft_xs,
                        ft_ys,
@@ -455,7 +462,7 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
                        vmin=min_value,
                        vmax=max_value,
                        )
-    axes[1].set_title(r'$Numerical \ f_t(x, y)$')
+    axes[1].set_title(r'Numerical $f_t(x, y)$')
     numerical_mesh = axes[1].pcolormesh(
                        ft_xs,
                        ft_ys,
@@ -467,23 +474,41 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     for ax in axes:
         ax.set_aspect('equal')
     cbar_ax = fig2.add_axes([0.85, 0.15, 0.02, 0.7])
-    fig2.colorbar(numerical_mesh, cax=cbar_ax)
+    
+    axes[0].set_ylabel('y (step size)')
+    axes[0].set_xlabel('x (step size)')
+    axes[1].set_xlabel('x (step size)')
+    
+    fig2.colorbar(numerical_mesh, cax=cbar_ax, label='P(x,y)')
 
     """
     'teardrop' f_t plot
     """
     fig3, ax = plt.subplots(1, 1, squeeze=True)
-    ax.set_title(r'$Orientationally\  normalised\  f_t(x, y)$')
+    ax.set_title(r'Orientationally normalised $f_t(x, y)$')
     rot_probs_plot = ax.pcolormesh(
             ft_xs,
             ft_ys,
             rot_probs.T,
             norm=colors.PowerNorm(gamma=0.5)
             )
-    fig3.colorbar(rot_probs_plot)
+    fig3.colorbar(rot_probs_plot, label='P(x,y)')
     ax.hlines((0.,), np.min(ft_xs), np.max(ft_xs),
               colors='b')
     ax.set_aspect('equal')
+    ax.set_ylabel('y (step size)')
+    ax.set_xlabel('x (step size)')
+
+
+    """
+    Plot Malte's most incredible, astonishing, brilliant, amazong, Im running
+    out of adjacctives, cool radial function stuff
+    """
+    fig4, axis = plt.subplots(1,1, squeeze=True)
+    plt.plot(radii, avg)
+    plt.title(r'Average Radial Distribution of the numerical $f_t$')
+    plt.xlabel('x (step size)')
+    plt.ylabel('y (step size)')
 
     # save all figures
     #suffix = ('{:} {:} {:} {:} {:}.png'
@@ -506,8 +531,8 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-    ONE_D = True
-    TWO_D = False
+    ONE_D = False
+    TWO_D = True
 
     if ONE_D:
         # 1D case
@@ -550,7 +575,7 @@ if __name__ == '__main__':
         for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 
-            compare_2D_plotting(pdf, bins, steps=int(8e3),
+            compare_2D_plotting(pdf, bins, steps=int(1e3),
                                 pdf_name=pdf_name,
                                 pdf_kwargs=kwargs,
                                 bounds=weird_bounds,
