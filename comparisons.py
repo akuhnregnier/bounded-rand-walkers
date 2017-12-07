@@ -23,7 +23,6 @@ mpl.rc('font', family='serif', size=15)
 if not SHOW:
     mpl.use('Agg')
 import matplotlib.pyplot as plt
-
 from rotation_steps import (g1D, gRadialCircle, Pdf_Transform,
                             rot_steps, g1D_norm, g2D,
                             get_pdf_transform_shaper)
@@ -118,13 +117,33 @@ def compare_1D(pdf, nr_bins, num_samples=int(1e4),
             density=True
             )
 
+    # reconstruct f_i from the numerics and the shaper function
+    f_i_numerical = np.zeros_like(f_t_numerical)
+    shaper_mask = ~np.isclose(shaper, 0)
+    f_i_numerical[shaper_mask] = (f_t_numerical[shaper_mask]
+                                  / shaper[shaper_mask])
+
+    # normalise f_i_numerical
+    # using the bins specified in ``step_bin_edges``
+    f_i_numerical /= np.sum(f_i_numerical
+                            * (step_bin_edges[1:]
+                               - step_bin_edges[:-1])
+                            )
+
+    f_i_analytical = np.array(
+            [pdf(x_coord) for x_coord in step_bin_centres],
+            dtype=np.float64
+            )
+
     data = (
         pos_bin_centres,
         g_analytical,
         g_numerical,
         step_bin_centres,
         f_t_analytical,
-        f_t_numerical
+        f_t_numerical,
+        f_i_analytical,
+        f_i_numerical,
         )
 
     with open(pickle_path, 'wb') as f:
@@ -248,9 +267,49 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
         normed=True
         )
 
+
+    # reconstruct f_i from the numerics and the shaper function
+    f_i_numerical = np.zeros_like(f_t_numerical)
+    shaper_mask = ~np.isclose(shaper, 0)
+    f_i_numerical[shaper_mask] = (f_t_numerical[shaper_mask]
+                                  / shaper[shaper_mask])
+
+    # normalise f_i_numerical
+    shaper_mask = np.isclose(shaper, 0)  # avoid dividing by 0
+    f_i_numerical[~shaper_mask] /= np.sum(
+            (f_i_numerical
+             * ((ft_xs[1:] - ft_xs[:-1]).reshape(-1, 1))
+                * (ft_ys[1:] - ft_ys[:-1]).reshape(1, -1)
+             )[~shaper_mask]
+            )
+
+    f_i_analytical = np.zeros_like(f_i_numerical, dtype=np.float64)
+    for i, step_x in enumerate(ft_x_values):
+        for j, step_y in enumerate(ft_y_values):
+            f_i_analytical[i, j] = pdf(step_x, step_y)
+
     # try radial calculation
-    avg, radii = radial_interp(f_t_numerical, ft_x_values, ft_y_values,
-                               400, 200, dtype='float')
+    num_radii = 400
+    num_points_per_radius = 200
+    avg_f_t_analytical, radii = radial_interp(
+            f_t_analytical, ft_x_values, ft_y_values,
+            num_radii, num_points_per_radius, dtype='float'
+            )
+
+    avg_f_t_numerical, _ = radial_interp(
+            f_t_numerical, ft_x_values, ft_y_values,
+            num_radii, num_points_per_radius, dtype='float'
+            )
+
+    avg_f_i_analytical, _ = radial_interp(
+            f_i_analytical, ft_x_values, ft_y_values,
+            num_radii, num_points_per_radius, dtype='float'
+            )
+
+    avg_f_i_numerical, _ = radial_interp(
+            f_i_numerical, ft_x_values, ft_y_values,
+            num_radii, num_points_per_radius, dtype='float'
+            )
 
     data = ((x_edges, y_edges),
             g_analytical,
@@ -260,7 +319,12 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
             f_t_numerical,
             rot_probs,
             radii,
-            avg
+            avg_f_t_analytical,
+            avg_f_t_numerical,
+            avg_f_i_analytical,
+            avg_f_i_numerical,
+            f_i_analytical,
+            f_i_numerical
             )
 
     with open(pickle_path, 'wb') as f:
@@ -278,7 +342,9 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
      g_numerical,
      step_bin_centres,
      f_t_analytical,
-     f_t_numerical) = (
+     f_t_numerical,
+     f_i_analytical,
+     f_i_numerical) = (
         compare_1D(pdf, nr_bins,
                    num_samples=steps,
                    pdf_name=pdf_name,
@@ -299,7 +365,7 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
     axes[0].set_xlabel('x')
     axes[0].set_ylabel('$g(x)$')
     axes[1].set_xlabel('x')
-    
+
     fig2, axes2 = plt.subplots(1, 2, squeeze=True)
     axes2[0].set_title(r'Analytical $f_t(x)$')
     axes2[0].plot(step_bin_centres,
@@ -319,10 +385,9 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
     ax3.set_title(r'Comparing Analytical and Numerical $g(x)$')
     ax3.plot(pos_bin_centres, g_analytical, label='Analytical Solution')
     ax3.plot(pos_bin_centres, g_numerical, label='Numerical Solution')
-    ax3.set_xlabel('x')
     ax3.set_ylabel('$g(x)$')
     ax3.set_xlabel('x')
-    ax3.legend()
+    ax3.legend(loc='best')
 
     fig4 = plt.figure()
     ax4 = fig4.add_subplot(111)
@@ -331,8 +396,16 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
     ax4.plot(step_bin_centres, f_t_numerical, label='Numerical Result')
     ax4.set_xlabel('x (step size)')
     ax4.set_ylabel('$f_t(x)$')
-    ax4.set_xlabel('x (step size)')
-    ax4.legend()
+    ax4.legend(loc='best')
+
+    fig5 = plt.figure()
+    ax5 = fig5.add_subplot(111)
+    ax5.set_title(r'Comparing Analytical and Numerical $f_i(x)$')
+    ax5.plot(step_bin_centres, f_i_analytical, label='Analytical Solution')
+    ax5.plot(step_bin_centres, f_i_numerical, label='Numerical Result')
+    ax5.set_xlabel('x (step size)')
+    ax5.set_ylabel('$f_i(x)$')
+    ax5.legend(loc='best')
 
     # save all figures
     suffix = ('{:} {:} {:} {:}.png'
@@ -345,6 +418,8 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
     fig3.savefig(os.path.join(output_dir, name))
     name = '1D overplot analytical vs numerical f_t ' + suffix
     fig4.savefig(os.path.join(output_dir, name))
+    name = '1D overplot analytical vs numerical f_i ' + suffix
+    fig5.savefig(os.path.join(output_dir, name))
 
     if SHOW:
         plt.show()
@@ -366,7 +441,12 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
      f_t_numerical,
      rot_probs,
      radii,
-     avg
+     avg_f_t_analytical,
+     avg_f_t_numerical,
+     avg_f_i_analytical,
+     avg_f_i_numerical,
+     f_i_analytical,
+     f_i_numerical
      ) = (
         compare_2D(pdf, nr_bins,
                    num_samples=steps,
@@ -505,11 +585,21 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     Plot Malte's most incredible, astonishing, brilliant, amazong, Im running
     out of adjacctives, cool radial function stuff
     """
-    fig4, axis = plt.subplots(1,1, squeeze=True)
-    plt.plot(radii, avg)
-    plt.title(r'Average Radial Distribution of the numerical $f_t$')
+    fig4, axis = plt.subplots(1, 1, squeeze=True)
+    plt.plot(radii, avg_f_t_numerical, label='Numerical Result')
+    plt.plot(radii, avg_f_t_analytical, label='Analytical Solution')
+    plt.title(r'Average Radial Distribution of $f_t$')
     plt.xlabel('r (step size)')
     plt.ylabel('P(r)')
+    plt.legend(loc='best')
+
+    fig5, axis = plt.subplots(1, 1, squeeze=True)
+    plt.plot(radii, avg_f_i_numerical, label='Numerical Solution')
+    plt.plot(radii, avg_f_i_analytical, label='Analytical Solution')
+    plt.title(r'Average Radial Distribution of $f_i$')
+    plt.xlabel('r (step size)')
+    plt.ylabel('P(r)')
+    plt.legend(loc='best')
 
     # save all figures
     suffix = ('{:} {:} {:} {:} {:}.png'
@@ -524,6 +614,8 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     fig3.savefig(os.path.join(output_dir, name))
     name = '2D cross section f_t ' + suffix
     fig4.savefig(os.path.join(output_dir, name))
+    name = '2D cross section f_i ' + suffix
+    fig5.savefig(os.path.join(output_dir, name))
 
     if SHOW:
         plt.show()
