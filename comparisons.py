@@ -15,7 +15,7 @@ except ImportError:
     import pickle
 
 N_PROCESSES = 1
-SHOW = True
+SHOW = False
 mpl.rcParams['savefig.dpi'] = 600
 mpl.rcParams['savefig.bbox'] = 'tight'
 mpl.rc('text', usetex=True)
@@ -46,7 +46,8 @@ def compare_1D(pdf, nr_bins, num_samples=int(1e4),
                bounds=np.array([0, 1]),
                pdf_name='tophat',
                pdf_kwargs={'test': 10},
-               load=True):
+               load=True,
+               blocks=60):
     logger = logging.getLogger(__name__)
     logger.info('Starting 1D')
 
@@ -104,6 +105,7 @@ def compare_1D(pdf, nr_bins, num_samples=int(1e4),
             f_i=pdf,
             bounds=bounds,
             steps=int(num_samples),
+            blocks=blocks
             )
     logger.debug('{:} {:}'.format(step_values.shape, positions.shape))
     g_numerical, pos_bin_edges = np.histogram(
@@ -158,7 +160,8 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
                bounds_name='circle',
                pdf_name='tophat',
                pdf_kwargs={'test': 10},
-               load=True):
+               load=True,
+               blocks=60):
 
     logger = logging.getLogger(__name__)
 
@@ -236,6 +239,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
             f_i=pdf,
             bounds=bounds,
             steps=int(num_samples),
+            blocks=blocks
             )
     logger.info('Finished numerical run')
     logger.debug('{:} {:}'.format(step_values.shape, positions.shape))
@@ -337,7 +341,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
 
 
 def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
-                        pdf_kwargs={'test': 10}, load=True):
+                        pdf_kwargs={'test': 10}, load=True, blocks=60):
 
     (pos_bin_centres,
      g_analytical,
@@ -351,7 +355,8 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
                    num_samples=steps,
                    pdf_name=pdf_name,
                    load=load,
-                   pdf_kwargs=pdf_kwargs)
+                   pdf_kwargs=pdf_kwargs,
+                   blocks=blocks)
         )
 
     print('g stats (mean, std)')
@@ -433,7 +438,8 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
                         bounds=circle_points(samples=20),
                         bounds_name='circle', pdf_name='tophat',
                         pdf_kwargs={'test': 10},
-                        load=True):
+                        load=True,
+                        blocks=60):
 
     ((pos_x_edges, pos_y_edges),
      g_analytical,
@@ -459,7 +465,8 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
                    bounds_name=bounds_name,
                    pdf_name=pdf_name,
                    load=load,
-                   pdf_kwargs=pdf_kwargs
+                   pdf_kwargs=pdf_kwargs,
+                   blocks=blocks
                    )
         )
 
@@ -631,24 +638,12 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-    ONE_D = False
-    TWO_D = True
+    ONE_D = True
+    TWO_D = False
 
     if ONE_D:
         # 1D case
         pdfs_args_1D = [
-                (Gaussian, 'gauss', {
-                    'scale': 2.0,
-                    'centre': 0.
-                    }),
-                (Gaussian, 'gauss', {
-                    'scale': 1.5,
-                    'centre': 0.
-                    }),
-                (Gaussian, 'gauss', {
-                    'scale': 1.0,
-                    'centre': 0.
-                    }),
                 (Gaussian, 'gauss', {
                     'scale': 0.5,
                     'centre': 0.
@@ -657,9 +652,10 @@ if __name__ == '__main__':
         bins = 31
         for PDFClass, pdf_name, kwargs in pdfs_args_1D:
             pdf = PDFClass(**kwargs).pdf
-            compare_1D_plotting(pdf, bins, steps=int(1e6),
+            compare_1D_plotting(pdf, bins, steps=int(1e5),
                                 pdf_name=pdf_name,
-                                pdf_kwargs=kwargs)
+                                pdf_kwargs=kwargs,
+                                blocks=100)
 
     if TWO_D:
         # 2D case
@@ -671,14 +667,15 @@ if __name__ == '__main__':
                     }),
                 ]
 
-        bins = 31
+        bins = 71
         for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 
-            compare_2D_plotting(pdf, bins, steps=int(1e3),
+            compare_2D_plotting(pdf, bins, steps=int(4e3),
                                 pdf_name=pdf_name,
                                 pdf_kwargs=kwargs,
                                 bounds=weird_bounds,
                                 bounds_name='weird',
-                                load=False)
+                                load=False,
+                                blocks=100)
 

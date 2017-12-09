@@ -187,7 +187,8 @@ class Sampler(object):
         output = []
         centre_indices = []
         if self. dims == 1:
-            axes_step_bounds = np.array((-position, 1 - position))
+            axes_step_bounds = np.array((-position,
+                                         1 - position)).reshape(1, 2)
         elif self.dims == 2:
             position = position.reshape(2, 1)
             axes_step_bounds = np.array([-1, 1]).reshape(1, 2) - position
