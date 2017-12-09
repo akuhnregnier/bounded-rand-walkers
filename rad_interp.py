@@ -71,7 +71,7 @@ def radial_interp(data, xcentre, ycentre, num_radii, num_points_per_radius, dtyp
 
     # interpolate on grid encompassing these points
     points = []
-    radii = np.zeros(num_radii + 1)
+    radii = np.zeros(num_radii)
     index = 0
     for r in np.linspace(0, max_rad, num_radii):
         x = r
@@ -86,9 +86,9 @@ def radial_interp(data, xcentre, ycentre, num_radii, num_points_per_radius, dtyp
     interp_points = griddata(pos, data_array, points, fill_value=-9.0)
 
     # average number of points at same radius
-    avg = np.zeros(num_radii + 1) - 9
+    avg = np.zeros(num_radii) - 9
     start = 0
-    for i in range(num_radii + 1):
+    for i in range(num_radii):
         values = interp_points[start*num_points_per_radius:(start+1)*num_points_per_radius]
         index = np.where(values != - 9.0)[0]
         if index.size != 0:
