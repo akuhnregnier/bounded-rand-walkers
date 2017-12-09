@@ -267,7 +267,6 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
         normed=True
         )
 
-
     # reconstruct f_i from the numerics and the shaper function
     f_i_numerical = np.zeros_like(f_t_numerical)
     shaper_mask = ~np.isclose(shaper, 0)
@@ -291,22 +290,22 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
     # try radial calculation
     num_radii = 400
     num_points_per_radius = 200
-    avg_f_t_analytical, radii = radial_interp(
+    avg_f_t_analytical, avg_f_t_ana_radii = radial_interp(
             f_t_analytical, ft_x_values, ft_y_values,
             num_radii, num_points_per_radius, dtype='float'
             )
 
-    avg_f_t_numerical, _ = radial_interp(
+    avg_f_t_numerical, avg_f_t_num_radii = radial_interp(
             f_t_numerical, ft_x_values, ft_y_values,
             num_radii, num_points_per_radius, dtype='float'
             )
 
-    avg_f_i_analytical, _ = radial_interp(
+    avg_f_i_analytical, avg_f_i_ana_radii = radial_interp(
             f_i_analytical, ft_x_values, ft_y_values,
             num_radii, num_points_per_radius, dtype='float'
             )
 
-    avg_f_i_numerical, _ = radial_interp(
+    avg_f_i_numerical, avg_f_i_num_radii = radial_interp(
             f_i_numerical, ft_x_values, ft_y_values,
             num_radii, num_points_per_radius, dtype='float'
             )
@@ -318,18 +317,21 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
             f_t_analytical,
             f_t_numerical,
             rot_probs,
-            radii,
+            avg_f_t_ana_radii,
             avg_f_t_analytical,
+            avg_f_t_num_radii,
             avg_f_t_numerical,
+            avg_f_i_ana_radii,
             avg_f_i_analytical,
+            avg_f_i_num_radii,
             avg_f_i_numerical,
             f_i_analytical,
             f_i_numerical
             )
 
-    #with open(pickle_path, 'wb') as f:
-    #    pickle.dump(data, f, protocol=-1)
-    #logger.info('wrote pickle data to {:}'.format(pickle_path))
+    with open(pickle_path, 'wb') as f:
+        pickle.dump(data, f, protocol=-1)
+    logger.info('wrote pickle data to {:}'.format(pickle_path))
 
     return data
 
@@ -440,10 +442,13 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
      f_t_analytical,
      f_t_numerical,
      rot_probs,
-     radii,
+     avg_f_t_ana_radii,
      avg_f_t_analytical,
+     avg_f_t_num_radii,
      avg_f_t_numerical,
+     avg_f_i_ana_radii,
      avg_f_i_analytical,
+     avg_f_i_num_radii,
      avg_f_i_numerical,
      f_i_analytical,
      f_i_numerical
@@ -586,16 +591,16 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     out of adjacctives, cool radial function stuff
     """
     fig4, axis = plt.subplots(1, 1, squeeze=True)
-    plt.plot(radii, avg_f_t_numerical, label='Numerical Result')
-    plt.plot(radii, avg_f_t_analytical, label='Analytical Solution')
+    plt.plot(avg_f_t_num_radii, avg_f_t_numerical, label='Numerical Result')
+    plt.plot(avg_f_t_ana_radii, avg_f_t_analytical, label='Analytical Solution')
     plt.title(r'Average Radial Distribution of $f_t$')
     plt.xlabel('r (step size)')
     plt.ylabel('P(r)')
     plt.legend(loc='best')
 
     fig5, axis = plt.subplots(1, 1, squeeze=True)
-    plt.plot(radii, avg_f_i_numerical, label='Numerical Solution')
-    plt.plot(radii, avg_f_i_analytical, label='Analytical Solution')
+    plt.plot(avg_f_i_num_radii, avg_f_i_numerical, label='Numerical Solution')
+    plt.plot(avg_f_i_ana_radii, avg_f_i_analytical, label='Analytical Solution')
     plt.title(r'Average Radial Distribution of $f_i$')
     plt.xlabel('r (step size)')
     plt.ylabel('P(r)')
@@ -606,16 +611,16 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
               .format(pdf_name, pdf_kwargs, bounds_name,
                       nr_bins, steps)
               )
-    #name = '2D analytical vs numerical g ' + suffix
-    #fig1.savefig(os.path.join(output_dir, name))
-    #name = '2D analytical vs numerical f_t ' + suffix
-    #fig2.savefig(os.path.join(output_dir, name))
-    #name = '2D orientationally normalised f_t ' + suffix
-    #fig3.savefig(os.path.join(output_dir, name))
-    #name = '2D cross section f_t ' + suffix
-    #fig4.savefig(os.path.join(output_dir, name))
-    #name = '2D cross section f_i ' + suffix
-    #fig5.savefig(os.path.join(output_dir, name))
+    name = '2D analytical vs numerical g ' + suffix
+    fig1.savefig(os.path.join(output_dir, name))
+    name = '2D analytical vs numerical f_t ' + suffix
+    fig2.savefig(os.path.join(output_dir, name))
+    name = '2D orientationally normalised f_t ' + suffix
+    fig3.savefig(os.path.join(output_dir, name))
+    name = '2D cross section f_t ' + suffix
+    fig4.savefig(os.path.join(output_dir, name))
+    name = '2D cross section f_i ' + suffix
+    fig5.savefig(os.path.join(output_dir, name))
 
     if SHOW:
         plt.show()
