@@ -5,7 +5,6 @@ Created on Thu Dec 07 09:41:02 2017
 @author: men14
 """
 import numpy as np
-from data_generation import weird_bounds, DelaunayArray, in_bounds, Delaunay
 from scipy.interpolate import griddata
 import cv2
 
@@ -24,7 +23,6 @@ def radial_interp(data, xcentre, ycentre, num_radii, num_points_per_radius, dtyp
     """
     Does radially interolation to average radially to get radial shape on
     given grid shape
-    centre is the centre from which the radial process starts
 
     """
     if dtype=='float':
@@ -41,7 +39,7 @@ def radial_interp(data, xcentre, ycentre, num_radii, num_points_per_radius, dtyp
     # generate mask
     filled_array = np.zeros((data_copy.shape[0]+2, data_copy.shape[1]+2), np.uint8)
     cv2.floodFill(data_copy, filled_array, (0,0), newVal=255)
-
+    
     if np.all(data_copy == 255):
         mask = np.ones((ycentre.size,xcentre.size), dtype=bool)
     else:
@@ -67,8 +65,8 @@ def radial_interp(data, xcentre, ycentre, num_radii, num_points_per_radius, dtyp
     pos[:,0] = pos_array[mask,0] # x positions
     pos[:,1] = pos_array[mask,1] # y positions
 
-    max_x = np.max(pos[:,0])
-    max_y = np.max(pos[:,1])
+    max_x = np.max(np.abs(pos[:,0]))
+    max_y = np.max(np.abs(pos[:,1]))
     max_rad = np.sqrt(max_x**2 + max_y**2)
 
     # interpolate on grid encompassing these points
@@ -80,7 +78,6 @@ def radial_interp(data, xcentre, ycentre, num_radii, num_points_per_radius, dtyp
         y = 0.
         radii[index] = r
         for angle in np.arange(0, 2*np.pi, 2*np.pi / num_points_per_radius):
-            #print('r', r, x, y)
             # rotate around z axis
             x,y = rotation(x,y,angle)
             points.append([x,y])

@@ -327,9 +327,9 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
             f_i_numerical
             )
 
-    with open(pickle_path, 'wb') as f:
-        pickle.dump(data, f, protocol=-1)
-    logger.info('wrote pickle data to {:}'.format(pickle_path))
+    #with open(pickle_path, 'wb') as f:
+    #    pickle.dump(data, f, protocol=-1)
+    #logger.info('wrote pickle data to {:}'.format(pickle_path))
 
     return data
 
@@ -606,16 +606,16 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
               .format(pdf_name, pdf_kwargs, bounds_name,
                       nr_bins, steps)
               )
-    name = '2D analytical vs numerical g ' + suffix
-    fig1.savefig(os.path.join(output_dir, name))
-    name = '2D analytical vs numerical f_t ' + suffix
-    fig2.savefig(os.path.join(output_dir, name))
-    name = '2D orientationally normalised f_t ' + suffix
-    fig3.savefig(os.path.join(output_dir, name))
-    name = '2D cross section f_t ' + suffix
-    fig4.savefig(os.path.join(output_dir, name))
-    name = '2D cross section f_i ' + suffix
-    fig5.savefig(os.path.join(output_dir, name))
+    #name = '2D analytical vs numerical g ' + suffix
+    #fig1.savefig(os.path.join(output_dir, name))
+    #name = '2D analytical vs numerical f_t ' + suffix
+    #fig2.savefig(os.path.join(output_dir, name))
+    #name = '2D orientationally normalised f_t ' + suffix
+    #fig3.savefig(os.path.join(output_dir, name))
+    #name = '2D cross section f_t ' + suffix
+    #fig4.savefig(os.path.join(output_dir, name))
+    #name = '2D cross section f_i ' + suffix
+    #fig5.savefig(os.path.join(output_dir, name))
 
     if SHOW:
         plt.show()
@@ -666,7 +666,7 @@ if __name__ == '__main__':
                     }),
                 ]
 
-        bins = 61
+        bins = 31
         for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 
