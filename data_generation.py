@@ -108,7 +108,7 @@ def format_time(time_value):
     return time_value, units
 
 
-def random_walker(f_i, bounds, steps=int(1e2), sampler=None):
+def random_walker(f_i, bounds, steps=int(1e2), sampler=None, blocks=50):
     """
     Trace a random walker given the ``bounds`` and the given
     intrinsic step size distribution ``f_i``.
@@ -215,7 +215,7 @@ def random_walker(f_i, bounds, steps=int(1e2), sampler=None):
 
     dimensions = bounds.shape[1]
     if sampler is None:
-        sampler = Sampler(f_i, dimensions, blocks=50)
+        sampler = Sampler(f_i, dimensions, blocks=blocks)
     positions = np.zeros((steps + 1, dimensions), dtype=np.float64)
     step_values = np.zeros((steps, dimensions), dtype=np.float64)
     # give random initial position
@@ -253,7 +253,7 @@ def random_walker(f_i, bounds, steps=int(1e2), sampler=None):
     return step_values, positions
 
 
-def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2)):
+def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2), blocks=60):
     """Generate random walks in multiple processes concurrently.
 
     If the ``n_processes==1``, the ``random_walker`` function is called in
@@ -282,6 +282,7 @@ def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2)):
                 f_i=f_i,
                 bounds=bounds,
                 steps=steps,
+                blocks=blocks
                 )
         print('data shapes (steps, positions)')
         print(step_values.shape, positions.shape)
@@ -291,7 +292,7 @@ def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2)):
         bounds = bounds.reshape(-1, 1)
     dimensions = bounds.shape[1]
 
-    sampler = Sampler(f_i, dimensions, blocks=60)
+    sampler = Sampler(f_i, dimensions, blocks=blocks)
 
     def rand_walk_worker(procnum, return_dict):
         """Worker function which executes the random_walker"""
