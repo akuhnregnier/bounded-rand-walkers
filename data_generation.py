@@ -9,8 +9,6 @@ size distributions numerically.
 import logging
 import multiprocessing
 import numpy as np
-import scipy.optimize
-import scipy.stats
 from scipy.spatial import Delaunay
 import matplotlib.pyplot as plt
 from time import time
@@ -108,7 +106,7 @@ def format_time(time_value):
     return time_value, units
 
 
-def random_walker(f_i, bounds, steps=int(1e2), sampler=None, blocks=50):
+def random_walker(f_i, bounds, steps=int(1e2), sampler=None, blocks=150):
     """
     Trace a random walker given the ``bounds`` and the given
     intrinsic step size distribution ``f_i``.
@@ -228,7 +226,8 @@ def random_walker(f_i, bounds, steps=int(1e2), sampler=None, blocks=50):
     for position_index in range(1, steps + 1):
         logger.debug('position index:{:} {:}'
                      .format(position_index, steps + 1))
-        if (position_index % ((steps + 1) / 10)) == 0 or (steps < 10):
+        if ((position_index % ((steps + 1) / 10)) == 0 or (steps < 10)) or (
+                position_index == int(4e3)):
             elapsed_time = time() - start_time
             elapsed_time_per_step = elapsed_time / position_index
             remaining_time = (steps - position_index) * elapsed_time_per_step
@@ -236,7 +235,7 @@ def random_walker(f_i, bounds, steps=int(1e2), sampler=None, blocks=50):
             remaining_time, remaining_time_units = format_time(remaining_time)
             logger.info('Position index:{:.1e} out of {:.1e}'
                         .format(position_index, steps + 1))
-            logger.info('Time elapsed:{:>4.1f} {:} remaining:{:0.1f} {:}'
+            logger.info('Time elapsed:{:>4.1f} {:}, remaining:{:0.1f} {:}'
                         .format(elapsed_time, elapsed_time_units,
                                 remaining_time, remaining_time_units))
         logger.debug('Current position:{:}'
@@ -250,10 +249,13 @@ def random_walker(f_i, bounds, steps=int(1e2), sampler=None, blocks=50):
                 positions[position_index] = next_position
                 step_values[step_index] = step
                 found = True
+    elapsed_time = time() - start_time
+    elapsed_time_per_step = elapsed_time / position_index
+    logger.info('time per step:{:.1e} s'.format(elapsed_time_per_step))
     return step_values, positions
 
 
-def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2), blocks=60):
+def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2), blocks=150):
     """Generate random walks in multiple processes concurrently.
 
     If the ``n_processes==1``, the ``random_walker`` function is called in
@@ -375,9 +377,10 @@ if __name__ == '__main__':
 
         step_values, positions = multi_random_walker(
                 n_processes=4,
-                f_i=Tophat_2D(extent=1.).pdf,
+                f_i=Tophat_2D(extent=1.5).pdf,
                 bounds=bounds,
-                steps=int(1e5),
+                steps=int(1e4),
+                blocks=3
                 )
 
         fig, axes = plt.subplots(1, 2, squeeze=True)
