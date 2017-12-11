@@ -62,6 +62,10 @@ class Sampler(object):
 
         self.logger.debug('starting fn max finding')
         self.max_box_values = np.zeros_like(self.pdf_values)
+
+        def inv_pdf(x):
+            return - self.pdf(*x)
+
         for indices in np.ndindex(*self.pdf_values.shape):
             min_edges = [edges[index] for edges, index in
                          zip(self.edges_list, indices)]
@@ -70,15 +74,38 @@ class Sampler(object):
             centres = [centres[index] for centres, index in
                        zip(self.centres_list, indices)]
 
-            # now perform the function minimization from ``min_edges`` to
-            # ``max_edges``, in order to find the maximum in that range.
-            # This is achieved by minimizing -1 * pdf.
-            x_max = optimize.fmin_tnc(
-                    func=lambda x: - self.pdf(*x),
-                    x0=centres,
-                    bounds=[(l, u) for l, u in zip(min_edges, max_edges)],
-                    approx_grad=True,
-                    disp=0)[0]
+            edges_array = np.array((min_edges, max_edges))
+            max_args = []
+            max_values = []
+            target_value = self.pdf_values[indices]
+            for x0_indices in np.ndindex(edges_array.squeeze().shape):
+                x0 = [edges_array[j, k] for k, j in enumerate(x0_indices)]
+                # now perform the function minimization from ``min_edges`` to
+                # ``max_edges``, in order to find the maximum in that range.
+                # This is achieved by minimizing -1 * pdf.
+                self.logger.debug('calling at:{:}'.format(x0))
+                x_max = optimize.fmin_tnc(
+                        func=inv_pdf,
+                        x0=x0,
+                        bounds=[(l, u) for l, u in zip(min_edges, max_edges)],
+                        approx_grad=True,
+                        disp=0)[0]
+                max_args.append(x_max)
+                max_values.append(self.pdf(*x_max))
+                if max_values[-1] > target_value:
+                    break
+            max_value = np.max(max_values)
+            if np.isclose(max_value, 0):
+                # the minimisation has been completed successfully
+                self.logger.debug('calling centre:{:}'.format(centres))
+                x_max = optimize.fmin_tnc(
+                        func=inv_pdf,
+                        x0=centres,
+                        bounds=[(l, u) for l, u in zip(min_edges, max_edges)],
+                        approx_grad=True,
+                        disp=0)[0]
+            self.logger.debug('max value:{:} at {:}'
+                              .format(self.pdf(*x_max), x_max))
             self.max_box_values[indices] = self.pdf(*x_max)
 
         self.max_box_values += 1e-5
@@ -86,7 +113,10 @@ class Sampler(object):
         # getting buried in the floating point limit
 
         diffs = self.max_box_values - self.pdf_values
-        assert np.min(diffs) >= 0, 'g(x) needs to be > f(x)'
+        invalid_indices = np.where(diffs < 0)
+        self.max_box_values[invalid_indices] = np.max(self.max_box_values)
+        diffs2 = self.max_box_values - self.pdf_values
+        assert np.min(diffs2) >= 0, 'g(x) needs to be > f(x)'
 
         self.logger.debug('starting lin_interp')
         self.lin_interp_cdf()
@@ -136,7 +166,7 @@ class Sampler(object):
                                 first_discrete_cdf.reshape(1, -1))
                                 )
         self.first_interpolator = RegularGridInterpolator(
-                # add the first 0 explitictly - this corresponds to the
+                # add the first 0 explicitly - this corresponds to the
                 # lowest coordinate possible, ie. the first edge
                 first_probs.reshape(1, -1),
                 first_edges.reshape(-1,)
@@ -256,12 +286,16 @@ if __name__ == '__main__':
 
     plt.close('all')
 
-    from functions import Gaussian
+    from time import time
+    from functions import Gaussian, Tophat_2D
     pdf = Gaussian(centre=0., scale=0.2).pdf
     sampler = Sampler(pdf, dimensions=1, blocks=5)
-    pdf2 = Gaussian(centre=(0., 0.), scale=0.2).pdf
+    # pdf2 = Gaussian(centre=(0., 0.), scale=0.7).pdf
+    pdf2 = Tophat_2D(extent=1.4).pdf
+    start = time()
     sampler2 = Sampler(pdf2, dimensions=2,
-                       blocks=40)
+                       blocks=30)
+    print('setup time:{:}'.format(time() - start))
 
     fig, axes = plt.subplots(2, 2)
     axes[0][0].plot(sampler.pdf_values)
@@ -278,14 +312,15 @@ if __name__ == '__main__':
     fig3 = plt.figure()
     plt.hist(ys, bins=60)
 
-    from time import time
     print('sampling')
     samples = []
     start = time()
-    N = 1000
+    N = int(1e4)
     for i in range(N):
-        samples.append(sampler2.sample(position=np.array((0.9, 0.5))))
-    print('duration1:{:}'.format(time() - start))
+        samples.append(sampler2.sample(position=np.array((0.1, 0.1))))
+    duration = time() - start
+    print('duration1:{:}'.format(duration))
+    print('per sample:{:0.1e}'.format(duration / float(N)))
     samples = np.squeeze(np.array(samples))
     fig, ax = plt.subplots()
     sampling = ax.hexbin(samples[:, 0], samples[:, 1])

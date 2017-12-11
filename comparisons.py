@@ -47,7 +47,7 @@ def compare_1D(pdf, nr_bins, num_samples=int(1e4),
                pdf_name='tophat',
                pdf_kwargs={'test': 10},
                load=True,
-               blocks=160):
+               blocks=50):
     logger = logging.getLogger(__name__)
     logger.info('Starting 1D')
 
@@ -161,7 +161,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
                pdf_name='tophat',
                pdf_kwargs={'test': 10},
                load=True,
-               blocks=160):
+               blocks=50):
 
     logger = logging.getLogger(__name__)
 
@@ -341,7 +341,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
 
 
 def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
-                        pdf_kwargs={'test': 10}, load=True, blocks=160):
+                        pdf_kwargs={'test': 10}, load=True, blocks=50):
 
     (pos_bin_centres,
      g_analytical,
@@ -439,7 +439,7 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
                         bounds_name='circle', pdf_name='tophat',
                         pdf_kwargs={'test': 10},
                         load=True,
-                        blocks=160):
+                        blocks=50):
 
     ((pos_x_edges, pos_y_edges),
      g_analytical,
@@ -655,7 +655,7 @@ if __name__ == '__main__':
             compare_1D_plotting(pdf, bins, steps=int(1e5),
                                 pdf_name=pdf_name,
                                 pdf_kwargs=kwargs,
-                                blocks=100)
+                                blocks=50)
 
     if TWO_D:
         # 2D case
@@ -677,5 +677,5 @@ if __name__ == '__main__':
                                 bounds=weird_bounds,
                                 bounds_name='weird',
                                 load=False,
-                                blocks=100)
+                                blocks=50)
 

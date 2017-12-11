@@ -106,7 +106,7 @@ def format_time(time_value):
     return time_value, units
 
 
-def random_walker(f_i, bounds, steps=int(1e2), sampler=None, blocks=150):
+def random_walker(f_i, bounds, steps=int(1e2), sampler=None, blocks=50):
     """
     Trace a random walker given the ``bounds`` and the given
     intrinsic step size distribution ``f_i``.
@@ -255,7 +255,7 @@ def random_walker(f_i, bounds, steps=int(1e2), sampler=None, blocks=150):
     return step_values, positions
 
 
-def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2), blocks=150):
+def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2), blocks=50):
     """Generate random walks in multiple processes concurrently.
 
     If the ``n_processes==1``, the ``random_walker`` function is called in
