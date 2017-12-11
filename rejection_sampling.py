@@ -9,7 +9,8 @@ import logging
 
 
 class Sampler(object):
-    def __init__(self, pdf, dimensions, blocks=100):
+    def __init__(self, pdf, dimensions, blocks=100,
+                 bounds=None):
         """
 
         Args:
@@ -29,11 +30,14 @@ class Sampler(object):
         self.logger = logging.getLogger(__name__)
         self.logger.debug('starting init')
         self.pdf = pdf
-        if dimensions == 1:
-            self.bounds = np.array([-1, 1]).reshape(2, 1)
-        elif dimensions == 2:
-            self.bounds = np.array([[-2, -2],
-                                    [2, 2]])
+        if bounds is None:
+            if dimensions == 1:
+                self.bounds = np.array([-1, 1]).reshape(2, 1)
+            elif dimensions == 2:
+                self.bounds = np.array([[-2, -2],
+                                        [2, 2]])
+        else:
+            self.bounds = bounds
         self.dims = dimensions
 
         # sample the input pdf at ``blocks`` positions
@@ -108,7 +112,7 @@ class Sampler(object):
                               .format(self.pdf(*x_max), x_max))
             self.max_box_values[indices] = self.pdf(*x_max)
 
-        self.max_box_values += 1e-5
+        self.max_box_values += 1e-7
         # prevent minuscule differences from
         # getting buried in the floating point limit
 
@@ -117,6 +121,33 @@ class Sampler(object):
         self.max_box_values[invalid_indices] = np.max(self.max_box_values)
         diffs2 = self.max_box_values - self.pdf_values
         assert np.min(diffs2) >= 0, 'g(x) needs to be > f(x)'
+        # trim the boundaries by reducing the bounds such that only
+        # non-zero parts of the pdf within the sampling region.
+        # This is important for a very narrow tophat distribution, for
+        # example
+        non_zero_mask = self.max_box_values > 1e-6
+        non_zero_indices = np.where(non_zero_mask)
+
+        # if dimensions == 1:
+        #     plt.plot(self.centres_list[0], non_zero_mask)
+        # elif dimensions == 2:
+        #     plt.imshow(non_zero_mask)
+        # plt.show()
+
+        bounds = np.zeros((2, dimensions), dtype=np.float64)
+        for i, axes_indices in enumerate(non_zero_indices):
+            # ``axes_indices`` contains the indices for one axis, which
+            # contribute to the bounds array in one column.
+            min_i, max_i = np.min(axes_indices), np.max(axes_indices)
+            bounds[0, i] = self.edges_list[i][min_i]
+            bounds[1, i] = self.edges_list[i][max_i + 1]
+        if not np.all(non_zero_mask) and not np.all(self.bounds == bounds):
+            # If there are some zero elements left, AND if the bounds have
+            # changed compared to the input bounds - last condition is
+            # necessary to avoid an endless loop in the 2D case
+            self.logger.debug('calling init again with reduced bounds:\n{:}'
+                              .format(bounds))
+            self.__init__(pdf, dimensions, blocks, bounds)
 
         self.logger.debug('starting lin_interp')
         self.lin_interp_cdf()
@@ -222,6 +253,11 @@ class Sampler(object):
         elif self.dims == 2:
             position = position.reshape(2, 1)
             axes_step_bounds = np.array([-1, 1]).reshape(1, 2) - position
+        axes_step_bounds = np.clip(
+                axes_step_bounds,
+                np.min(self.bounds, axis=0),
+                np.max(self.bounds, axis=0)
+                )
 
         for (i, (interpolators, edges, inv_interpolators, step_bounds)) in enumerate(
                 zip(self.interpolators, self.edges_list,
@@ -287,14 +323,20 @@ if __name__ == '__main__':
     plt.close('all')
 
     from time import time
-    from functions import Gaussian, Tophat_2D
-    pdf = Gaussian(centre=0., scale=0.2).pdf
-    sampler = Sampler(pdf, dimensions=1, blocks=5)
-    # pdf2 = Gaussian(centre=(0., 0.), scale=0.7).pdf
-    pdf2 = Tophat_2D(extent=1.4).pdf
+    from functions import Gaussian, Tophat_2D, Tophat_1D
+    # pdf = Gaussian(centre=0., scale=1e-7).pdf
+    pdf = Tophat_1D(centre=0., width=1e-7).pdf
     start = time()
-    sampler2 = Sampler(pdf2, dimensions=2,
-                       blocks=30)
+    sampler = Sampler(pdf, dimensions=1, blocks=int(1e2))
+    print('setup time 1D:{:}'.format(time() - start))
+    start = time()
+    N = int(1e3)
+    [sampler.sample(position=np.array([0.2,])) for i in range(N)]
+    print('sample time 1D (per sample):{:0.1e}'.format((time() - start) / N))
+    pdf2 = Gaussian(centre=(0., 0.), scale=0.2).pdf
+    # pdf2 = Tophat_2D(extent=1.4).pdf
+    start = time()
+    sampler2 = Sampler(pdf2, dimensions=2, blocks=60)
     print('setup time:{:}'.format(time() - start))
 
     fig, axes = plt.subplots(2, 2)
@@ -317,7 +359,7 @@ if __name__ == '__main__':
     start = time()
     N = int(1e4)
     for i in range(N):
-        samples.append(sampler2.sample(position=np.array((0.1, 0.1))))
+        samples.append(sampler2.sample(position=np.array((0.0, 0.0))))
     duration = time() - start
     print('duration1:{:}'.format(duration))
     print('per sample:{:0.1e}'.format(duration / float(N)))
@@ -344,3 +386,5 @@ if __name__ == '__main__':
     # sampling = ax.hexbin(samples[:, 0], samples[:, 1])
     # ax.set_aspect('equal')
     # fig.colorbar(sampling)
+    #
+    plt.show()
