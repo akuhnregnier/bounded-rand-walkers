@@ -51,7 +51,7 @@ def compare_1D(pdf, nr_bins, num_samples=int(1e4),
     logger = logging.getLogger(__name__)
     logger.info('Starting 1D')
 
-    pickle_name = ('1D_compare_data_{:}_{:}_{:}_{:}.pickle'
+    pickle_name = ('1D_compare_data_{:}_{:}_{:}_{:.1e}.pickle'
                    .format(pdf_name, pdf_kwargs, nr_bins,
                            num_samples))
     pickle_path = os.path.join(output_dir, pickle_name)
@@ -165,7 +165,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
 
     logger = logging.getLogger(__name__)
 
-    pickle_name = ('2D_compare_data_{:}_{:}_{:}_{:}_{:}.pickle'
+    pickle_name = ('2D_compare_data_{:}_{:}_{:}_{:}_{:.1e}.pickle'
                    .format(pdf_name, pdf_kwargs, bounds_name,
                            nr_bins, num_samples))
     pickle_path = os.path.join(output_dir, pickle_name)
@@ -415,7 +415,7 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
     ax5.legend(loc='best')
 
     # save all figures
-    suffix = ('{:} {:} {:} {:}.png'
+    suffix = ('{:} {:} {:} {:.1e}.png'
               .format(pdf_name, pdf_kwargs, nr_bins, steps))
     name = '1D analytical vs numerical g ' + suffix
     fig1.savefig(os.path.join(output_dir, name))
@@ -614,7 +614,7 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     plt.legend(loc='best')
 
     # save all figures
-    suffix = ('{:} {:} {:} {:} {:}.png'
+    suffix = ('{:} {:} {:} {:} {:.1e}.png'
               .format(pdf_name, pdf_kwargs, bounds_name,
                       nr_bins, steps)
               )
