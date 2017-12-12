@@ -18,6 +18,7 @@ N_PROCESSES = 1
 SHOW = False
 mpl.rcParams['savefig.dpi'] = 600
 mpl.rcParams['savefig.bbox'] = 'tight'
+mpl.rcParams['contour.negative_linestyle'] = 'solid'
 mpl.rc('text', usetex=True)
 mpl.rc('font', family='serif', size=15)
 if not SHOW:

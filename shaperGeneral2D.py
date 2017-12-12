@@ -11,17 +11,29 @@ from scipy.integrate import dblquad
 from scipy.interpolate import RegularGridInterpolator
 import time
 from data_generation import in_bounds, DelaunayArray, weird_bounds, Delaunay
+from relief_matrix_shaper import gen_shaper2D
+from utils import get_centres
 
 
-def get_weird_shaper(x_centres, y_centres):
+def get_weird_shaper(x_centres, y_centres, which='binary', divisions=150):
     """Load a saved shaper function and then interpolate this to the
     desired grid.
 
     """
-    delta = 2 * np.sqrt(2) / 121.
-    x_centres_orig = np.arange(-np.sqrt(2), np.sqrt(2), delta) + delta/2.
-    y_centres_orig = np.arange(-np.sqrt(2), np.sqrt(2), delta) + delta/2.
-    Z_orig = np.load('weird_Z_121.npy')
+    X, Y = np.meshgrid(x_centres, y_centres, indexing='ij')
+    if which == 'load':
+        delta = 2 * np.sqrt(2) / 121.
+        x_centres_orig = np.arange(-np.sqrt(2), np.sqrt(2), delta) + delta/2.
+        y_centres_orig = np.arange(-np.sqrt(2), np.sqrt(2), delta) + delta/2.
+        Z_orig = np.load('weird_Z_121.npy')
+    if which == 'binary':
+        X_orig, Y_orig, Z_orig = gen_shaper2D(divisions, weird_bounds)
+        x_centres_orig = get_centres(X_orig[0])
+        y_centres_orig = get_centres(Y_orig[:, 0])
+    else:
+        raise NotImplementedError(
+                'Choice of which:{:}, not supported'.format(which)
+                )
     interp = RegularGridInterpolator(
             (x_centres_orig, y_centres_orig),
             Z_orig,
@@ -29,7 +41,6 @@ def get_weird_shaper(x_centres, y_centres):
             bounds_error=False,
             fill_value=0.
             )
-    X, Y = np.meshgrid(x_centres, y_centres, indexing='ij')
     interp_shaper = interp((X, Y))
 
     return interp_shaper
