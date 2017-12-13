@@ -14,8 +14,8 @@ try:
 except ImportError:
     import pickle
 
-N_PROCESSES = 1
-SHOW = False
+N_PROCESSES = 4
+SHOW = True
 mpl.rcParams['savefig.dpi'] = 600
 mpl.rcParams['savefig.bbox'] = 'tight'
 mpl.rcParams['contour.negative_linestyle'] = 'solid'
@@ -29,9 +29,8 @@ from rotation_steps import (g1D, gRadialCircle, Pdf_Transform,
                             get_pdf_transform_shaper)
 from functions import Tophat_1D, Tophat_2D, Power, Exponential, Gaussian, Funky
 from data_generation import multi_random_walker, circle_points, weird_bounds
-from utils import get_centres, stats
-from shaperGeneral2D import genShaper
-from shaperGeneral2D import get_weird_shaper
+from utils import get_centres, stats, plot_name_clean
+from shaperGeneral2D import genShaper, get_weird_shaper
 from rad_interp import radial_interp
 
 
@@ -366,22 +365,24 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
     print(stats(f_t_analytical, f_t_numerical))
 
     fig1, axes = plt.subplots(1, 2, squeeze=True)
-    axes[0].set_title(r'Analytical $g(x)$')
+    axes[0].set_title(r'a.) Analytical $g(x)$')
     axes[0].plot(pos_bin_centres, g_analytical)
-    axes[1].set_title(r'Numerical $g(x)$')
-    axes[1].plot(pos_bin_centres, g_numerical)
+    axes[1].set_title(r'b.) Numerical $g(x)$')
+    axes[1].plot(pos_bin_centres, g_numerical,
+                 linestyle='', marker='o')
     axes[0].set_xlabel('x')
     axes[0].set_ylabel('$g(x)$')
     axes[1].set_xlabel('x')
 
     fig2, axes2 = plt.subplots(1, 2, squeeze=True)
-    axes2[0].set_title(r'Analytical $f_t(x)$')
+    axes2[0].set_title(r'a.) Analytical $f_t(x)$')
     axes2[0].plot(step_bin_centres,
                   f_t_analytical,
                   )
-    axes2[1].set_title(r'Numerical $f_t(x)$')
+    axes2[1].set_title(r'b.) Numerical $f_t(x)$')
     axes2[1].plot(step_bin_centres,
                   f_t_numerical,
+                  linestyle='', marker='o'
                   )
     axes2[0].set_xlabel('x (step size)')
     axes2[0].set_ylabel('$f_t(x)$')
@@ -390,27 +391,33 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
     # plot figures on top of each other
     fig3 = plt.figure()
     ax3 = fig3.add_subplot(111)
-    ax3.set_title(r'Comparing Analytical and Numerical $g(x)$')
-    ax3.plot(pos_bin_centres, g_analytical, label='Analytical Solution')
-    ax3.plot(pos_bin_centres, g_numerical, label='Numerical Solution')
+    # ax3.set_title(r'Comparing Analytical and Numerical $g(x)$')
+    ax3.plot(pos_bin_centres, g_analytical, label='Analytical')
+    ax3.plot(pos_bin_centres, g_numerical, label='Numerical',
+             linestyle='', marker='o'
+             )
     ax3.set_ylabel('$g(x)$')
-    ax3.set_xlabel('x')
+    ax3.set_xlabel('x (step size)')
     ax3.legend(loc='best')
 
     fig4 = plt.figure()
     ax4 = fig4.add_subplot(111)
-    ax4.set_title(r'Comparing Analytical and Numerical $f_t(x)$')
-    ax4.plot(step_bin_centres, f_t_analytical, label='Analytical Solution')
-    ax4.plot(step_bin_centres, f_t_numerical, label='Numerical Result')
+    # ax4.set_title(r'Comparing Analytical and Numerical $f_t(x)$')
+    ax4.plot(step_bin_centres, f_t_analytical, label='Analytical')
+    ax4.plot(step_bin_centres, f_t_numerical, label='Numerical',
+             linestyle='', marker='o'
+             )
     ax4.set_xlabel('x (step size)')
     ax4.set_ylabel('$f_t(x)$')
     ax4.legend(loc='best')
 
     fig5 = plt.figure()
     ax5 = fig5.add_subplot(111)
-    ax5.set_title(r'Comparing Analytical and Numerical $f_i(x)$')
-    ax5.plot(step_bin_centres, f_i_analytical, label='Analytical Solution')
-    ax5.plot(step_bin_centres, f_i_numerical, label='Numerical Result')
+    # ax5.set_title(r'Comparing Analytical and Numerical $f_i(x)$')
+    ax5.plot(step_bin_centres, f_i_analytical, label='Analytical')
+    ax5.plot(step_bin_centres, f_i_numerical, label='Numerical',
+             linestyle='', marker='o'
+             )
     ax5.set_xlabel('x (step size)')
     ax5.set_ylabel('$f_i(x)$')
     ax5.legend(loc='best')
@@ -419,15 +426,15 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
     suffix = ('{:} {:} {:} {:.1e}.png'
               .format(pdf_name, pdf_kwargs, nr_bins, steps))
     name = '1D analytical vs numerical g ' + suffix
-    fig1.savefig(os.path.join(output_dir, name))
+    fig1.savefig(os.path.join(output_dir, plot_name_clean(name)))
     name = '1D analytical vs numerical f_t ' + suffix
-    fig2.savefig(os.path.join(output_dir, name))
+    fig2.savefig(os.path.join(output_dir, plot_name_clean(name)))
     name = '1D overplot analytical vs numerical g ' + suffix
-    fig3.savefig(os.path.join(output_dir, name))
+    fig3.savefig(os.path.join(output_dir, plot_name_clean(name)))
     name = '1D overplot analytical vs numerical f_t ' + suffix
-    fig4.savefig(os.path.join(output_dir, name))
+    fig4.savefig(os.path.join(output_dir, plot_name_clean(name)))
     name = '1D overplot analytical vs numerical f_i ' + suffix
-    fig5.savefig(os.path.join(output_dir, name))
+    fig5.savefig(os.path.join(output_dir, plot_name_clean(name)))
 
     if SHOW:
         plt.show()
@@ -620,15 +627,15 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
                       nr_bins, steps)
               )
     name = '2D analytical vs numerical g ' + suffix
-    fig1.savefig(os.path.join(output_dir, name))
+    fig1.savefig(os.path.join(output_dir, plot_name_clean(name)))
     name = '2D analytical vs numerical f_t ' + suffix
-    fig2.savefig(os.path.join(output_dir, name))
+    fig2.savefig(os.path.join(output_dir, plot_name_clean(name)))
     name = '2D orientationally normalised f_t ' + suffix
-    fig3.savefig(os.path.join(output_dir, name))
+    fig3.savefig(os.path.join(output_dir, plot_name_clean(name)))
     name = '2D cross section f_t ' + suffix
-    fig4.savefig(os.path.join(output_dir, name))
+    fig4.savefig(os.path.join(output_dir, plot_name_clean(name)))
     name = '2D cross section f_i ' + suffix
-    fig5.savefig(os.path.join(output_dir, name))
+    fig5.savefig(os.path.join(output_dir, plot_name_clean(name)))
 
     if SHOW:
         plt.show()
@@ -639,8 +646,8 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-    ONE_D = True
-    TWO_D = False
+    ONE_D = False
+    TWO_D = True
 
     if ONE_D:
         # 1D case
@@ -653,7 +660,7 @@ if __name__ == '__main__':
         bins = 31
         for PDFClass, pdf_name, kwargs in pdfs_args_1D:
             pdf = PDFClass(**kwargs).pdf
-            compare_1D_plotting(pdf, bins, steps=int(1e5),
+            compare_1D_plotting(pdf, bins, steps=int(1e4),
                                 pdf_name=pdf_name,
                                 pdf_kwargs=kwargs,
                                 blocks=50)
@@ -668,15 +675,15 @@ if __name__ == '__main__':
                     }),
                 ]
 
-        bins = 71
+        bins = 131
         for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 
-            compare_2D_plotting(pdf, bins, steps=int(4e3),
+            compare_2D_plotting(pdf, bins, steps=int(5e7),
                                 pdf_name=pdf_name,
                                 pdf_kwargs=kwargs,
                                 bounds=weird_bounds,
                                 bounds_name='weird',
-                                load=False,
+                                load=True,
                                 blocks=50)
 

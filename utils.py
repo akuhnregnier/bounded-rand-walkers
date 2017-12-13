@@ -33,3 +33,24 @@ def stats(data1, data2, weights=None):
     weighted_stats = DescrStatsW(abs_difference, weights=weights)
 
     return weighted_stats.mean, weighted_stats.std_mean
+
+
+def plot_name_clean(name):
+    replace_pairs = [
+            ('{', '_'),
+            ('}', '_'),
+            ('(', '_'),
+            (')', '_'),
+            (':', '_'),
+            ("'", ''),
+            (',', '_'),
+            ('.', '_'),
+            (' ', '_'),
+            ('__', '_'),
+            ('__', '_'),
+            ('__', '_'),
+            ('_png', '.png')
+            ]
+    for i, j in replace_pairs:
+        name = name.replace(i, j)
+    return name
