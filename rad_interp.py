@@ -29,7 +29,7 @@ def radial_interp(data, xcentre, ycentre, num_radii, num_points_per_radius, dtyp
         data_copy = np.zeros(data.shape, dtype=np.int32)
         for row in range(data.shape[0]):
             for col in range(data.shape[1]):
-                if data[row,col] > 1e-10:
+                if data[row,col] > 1e-6:
                     data_copy[row,col] = 1
     elif dtype == 'int32':
         data_copy = data.copy()

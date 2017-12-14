@@ -305,51 +305,29 @@ class Sampler(object):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    # # 1D
-    # points = np.arange(4)
-    # values = np.arange(4)
-    # interp = RegularGridInterpolator(points.reshape(1, -1), values)
-    # # interp([2.4])
-
-    # # 2D
-    # N = 10000
-    # xs = np.arange(N)
-    # ys = np.arange(N)
-
-    # data = np.random.randn(xs.size, ys.size)
-    # interp2 = RegularGridInterpolator((xs, ys), data)
-    # # interp2([10, 12])
-
     plt.close('all')
 
+    print('Starting')
+
     from time import time
-    from functions import Gaussian, Tophat_2D, Tophat_1D
-    # pdf = Gaussian(centre=0., scale=1e-7).pdf
-    pdf = Tophat_1D(centre=0., width=1e-7).pdf
+    import sys
+    from functions import Gaussian, Tophat_2D, Tophat_1D, Funky
+    pdf2 = Funky(centre=(0., 0.), width=2.0).pdf
     start = time()
-    sampler = Sampler(pdf, dimensions=1, blocks=int(1e2))
-    print('setup time 1D:{:}'.format(time() - start))
-    start = time()
-    N = int(1e3)
-    [sampler.sample(position=np.array([0.2,])) for i in range(N)]
-    print('sample time 1D (per sample):{:0.1e}'.format((time() - start) / N))
-    pdf2 = Gaussian(centre=(0., 0.), scale=0.2).pdf
-    # pdf2 = Tophat_2D(extent=1.4).pdf
-    start = time()
-    sampler2 = Sampler(pdf2, dimensions=2, blocks=60)
+    sampler2 = Sampler(pdf2, dimensions=2, blocks=30)
     print('setup time:{:}'.format(time() - start))
 
-    fig, axes = plt.subplots(2, 2)
-    axes[0][0].plot(sampler.pdf_values)
-    axes[0][1].plot(sampler.max_box_values)
-    p1 = axes[1][0].imshow(sampler2.pdf_values)
-    p2 = axes[1][1].imshow(sampler2.max_box_values)
+    fig, axes = plt.subplots(1, 2, squeeze=True, sharey=True)
+    p1 = axes[0].imshow(sampler2.pdf_values)
+    axes[0].set_aspect('equal')
+    p2 = axes[1].imshow(sampler2.max_box_values)
+    axes[1].set_aspect('equal')
 
     fig2, ax2 = plt.subplots()
     ps = np.linspace(0, 1, 100)
     ax2.plot(ps, sampler2.first_interpolator(ps))
 
-    probs = np.random.uniform(0, 1, 1000000)
+    probs = np.random.uniform(0, 1, 100000)
     ys = sampler2.first_interpolator(probs)
     fig3 = plt.figure()
     plt.hist(ys, bins=60)
@@ -357,9 +335,9 @@ if __name__ == '__main__':
     print('sampling')
     samples = []
     start = time()
-    N = int(1e4)
+    N = int(1e3)
     for i in range(N):
-        samples.append(sampler2.sample(position=np.array((0.0, 0.0))))
+        samples.append(sampler2.sample(position=np.array((2.0, 0.0))))
     duration = time() - start
     print('duration1:{:}'.format(duration))
     print('per sample:{:0.1e}'.format(duration / float(N)))
@@ -368,23 +346,3 @@ if __name__ == '__main__':
     sampling = ax.hexbin(samples[:, 0], samples[:, 1])
     ax.set_aspect('equal')
     fig.colorbar(sampling)
-    # ax.hist(samples, bins=60)
-    #
-
-    # now compare to the original sampler
-    # from data_generation import generate_random_samples
-    # generate_random_samples.max_fn_value = 0
-
-    # print('sampling orig')
-    # samples = []
-    # start = time()
-    # samples = generate_random_samples(pdf2, np.array([0.9, 0.5]), N,
-    #                 dimensions=2)
-    # print('duration2:{:}'.format(time() - start))
-    # samples = np.squeeze(np.array(samples))
-    # fig, ax = plt.subplots()
-    # sampling = ax.hexbin(samples[:, 0], samples[:, 1])
-    # ax.set_aspect('equal')
-    # fig.colorbar(sampling)
-    #
-    plt.show()
