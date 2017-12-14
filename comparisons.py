@@ -277,6 +277,28 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
     f_i_numerical[shaper_mask] = (f_t_numerical[shaper_mask]
                                   / shaper[shaper_mask])
 
+    fig, axes = plt.subplots(1, 3, squeeze=True)
+    fig.suptitle('1')
+    axes[0].imshow(f_t_numerical)
+    axes[0].set_title('f t numerical')
+    axes[1].imshow(f_t_analytical)
+    axes[1].set_title('f t analytical')
+    axes[2].imshow(f_t_analytical - f_t_numerical)
+    axes[2].set_title('f t analytical - numerical')
+    for ax in axes:
+        ax.set_aspect('equal')
+    plt.show()
+
+    fig, axes = plt.subplots(1, 2, squeeze=True)
+    fig.suptitle('2')
+    axes[0].imshow(f_t_numerical)
+    axes[0].set_title('f t numerical')
+    axes[1].imshow(f_i_numerical)
+    axes[1].set_title('f i numerical')
+    for ax in axes:
+        ax.set_aspect('equal')
+    plt.show()
+
     # normalise f_i_numerical
     shaper_mask = np.isclose(shaper, 0)  # avoid dividing by 0
     f_i_numerical[~shaper_mask] /= np.sum(
@@ -307,6 +329,18 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
         for j, step_y in enumerate(ft_y_values):
             f_i_analytical[i, j] = pdf(step_x, step_y)
 
+    fig, axes = plt.subplots(1, 3, squeeze=True)
+    fig.suptitle('3')
+    axes[0].imshow(f_i_check)
+    axes[0].set_title('check')
+    axes[1].imshow(f_i_numerical)
+    axes[1].set_title('numerical')
+    axes[2].imshow(f_i_check - f_i_numerical)
+    axes[2].set_title('check - numerical')
+    for ax in axes:
+        ax.set_aspect('equal')
+    plt.show()
+
     # try radial calculation
     num_radii = 400
     num_points_per_radius = 200
@@ -336,10 +370,10 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
             )
 
     fig, axes = plt.subplots(1, 3, squeeze=True)
+    fig.suptitle('4')
     axes[0].imshow(f_i_check)
     axes[0].set_title('check')
     axes[1].imshow(f_i_numerical)
-    axes[1].set_title('numerical')
     axes[1].set_title('numerical')
     axes[2].imshow(f_i_check - f_i_numerical)
     axes[2].set_title('check - numerical')
@@ -717,7 +751,7 @@ if __name__ == '__main__':
         for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 
-            compare_2D_plotting(pdf, bins, steps=int(1e7),
+            compare_2D_plotting(pdf, bins, steps=int(1e4),
                                 pdf_name=pdf_name,
                                 pdf_kwargs=kwargs,
                                 bounds=circle_points(),

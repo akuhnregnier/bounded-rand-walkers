@@ -14,7 +14,8 @@ import scipy.stats
 from scipy.spatial import Delaunay
 import matplotlib.pyplot as plt
 from time import time
-from functions import Tophat_1D, Tophat_2D, Gaussian, Power, Exponential
+from functions import (Tophat_1D, Tophat_2D, Gaussian,
+                       Power, Exponential, Funky)
 
 
 # bounds with x coords in the first column and y coords in the second
@@ -344,10 +345,10 @@ def random_walker(f_i, bounds, steps=int(1e2), sampler=None, blocks=50):
     positions = np.zeros((steps + 1, dimensions), dtype=np.float64)
     step_values = np.zeros((steps, dimensions), dtype=np.float64)
     # give random initial position
-    positions[0] = np.random.uniform(low=0.0, high=1.0, size=dimensions)
+    positions[0] = np.random.uniform(low=-1.0, high=1.0, size=dimensions)
     while not in_bounds(positions[0], bounds):
         logger.debug('creating new initial position')
-        positions[0] = np.random.uniform(low=0.0, high=1.0, size=dimensions)
+        positions[0] = np.random.uniform(low=-1.0, high=1.0, size=dimensions)
     logger.info('Initial walker position:{:}'.format(positions[0]))
     start_time = time()
     for position_index in range(1, steps + 1):
@@ -430,8 +431,10 @@ def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2), blocks=50):
     manager = multiprocessing.Manager()
     return_dict = manager.dict()
     jobs = []
+    start = time() - (time() / 4.)
     for i in range(n_processes):
-        np.random.seed(i)
+        # np.random.seed(i)
+        np.random.seed(i + (int((time() - start) * 100) % 12))
         p = multiprocessing.Process(target=rand_walk_worker,
                                     args=(i, return_dict))
         jobs.append(p)
@@ -455,7 +458,8 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
 
     ONE_D = False
-    TWO_D = True
+    TWO_D = False
+    TWO_D_CHECK = True
     # test the sampling function
     # import scipy.stats
     # plt.figure()
@@ -529,5 +533,36 @@ if __name__ == '__main__':
 
         cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
         fig.colorbar(positions_bin, cax=cbar_ax)
+
+        plt.show()
+
+    if TWO_D_CHECK:
+        step_values, positions = multi_random_walker(
+                n_processes=4,
+                f_i=Funky(centre=(0., 0.), width=2.).pdf,
+                bounds=circle_points(),
+                steps=int(2e4),
+                )
+
+        fig, ax = plt.subplots(1, 1, squeeze=True)
+        ax.plot(positions[:, 0], label='x')
+        ax.plot(positions[:, 1], label='y')
+        plt.legend(loc='best')
+
+        fig, ax = plt.subplots(1, 1, squeeze=True)
+        ax.set_title('positions')
+        sorted_positions = positions[np.argsort(positions[:, 0])]
+        ax.plot(*sorted_positions.T)
+        ext_bounds = np.vstack((weird_bounds, weird_bounds[:1, :]))
+        ax.plot(*ext_bounds.T)
+
+        fig, ax = plt.subplots(1, 1, squeeze=True)
+        ax.set_title('step_values')
+        sorted_step_values = step_values[np.argsort(step_values[:, 0])]
+        ax.plot(*sorted_step_values.T)
+
+        fig, ax = plt.subplots(1, 1, squeeze=True)
+        ax.hexbin(*step_values.T)
+        ax.set_title('Step Values')
 
         plt.show()
