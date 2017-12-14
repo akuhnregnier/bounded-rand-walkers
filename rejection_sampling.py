@@ -314,7 +314,7 @@ if __name__ == '__main__':
     from functions import Gaussian, Tophat_2D, Tophat_1D, Funky
     pdf2 = Funky(centre=(0., 0.), width=2.0).pdf
     start = time()
-    sampler2 = Sampler(pdf2, dimensions=2, blocks=30)
+    sampler2 = Sampler(pdf2, dimensions=2, blocks=20)
     print('setup time:{:}'.format(time() - start))
 
     fig, axes = plt.subplots(1, 2, squeeze=True, sharey=True)
@@ -335,9 +335,9 @@ if __name__ == '__main__':
     print('sampling')
     samples = []
     start = time()
-    N = int(1e3)
+    N = int(7e3)
     for i in range(N):
-        samples.append(sampler2.sample(position=np.array((2.0, 0.0))))
+        samples.append(sampler2.sample(position=np.array((0.0, -1))))
     duration = time() - start
     print('duration1:{:}'.format(duration))
     print('per sample:{:0.1e}'.format(duration / float(N)))

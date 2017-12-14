@@ -711,7 +711,7 @@ if __name__ == '__main__':
                     }),
                 ]
 
-        bins = 61
+        bins = 31
         for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 
@@ -719,7 +719,7 @@ if __name__ == '__main__':
                                 pdf_name=pdf_name,
                                 pdf_kwargs=kwargs,
                                 bounds=circle_points(),
-                                bounds_name='weird',
+                                bounds_name='circle',
                                 load=False,
                                 blocks=70)
 
