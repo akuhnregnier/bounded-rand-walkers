@@ -335,7 +335,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
             num_radii, num_points_per_radius, dtype='float'
             )
 
-    fig, axes = plt.subplots(1, 3, squeeze=True, sharey=True)
+    fig, axes = plt.subplots(1, 3, squeeze=True)
     axes[0].imshow(f_i_check)
     axes[0].set_title('check')
     axes[1].imshow(f_i_numerical)
@@ -343,6 +343,8 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
     axes[1].set_title('numerical')
     axes[2].imshow(f_i_check - f_i_numerical)
     axes[2].set_title('check - numerical')
+    for ax in axes:
+        ax.set_aspect('equal')
     plt.show()
 
     data = ((x_edges, y_edges),
@@ -693,7 +695,7 @@ if __name__ == '__main__':
                     'centre': 0.
                     }),
                 ]
-        bins = 31
+        bins = 21
         for PDFClass, pdf_name, kwargs in pdfs_args_1D:
             pdf = PDFClass(**kwargs).pdf
             compare_1D_plotting(pdf, bins, steps=int(1e4),
@@ -715,7 +717,7 @@ if __name__ == '__main__':
         for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 
-            compare_2D_plotting(pdf, bins, steps=int(5e3),
+            compare_2D_plotting(pdf, bins, steps=int(1e7),
                                 pdf_name=pdf_name,
                                 pdf_kwargs=kwargs,
                                 bounds=circle_points(),
