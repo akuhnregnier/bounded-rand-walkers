@@ -165,7 +165,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
 
     logger = logging.getLogger(__name__)
 
-    pickle_name = ('2D_compare_data_{:}_{:}_{:}_{:}_{:.1e}.pickle'
+    pickle_name = ('2D_compare_data_{:}_{:}_{:}_{:}_{:.1e}_+check.pickle'
                    .format(pdf_name, pdf_kwargs, bounds_name,
                            nr_bins, num_samples))
     pickle_path = os.path.join(output_dir, pickle_name)
@@ -286,6 +286,22 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
              )[~shaper_mask]
             )
 
+    # verify that the shaper function is indeed working correctly - by
+    # transforming the analytical f_t to f_i using the shaper function.
+    f_i_check = np.zeros_like(f_t_analytical)
+    shaper_mask = ~np.isclose(shaper, 0)
+    f_i_check[shaper_mask] = (f_t_analytical[shaper_mask]
+                                  / shaper[shaper_mask])
+
+    # normalise f_i_check
+    shaper_mask = np.isclose(shaper, 0)  # avoid dividing by 0
+    f_i_check[~shaper_mask] /= np.sum(
+            (f_i_check
+             * ((ft_xs[1:] - ft_xs[:-1]).reshape(-1, 1))
+                * (ft_ys[1:] - ft_ys[:-1]).reshape(1, -1)
+             )[~shaper_mask]
+            )
+
     f_i_analytical = np.zeros_like(f_i_numerical, dtype=np.float64)
     for i, step_x in enumerate(ft_x_values):
         for j, step_y in enumerate(ft_y_values):
@@ -314,6 +330,11 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
             num_radii, num_points_per_radius, dtype='float'
             )
 
+    avg_f_i_check, avg_f_i_chk_radii = radial_interp(
+            f_i_check, ft_x_values, ft_y_values,
+            num_radii, num_points_per_radius, dtype='float'
+            )
+
     data = ((x_edges, y_edges),
             g_analytical,
             g_numerical,
@@ -329,6 +350,8 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
             avg_f_i_analytical,
             avg_f_i_num_radii,
             avg_f_i_numerical,
+            avg_f_i_chk_radii,
+            avg_f_i_check,
             f_i_analytical,
             f_i_numerical
             )
@@ -464,6 +487,8 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
      avg_f_i_analytical,
      avg_f_i_num_radii,
      avg_f_i_numerical,
+     avg_f_i_chk_radii,
+     avg_f_i_check,
      f_i_analytical,
      f_i_numerical
      ) = (
@@ -510,7 +535,7 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     min_value = np.min([np.min(g_analytical[~np.isnan(g_analytical)]),
                         np.min(g_numerical[~np.isnan(g_numerical)])
                         ])
-    axes[0].set_title(r'Analytical $g(x, y)$')
+    axes[0].set_title(r'a.) Analytical $g(x, y)$')
 
     analytical_mesh = axes[0].pcolormesh(
             pos_x_edges[x_lims[0]: x_lims[1] + 2],
@@ -521,7 +546,7 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
             vmin=min_value,
             vmax=max_value,
             )
-    axes[1].set_title(r'Numerical $g(x, y)$')
+    axes[1].set_title(r'b.) Numerical $g(x, y)$')
     numerical_mesh = axes[1].pcolormesh(
             pos_x_edges[x_lims[0]: x_lims[1] + 2],
             pos_y_edges[y_lims[0]: y_lims[1] + 2],
@@ -555,7 +580,7 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     min_value = np.min([np.min(f_t_analytical[~np.isnan(f_t_analytical)]),
                         np.min(f_t_numerical[~np.isnan(f_t_numerical)])
                         ])
-    axes[0].set_title(r'Analytical $f_t(x, y)$')
+    axes[0].set_title(r'a.) Analytical $f_t(x, y)$')
     analytical_mesh = axes[0].pcolormesh(
                        ft_xs,
                        ft_ys,
@@ -564,7 +589,7 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
                        vmin=min_value,
                        vmax=max_value,
                        )
-    axes[1].set_title(r'Numerical $f_t(x, y)$')
+    axes[1].set_title(r'b.) Numerical $f_t(x, y)$')
     numerical_mesh = axes[1].pcolormesh(
                        ft_xs,
                        ft_ys,
@@ -606,19 +631,20 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     out of adjacctives, cool radial function stuff
     """
     fig4, axis = plt.subplots(1, 1, squeeze=True)
-    plt.plot(avg_f_t_num_radii, avg_f_t_numerical, label='Numerical Result')
-    plt.plot(avg_f_t_ana_radii, avg_f_t_analytical, label='Analytical Solution')
-    plt.title(r'Average Radial Distribution of $f_t$')
+    plt.plot(avg_f_t_num_radii, avg_f_t_numerical, label='Numerical')
+    plt.plot(avg_f_t_ana_radii, avg_f_t_analytical, label='Analytical')
+    # plt.title(r'Average Radial Distribution of $f_t$')
     plt.xlabel('r (step size)')
-    plt.ylabel('P(r)')
+    plt.ylabel('$f_t(r)$')
     plt.legend(loc='best')
 
     fig5, axis = plt.subplots(1, 1, squeeze=True)
-    plt.plot(avg_f_i_num_radii, avg_f_i_numerical, label='Numerical Solution')
-    plt.plot(avg_f_i_ana_radii, avg_f_i_analytical, label='Analytical Solution')
-    plt.title(r'Average Radial Distribution of $f_i$')
+    plt.plot(avg_f_i_num_radii, avg_f_i_numerical, label='Numerical')
+    plt.plot(avg_f_i_ana_radii, avg_f_i_analytical, label='Analytical')
+    plt.plot(avg_f_i_chk_radii, avg_f_i_check, label='Check', zorder=1000)
+    # plt.title(r'Average Radial Distribution of $f_i$')
     plt.xlabel('r (step size)')
-    plt.ylabel('P(r)')
+    plt.ylabel('$f_i(r)$')
     plt.legend(loc='best')
 
     # save all figures
@@ -675,15 +701,15 @@ if __name__ == '__main__':
                     }),
                 ]
 
-        bins = 131
+        bins = 111
         for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 
-            compare_2D_plotting(pdf, bins, steps=int(5e7),
+            compare_2D_plotting(pdf, bins, steps=int(2e5),
                                 pdf_name=pdf_name,
                                 pdf_kwargs=kwargs,
                                 bounds=weird_bounds,
                                 bounds_name='weird',
-                                load=True,
+                                load=False,
                                 blocks=50)
 
