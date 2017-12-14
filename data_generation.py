@@ -9,11 +9,12 @@ size distributions numerically.
 import logging
 import multiprocessing
 import numpy as np
+import scipy.optimize
+import scipy.stats
 from scipy.spatial import Delaunay
 import matplotlib.pyplot as plt
 from time import time
 from functions import Tophat_1D, Tophat_2D, Gaussian, Power, Exponential
-from rejection_sampling import Sampler
 
 
 # bounds with x coords in the first column and y coords in the second
@@ -49,6 +50,133 @@ class DelaunayArray(np.ndarray):
         if obj is None:
             return
         self.tri = getattr(obj, 'tri', None)
+
+
+def generate_random_samples(f_i, position, nr_samples, dimensions=1):
+    """
+    Use the rejection sampling method in order to generate
+    samples distributed according to the pdf f_i.
+
+    The random sampling is done within the interval [-pos_i, 1 - pos_i]
+    with either ``pos_0 = x`` (1D) or ``pos_0 = x`` and ``pos_1 = y`` (2D)!
+
+    Args:
+        f_i (function): The intrinsic step size distribution,
+            given as a pdf (probability distribution function).
+            The function should return a probability for
+            each step size ``l``, where ``l`` should be
+            between 0 and 1. For a 1D problem, ``f_i`` should take
+            one argument, whereas for a 2D problem, it should take
+            two aguments.
+        position (numpy.ndarray): Current position of the random
+            walker. The number of elements in this array dictate the
+            dimensionality of the program, ie. 1 element -> 1D,
+            2 elements -> 2D.
+        nr_samples (int): The number of samples to return
+        dimensions (int): The dimensionality of the problem. Defaults to 1.
+
+    Returns:
+        numpy.ndarray: Array of samples distributed according
+            to ``f_i``.
+
+    Examples:
+        >>> import scipy.stats
+        >>> import matplotlib.pyplot as plt
+        >>> from data_generation import generate_random_samples
+        >>> plt.figure()
+        >>> plt.hist(generate_random_samples(
+        ...     scipy.stats.norm(0.5, 0.1).pdf, 1000))
+        >>> plt.show()
+
+    """
+    logger = logging.getLogger(__name__)
+    if generate_random_samples.max_fn_value != 0:
+        logger.debug('Retrieving max fn value')
+        max_fn = generate_random_samples.max_fn_value
+        logger.debug('Got:{:}'.format(max_fn))
+    else:
+        logger.info('Finding maximum of f_i')
+        # need to be careful, since the minimiser might never find the
+        # minimum if the function is like a tophat function - ie. if it is
+        # flat in some regions!
+        if dimensions == 1:
+            # look at the function value at many positions and then find
+            # the minimum around the minimum of the points discovered so
+            # far
+            trial_x_coords = np.linspace(0, 1, 1000)
+            fn_values = [f_i(x) for x in trial_x_coords]
+            trial_max_x = trial_x_coords[np.argmax(fn_values)]
+            max_x = scipy.optimize.fmin(lambda x: -f_i(x), trial_max_x)
+            max_fn = f_i(max_x)
+        elif dimensions == 2:
+            # look at the function value at many positions and then find
+            # the minimum around the minimum of the points discovered so
+            # far
+            N = 100
+            trial_coords = np.linspace(-1, 1, N)
+            fn_values = np.zeros((N, N), dtype=np.float64)
+            for i in range(N):
+                for j in range(N):
+                    fn_values[i, j] = f_i(trial_coords[i], trial_coords[j])
+
+            max_index = np.unravel_index(np.argmax(fn_values),
+                                         fn_values.shape)
+            trial_max_x = trial_coords[max_index[0]]
+            trial_max_y = trial_coords[max_index[1]]
+            max_args = scipy.optimize.fmin(lambda args: -f_i(*args),
+                                           (trial_max_x, trial_max_y)
+                                           )
+            max_fn = f_i(*max_args)
+        # fix this value so it does not need to be calculated next time
+        logger.info('storing maximum fn value')
+        generate_random_samples.max_fn_value = max_fn
+        logger.debug('max_fn:{:}'.format(generate_random_samples.max_fn_value))
+
+    # imagine as throwing darts, with a 'height' randomly distributed
+    # from 0 to ``max_fn``, and a position randomly along x (1D)
+    # or (x, y) (2D). If the 'height' is below the return value
+    # of ``f_i`` at the randomly chosen point, keep the point.
+    # If not, randomly sample position and 'height' again.
+
+    logger.debug('position:{:}'.format(position))
+
+    distribution = np.zeros((nr_samples, dimensions), dtype=np.float64) - 9999
+    for sample in range(nr_samples):
+        found = False
+        tries = 0
+        while not found:
+            tries += 1
+            logger.debug('tries:{:}'.format(tries))
+            # get random position and height
+            random_p = np.random.uniform(low=0.0, high=max_fn, size=1)
+            # bounded between -pos_i and 1 - pos_i
+            if dimensions == 1:
+                random_args = [
+                        np.random.uniform(
+                            low=-pos_i, high=1-pos_i, size=1)
+                        for pos_i in position
+                        ]
+            elif dimensions == 2:
+                random_args = [
+                        np.random.uniform(
+                            low=-(1 + pos_i), high=1-pos_i, size=1)
+                        for pos_i in position
+                        ]
+            else:
+                raise NotImplementedError('{:} dimensions not implemented'
+                                          .format(dimensions))
+
+            # now test the actual p value at the position
+            # given by ``random_args``
+
+            actual_p = f_i(*random_args)
+            logger.debug('args: {:} actual p: {:} random p:{:}'
+                         .format(random_args, actual_p, random_p))
+            if random_p < actual_p:
+                # add to record
+                distribution[sample] = random_args
+                found = True
+    return distribution
 
 
 def in_bounds(position, bounds):
@@ -206,14 +334,13 @@ def random_walker(f_i, bounds, steps=int(1e2), sampler=None, blocks=50):
 
     """
     logger = logging.getLogger(__name__)
+    generate_random_samples.max_fn_value = 0
     if bounds.size == bounds.shape[0]:
         bounds = bounds.reshape(-1, 1)
     else:
         bounds = DelaunayArray(bounds, Delaunay(bounds))
 
     dimensions = bounds.shape[1]
-    if sampler is None:
-        sampler = Sampler(f_i, dimensions, blocks=blocks)
     positions = np.zeros((steps + 1, dimensions), dtype=np.float64)
     step_values = np.zeros((steps, dimensions), dtype=np.float64)
     # give random initial position
@@ -243,7 +370,12 @@ def random_walker(f_i, bounds, steps=int(1e2), sampler=None, blocks=50):
         step_index = position_index - 1
         found = False
         while not found:
-            step = sampler.sample(positions[position_index - 1]).reshape(-1,)
+            step = generate_random_samples(
+                    f_i=f_i,
+                    position=positions[position_index - 1],
+                    nr_samples=1,
+                    dimensions=dimensions
+                    )
             next_position = positions[position_index - 1] + step
             if in_bounds(next_position, bounds):
                 positions[position_index] = next_position
@@ -280,22 +412,11 @@ def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2), blocks=50):
     assert n_processes >= 1
     if n_processes == 1:
         # simply execute random_walker while ignoring the multiprocessing
-        step_values, positions = random_walker(
+        return random_walker(
                 f_i=f_i,
                 bounds=bounds,
                 steps=steps,
-                blocks=blocks
                 )
-        print('data shapes (steps, positions)')
-        print(step_values.shape, positions.shape)
-        return step_values, positions
-
-    if bounds.size == bounds.shape[0]:
-        bounds = bounds.reshape(-1, 1)
-    dimensions = bounds.shape[1]
-
-    sampler = Sampler(f_i, dimensions, blocks=blocks)
-
     def rand_walk_worker(procnum, return_dict):
         """Worker function which executes the random_walker"""
         print('process ' + str(procnum) + ' has started!')
@@ -303,7 +424,6 @@ def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2), blocks=50):
                 f_i=f_i,
                 bounds=bounds,
                 steps=int(steps / n_processes),
-                sampler=sampler
                 )
         return_dict[procnum] = (step_values, positions)
 
@@ -377,10 +497,9 @@ if __name__ == '__main__':
 
         step_values, positions = multi_random_walker(
                 n_processes=4,
-                f_i=Tophat_2D(extent=1.5).pdf,
+                f_i=Tophat_2D(extent=1.).pdf,
                 bounds=bounds,
-                steps=int(1e4),
-                blocks=3
+                steps=int(5e3),
                 )
 
         fig, axes = plt.subplots(1, 2, squeeze=True)
