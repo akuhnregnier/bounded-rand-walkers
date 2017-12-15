@@ -16,6 +16,8 @@ except ImportError:
 
 N_PROCESSES = 4
 SHOW = True
+mpl.rcParams['lines.markersize'] = 9.
+mpl.rcParams['legend.loc'] = 'best'
 mpl.rcParams['savefig.dpi'] = 600
 mpl.rcParams['savefig.bbox'] = 'tight'
 mpl.rcParams['contour.negative_linestyle'] = 'solid'
@@ -286,12 +288,35 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
              )[~shaper_mask]
             )
 
+    # WORKAROUND - SLIGHTLY HACKY
+    # Average the numerical f_i values radially in order to smooth out
+    # variations and compare to analytical
+    f_i_numerical2 = np.zeros_like(f_i_numerical)
+    radii_edges = np.linspace(0, np.max(ft_rads), 70)
+    for l, u in zip(radii_edges[:-1], radii_edges[1:]):
+        c = (l + u) / 2.
+        mask = ((ft_rads < u) & (ft_rads >= l))
+        f_i_numerical2[mask] = np.mean(f_i_numerical[mask])
+
+    plt.figure()
+    plt.imshow(f_i_numerical)
+    plt.title('old f i')
+    plt.colorbar()
+
+    plt.figure()
+    plt.imshow(f_i_numerical2)
+    plt.title('new f i')
+    plt.colorbar()
+    plt.show()
+
+    f_i_numerical = f_i_numerical2
+
     # verify that the shaper function is indeed working correctly - by
     # transforming the analytical f_t to f_i using the shaper function.
     f_i_check = np.zeros_like(f_t_analytical)
     shaper_mask = ~np.isclose(shaper, 0)
     f_i_check[shaper_mask] = (f_t_analytical[shaper_mask]
-                                  / shaper[shaper_mask])
+                              / shaper[shaper_mask])
 
     # normalise f_i_check
     shaper_mask = np.isclose(shaper, 0)  # avoid dividing by 0
@@ -335,15 +360,15 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
             num_radii, num_points_per_radius, dtype='float'
             )
 
-    fig, axes = plt.subplots(1, 3, squeeze=True, sharey=True)
-    axes[0].imshow(f_i_check)
-    axes[0].set_title('check')
-    axes[1].imshow(f_i_numerical)
-    axes[1].set_title('numerical')
-    axes[1].set_title('numerical')
-    axes[2].imshow(f_i_check - f_i_numerical)
-    axes[2].set_title('check - numerical')
-    plt.show()
+    # fig, axes = plt.subplots(1, 3, squeeze=True, sharey=True)
+    # axes[0].imshow(f_i_check)
+    # axes[0].set_title('check')
+    # axes[1].imshow(f_i_numerical)
+    # axes[1].set_title('numerical')
+    # axes[1].set_title('numerical')
+    # axes[2].imshow(f_i_check - f_i_numerical)
+    # axes[2].set_title('check - numerical')
+    # plt.show()
 
     data = ((x_edges, y_edges),
             g_analytical,
@@ -402,7 +427,9 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
     axes[0].plot(pos_bin_centres, g_analytical)
     axes[1].set_title(r'b.) Numerical $g(x)$')
     axes[1].plot(pos_bin_centres, g_numerical,
-                 linestyle='', marker='o')
+                 linestyle='', marker='x', markerfacecolor='C3',
+                 markeredgecolor='C3',
+                 )
     axes[0].set_xlabel('x')
     axes[0].set_ylabel('$g(x)$')
     axes[1].set_xlabel('x')
@@ -415,8 +442,9 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
     axes2[1].set_title(r'b.) Numerical $f_t(x)$')
     axes2[1].plot(step_bin_centres,
                   f_t_numerical,
-                  linestyle='', marker='o'
-                  )
+                 linestyle='', marker='x', markerfacecolor='C3',
+                 markeredgecolor='C3',
+                 )
     axes2[0].set_xlabel('x (step size)')
     axes2[0].set_ylabel('$f_t(x)$')
     axes2[1].set_xlabel('x (step size)')
@@ -427,8 +455,9 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
     # ax3.set_title(r'Comparing Analytical and Numerical $g(x)$')
     ax3.plot(pos_bin_centres, g_analytical, label='Analytical')
     ax3.plot(pos_bin_centres, g_numerical, label='Numerical',
-             linestyle='', marker='o'
-             )
+                 linestyle='', marker='x', markerfacecolor='C3',
+                 markeredgecolor='C3',
+                 )
     ax3.set_ylabel('$g(x)$')
     ax3.set_xlabel('x (step size)')
     ax3.legend(loc='best')
@@ -438,8 +467,9 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
     # ax4.set_title(r'Comparing Analytical and Numerical $f_t(x)$')
     ax4.plot(step_bin_centres, f_t_analytical, label='Analytical')
     ax4.plot(step_bin_centres, f_t_numerical, label='Numerical',
-             linestyle='', marker='o'
-             )
+                 linestyle='', marker='x', markerfacecolor='C3',
+                 markeredgecolor='C3',
+                 )
     ax4.set_xlabel('x (step size)')
     ax4.set_ylabel('$f_t(x)$')
     ax4.legend(loc='best')
@@ -449,8 +479,9 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
     # ax5.set_title(r'Comparing Analytical and Numerical $f_i(x)$')
     ax5.plot(step_bin_centres, f_i_analytical, label='Analytical')
     ax5.plot(step_bin_centres, f_i_numerical, label='Numerical',
-             linestyle='', marker='o'
-             )
+                 linestyle='', marker='x', markerfacecolor='C3',
+                 markeredgecolor='C3',
+                 )
     ax5.set_xlabel('x (step size)')
     ax5.set_ylabel('$f_i(x)$')
     ax5.legend(loc='best')
@@ -641,17 +672,22 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     out of adjacctives, cool radial function stuff
     """
     fig4, axis = plt.subplots(1, 1, squeeze=True)
-    plt.plot(avg_f_t_num_radii, avg_f_t_numerical, label='Numerical')
     plt.plot(avg_f_t_ana_radii, avg_f_t_analytical, label='Analytical')
+    plt.plot(avg_f_t_num_radii, avg_f_t_numerical, label='Numerical',
+             linestyle='', marker='x', markerfacecolor='C3',
+             markeredgecolor='C3')
     # plt.title(r'Average Radial Distribution of $f_t$')
     plt.xlabel('r (step size)')
     plt.ylabel('$f_t(r)$')
     plt.legend(loc='best')
 
     fig5, axis = plt.subplots(1, 1, squeeze=True)
-    plt.plot(avg_f_i_num_radii, avg_f_i_numerical, label='Numerical')
     plt.plot(avg_f_i_ana_radii, avg_f_i_analytical, label='Analytical')
-    plt.plot(avg_f_i_chk_radii, avg_f_i_check, label='Check', zorder=1000)
+    plt.plot(avg_f_i_num_radii, avg_f_i_numerical, label='Numerical',
+             linestyle='', marker='x', markerfacecolor='C3',
+             markeredgecolor='C3')
+    plt.plot(avg_f_i_chk_radii, avg_f_i_check, label='Transformed Analytical',
+             color='C2', linestyle='--')
     # plt.title(r'Average Radial Distribution of $f_i$')
     plt.xlabel('r (step size)')
     plt.ylabel('$f_i(r)$')
@@ -699,7 +735,8 @@ if __name__ == '__main__':
             compare_1D_plotting(pdf, bins, steps=int(1e4),
                                 pdf_name=pdf_name,
                                 pdf_kwargs=kwargs,
-                                blocks=50)
+                                blocks=50,
+                                load=False)
 
     if TWO_D:
         # 2D case
@@ -715,11 +752,11 @@ if __name__ == '__main__':
         for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 
-            compare_2D_plotting(pdf, bins, steps=int(5e3),
+            compare_2D_plotting(pdf, bins, steps=int(4e3),
                                 pdf_name=pdf_name,
                                 pdf_kwargs=kwargs,
-                                bounds=circle_points(),
-                                bounds_name='circle',
+                                bounds=weird_bounds,
+                                bounds_name='weird',
                                 load=False,
                                 blocks=70)
 
