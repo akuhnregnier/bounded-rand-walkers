@@ -188,9 +188,9 @@ class Sampler1D: public SamplerBase {
             dxarray zero_element = { 0., };
             discrete_cdf = xt::concatenate(xtuple(zero_element, discrete_cdf), 0);
             // print("discrete cdf");
-            // print_1d_vect(discrete_cdf);
+            // print_1d(discrete_cdf);
             // print("vector form");
-            // print_1d_vect(discrete_cdf_vect);
+            // print_1d(discrete_cdf_vect);
             auto discrete_cdf_vect = transform_to_vect(discrete_cdf);
             auto edges_vect = transform_to_vect(edges);
             interpolators.emplace_back(discrete_cdf_vect, edges_vect);
@@ -315,7 +315,7 @@ class Sampler2D: public SamplerBase {
                     coord = { xt::index_view(x_coords, {{i, j}})[0], xt::index_view(y_coords, {{i, j}})[0] };
                     if (VERBOSE) {
                         print("coord");
-                        print_1d_vect(coord);
+                        print_1d(coord);
                         print(pdf(coord, dummy, func_data));
                     }
                     xt::index_view(pdf_values, {{i, j}}) = pdf(coord, dummy, func_data);
@@ -366,9 +366,9 @@ class Sampler2D: public SamplerBase {
             dxarray zero_element = { 0., };
             first_discrete_cdf = xt::concatenate(xtuple(zero_element, first_discrete_cdf), 0);
             // print("discrete cdf");
-            // print_1d_vect(discrete_cdf);
+            // print_1d(discrete_cdf);
             // print("vector form");
-            // print_1d_vect(discrete_cdf_vect);
+            // print_1d(discrete_cdf_vect);
             auto first_discrete_cdf_vect = transform_to_vect(first_discrete_cdf);
             auto edges_vect = transform_to_vect(edges);
             interpolators.emplace_back(first_discrete_cdf_vect, edges_vect);
@@ -453,7 +453,7 @@ class Sampler2D: public SamplerBase {
 
                 if (VERBOSE) {
                     print("1st dimension pdf coord param:");
-                    print_1d_vect(coord);
+                    print_1d(coord);
                     printf("min step %g, max step %g, min prob %g, max prob %g, 1st prob %g\n", min_step[0], max_step[0], min_prob, max_prob, first_prob[0]);
                 }
 
@@ -462,7 +462,7 @@ class Sampler2D: public SamplerBase {
                     if (coord[0] < edges[i]) {
                         if (VERBOSE) {
                             printf("edges: ");
-                            print_1d_vect(edges);
+                            print_1d(edges);
                             printf("get index, comp. %g < %g\n", coord[0], edges[i]);
                         }
                         first_max_val_index = i - 1;
@@ -497,7 +497,7 @@ class Sampler2D: public SamplerBase {
                     ratio = -1.;  // impossible, so skip this iteration of the while loop
                     if (VERBOSE) {
                         print("pdf coord param:");
-                        print_1d_vect(coord);
+                        print_1d(coord);
                         printf("first max val index %d\n", first_max_val_index);
                         printf("min step %g, max step %g, min prob %g, max prob %g, 2nd prob %g\n", min_step[0], max_step[0], min_prob, max_prob, second_prob[0]);
                         printf("pdf val = %g, therefore re-doing\n", pdf_val);
@@ -533,14 +533,6 @@ inline dvect transform_to_vect(const x_type& arr) {
     return arr_vect;
 }
 
-
-template <class vect_type>
-void print_1d_vect(vect_type vect) {
-    for (auto const& value : vect) {
-        std::cout << value << ", ";
-    }
-    std::cout << std::endl;
-}
 
 
 template <class arr_type>
@@ -620,10 +612,10 @@ void testing_1d() {
     // print(sampler.max_box_values);
 
     print("interp testing");
-    print_1d_vect(args);
+    print_1d(args);
     print(sampler.interpolators[0](args));
     args = {0.67};
-    print_1d_vect(args);
+    print_1d(args);
     print(sampler.interpolators[0](args));
 
     print("sampling");
@@ -688,11 +680,11 @@ void testing_2d() {
     auto centres = (xt::view(edges, xt::range(1, blocks + 1))
                     + xt::view(edges, xt::range(0, blocks))) / 2.;
     print(centres);
-    print_1d_vect(centres.shape());
+    print_1d(centres.shape());
     auto coord_grid = xt::meshgrid(centres, centres);
-    print_1d_vect(std::get<0>(coord_grid).shape());
-    print_1d_vect(std::get<0>(coord_grid));
-    print_1d_vect(std::get<1>(coord_grid));
+    print_1d(std::get<0>(coord_grid).shape());
+    print_1d(std::get<0>(coord_grid));
+    print_1d(std::get<1>(coord_grid));
     auto x_coords = std::get<1>(coord_grid);
 
     // print("iteration");
@@ -728,10 +720,10 @@ void testing_2d() {
 
     std::vector<double> args = {0.53, 0.2};
     print("interp testing");
-    print_1d_vect(args);
+    print_1d(args);
     print(sampler.interpolators[0](args));
     args = {0.67, 0.};
-    print_1d_vect(args);
+    print_1d(args);
     print(sampler.interpolators[0](args));
 
     print(sampler.second_discrete_cdf);
@@ -749,7 +741,7 @@ void testing_2d() {
     print(clipr);
     print(xt::amin(bounds2, {0}));
 
-    print_1d_vect(sampler.sample(args, pdf));
+    print_1d(sampler.sample(args, pdf));
 
     args = {0., 0.};
 

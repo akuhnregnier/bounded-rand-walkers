@@ -9,16 +9,7 @@
 #include <cmath>
 #include "boost/multi_array.hpp"
 #include "linterp.h"
-
-
-template <class T>
-void print_1d(T v){
-    std::cout << "Vector contents:" << std::endl;
-    for (int i=0; i < v.size(); i++){
-        std::cout << v[i] << ' ';
-    }
-    std::cout << std::endl;
-}
+#include "common.h"
 
 
 template <class T, class T2>

@@ -11,16 +11,6 @@
 #include "linterp.h"
 
 
-template <class T>
-void print_1d(T v){
-    std::cout << "Vector contents:" << std::endl;
-    for (int i=0; i < v.size(); i++){
-        std::cout << v[i] << ' ';
-    }
-    std::cout << std::endl;
-}
-
-
 template <class T, class T2>
 // std::vector<long unsigned int>
 void plot_square(T v, const  T2 shape){

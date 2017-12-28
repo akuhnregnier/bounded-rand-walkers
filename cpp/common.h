@@ -30,9 +30,6 @@ struct pdf_data {
 };
 
 
-template <class vect_type>
-void print_1d_vect(vect_type vect);
-
 template <class x_type>
 inline dvect transform_to_vect(const x_type& arr);
 
