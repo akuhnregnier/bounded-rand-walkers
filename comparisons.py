@@ -9,6 +9,8 @@ import os
 import numpy as np
 import matplotlib as mpl
 import matplotlib.colors as colors
+from scipy.ndimage.morphology import binary_erosion
+from scipy.interpolate import RegularGridInterpolator
 try:
     import cPickle as pickle
 except ImportError:
@@ -221,6 +223,11 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
 
         f_t_analytical[~ft_total_mask] = 0.
 
+    avg_shaper, avg_shaper_radii = radial_interp(
+            shaper, ft_x_values, ft_y_values,
+            300, 200, dtype='float'
+            )
+
     f_t_analytical *= shaper
 
     """
@@ -273,20 +280,24 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
         normed=True
         )
 
+    shaper_mask = ~np.isclose(shaper, 0)  # True within boundary
+    # reduce the extent of the shaper slightly using binary erosion
+    # shaper_mask = binary_erosion(shaper_mask, structure=np.ones((5, 5)))
+
     # reconstruct f_i from the numerics and the shaper function
     f_i_numerical = np.zeros_like(f_t_numerical)
-    shaper_mask = ~np.isclose(shaper, 0)
-    f_i_numerical[shaper_mask] = (f_t_numerical[shaper_mask]
-                                  / shaper[shaper_mask])
 
+    f_i_numerical[shaper_mask] = (f_t_numerical[shaper_mask].copy()
+                                  / shaper[shaper_mask])
     # normalise f_i_numerical
-    shaper_mask = np.isclose(shaper, 0)  # avoid dividing by 0
-    f_i_numerical[~shaper_mask] /= np.sum(
+    f_i_numerical[shaper_mask] /= np.sum(
             (f_i_numerical
              * ((ft_xs[1:] - ft_xs[:-1]).reshape(-1, 1))
                 * (ft_ys[1:] - ft_ys[:-1]).reshape(1, -1)
-             )[~shaper_mask]
+             )[shaper_mask]
             )
+    # Instead of dividing by the shaper function up there, do it below with
+    # an averaged shaper function
 
     # WORKAROUND - SLIGHTLY HACKY
     # Average the numerical f_i values radially in order to smooth out
@@ -307,24 +318,28 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
     plt.imshow(f_i_numerical2)
     plt.title('new f i')
     plt.colorbar()
+
+    plt.figure()
+    plt.imshow(f_t_numerical)
+    plt.title('raw numerical f t')
+    plt.colorbar()
+
     plt.show()
 
-    f_i_numerical = f_i_numerical2
+    # f_i_numerical = f_i_numerical2
 
     # verify that the shaper function is indeed working correctly - by
     # transforming the analytical f_t to f_i using the shaper function.
     f_i_check = np.zeros_like(f_t_analytical)
-    shaper_mask = ~np.isclose(shaper, 0)
     f_i_check[shaper_mask] = (f_t_analytical[shaper_mask]
                               / shaper[shaper_mask])
 
     # normalise f_i_check
-    shaper_mask = np.isclose(shaper, 0)  # avoid dividing by 0
-    f_i_check[~shaper_mask] /= np.sum(
+    f_i_check[shaper_mask] /= np.sum(
             (f_i_check
              * ((ft_xs[1:] - ft_xs[:-1]).reshape(-1, 1))
                 * (ft_ys[1:] - ft_ys[:-1]).reshape(1, -1)
-             )[~shaper_mask]
+             )[shaper_mask]
             )
 
     f_i_analytical = np.zeros_like(f_i_numerical, dtype=np.float64)
@@ -333,7 +348,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
             f_i_analytical[i, j] = pdf(step_x, step_y)
 
     # try radial calculation
-    num_radii = 400
+    num_radii = 100
     num_points_per_radius = 200
     avg_f_t_analytical, avg_f_t_ana_radii = radial_interp(
             f_t_analytical, ft_x_values, ft_y_values,
@@ -350,10 +365,39 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
             num_radii, num_points_per_radius, dtype='float'
             )
 
-    avg_f_i_numerical, avg_f_i_num_radii = radial_interp(
-            f_i_numerical, ft_x_values, ft_y_values,
-            num_radii, num_points_per_radius, dtype='float'
-            )
+    if True:
+        # set max values to 0
+        # max_indices = np.argsort(f_i_numerical.flatten())[-30:]
+        # plt.figure()
+        # plt.imshow(f_i_numerical)
+        # plt.title('debug1')
+        # f_i_numerical[np.unravel_index(
+        #     max_indices, f_i_numerical.shape)] = 0
+        # plt.figure()
+        # plt.imshow(f_i_numerical)
+        # plt.title('debug2')
+        avg_f_i_numerical, avg_f_i_num_radii = radial_interp(
+                f_i_numerical, ft_x_values, ft_y_values,
+                num_radii, num_points_per_radius, dtype='float'
+                )
+    if False:
+        # Do the interpolation instead using the avg_shaper and
+        # avg_f_t_numerical
+        avg_f_i_num_radii = avg_f_t_num_radii
+        interpolator = RegularGridInterpolator(
+                avg_shaper_radii.reshape(1, -1),
+                avg_shaper.reshape(-1,)
+                )
+        interpolated_shaper = interpolator(avg_f_i_num_radii)
+
+        plt.figure()
+        plt.title('1 / interpolated shaper')
+        plt.plot(1./interpolated_shaper)
+        plt.figure()
+        plt.title('1 / avg shaper')
+        plt.plot(1./avg_shaper)
+
+        avg_f_i_numerical = avg_f_t_numerical / interpolated_shaper
 
     avg_f_i_check, avg_f_i_chk_radii = radial_interp(
             f_i_check, ft_x_values, ft_y_values,
@@ -748,11 +792,11 @@ if __name__ == '__main__':
                     }),
                 ]
 
-        bins = 31
+        bins = 71
         for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 
-            compare_2D_plotting(pdf, bins, steps=int(4e3),
+            compare_2D_plotting(pdf, bins, steps=int(1e7),
                                 pdf_name=pdf_name,
                                 pdf_kwargs=kwargs,
                                 bounds=weird_bounds,

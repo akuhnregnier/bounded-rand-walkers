@@ -311,7 +311,7 @@ def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2), blocks=50):
     return_dict = manager.dict()
     jobs = []
     for i in range(n_processes):
-        np.random.seed(i)
+        np.random.seed(i + 200)
         p = multiprocessing.Process(target=rand_walk_worker,
                                     args=(i, return_dict))
         jobs.append(p)
