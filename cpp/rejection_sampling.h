@@ -16,7 +16,6 @@
 #include <ctime>
 #include <map>
 #include <random>
-#include "cnpy.h"
 #include <cmath>
 #include "boost/multi_array.hpp"
 #include "linterp.h"
@@ -32,26 +31,6 @@
 #include "polygon_inclusion.h"
 #include "common.h"
 #include "pdfs.h"
-
-bool VERBOSE = false;
-double max_rand = RAND_MAX;
-
-
-template <class vect_type>
-void print_1d_vect(vect_type vect);
-
-template <class x_type>
-inline dvect transform_to_vect(const x_type& arr);
-
-template <class print_type>
-void print(print_type to_print){
-    std::cout << to_print << std::endl;
-}
-
-
-inline double random_real(double lower, double upper) {
-    return ((rand() / max_rand) * (upper - lower)) + lower;
-}
 
 
 double find_maximum(nlopt::vfunc func, dvect &x, dvect &lb, dvect &ub, void * my_func_data) {
@@ -93,38 +72,6 @@ double find_maximum(nlopt::vfunc func, dvect &x, dvect &lb, dvect &ub, void * my
         max_pos[i] = x[i];
     }
     return maxf;
-}
-
-
-template <class T>
-void print_1d(T v){
-    std::cout << "Vector contents:" << std::endl;
-    for (int i=0; i < v.size(); i++){
-        std::cout << v[i] << ' ';
-    }
-    std::cout << std::endl;
-}
-
-
-template <class T, class T2>
-void plot_square(T v, const T2 shape){
-    cnpy::npy_save("/tmp/v_test.npy", &v[0], shape, "w");
-    std::system("./visualisation.py /tmp/v_test.npy");
-}
-
-template <class T, class T2>
-void plot_hist(T v, const T2 shape){
-    cnpy::npy_save("/tmp/v_test.npy", &v[0], shape, "w");
-    std::system("./visualisation.py /tmp/v_test.npy hist");
-}
-
-// return an evenly spaced 1-d grid of doubles.
-// from http://rncarpio.github.io/linterp/
-dvect linspace(double first, double last, int len) {
-  dvect result(len);
-  double step = (last-first) / (len - 1);
-  for (int i=0; i<len; i++) { result[i] = first + i*step; }
-  return result;
 }
 
 
@@ -862,53 +809,5 @@ void testing_2d_redux() {
     plot_hist(sample_results, s_shape);
 }
 
-
-template <class T>
-pvect make_points(const T& arr) {
-    pvect points;
-    for (size_t i(0); i<arr.size(); ++i) {
-        points.push_back(Point());
-        points[i].x = arr[i][0];
-        points[i].y = arr[i][1];
-    }
-    return points;
-}
-
-
-bool in_shape(const dvect& P_in, const std::vector<dvect>& points) {
-    /* P_in is a `dvect` containing the 2 coordinates of the point to test.
-     * points is a vector of `dvect`, containing the points of the polygon in
-     *      clockwise order.
-     * vertices.
-     */
-    Point P;
-    P.x = P_in[0];
-    P.y = P_in[1];
-    return cn_PnPoly(P, &make_points(points)[0], points.size() - 1);
-}
-
-
-void test_polygon() {
-    std::vector < dvect > point_vect;
-    point_vect.push_back(dvect {0, 0});
-    point_vect.push_back(dvect {0, 1});
-    point_vect.push_back(dvect {1, 0});
-    point_vect.push_back(dvect {0, 0});
-    auto points = make_points(point_vect);
-
-    print("testing polygon inclusion");
-    Point test;
-    test.x = 0.5;
-    test.y = 0.3;
-
-    for (size_t i(0); i<points.size(); ++i) {
-        printf("x=%g, y=%g\n", ((&points)[0])[i].x, ((&points)[0])[i].y); // this works as intended
-    }
-    print("test point");
-    printf("x=%g, y=%g\n", test.x, test.y); // this works as intended
-
-    print(cn_PnPoly(test, &make_points(point_vect)[0], points.size() - 1));
-    print(in_shape(dvect {test.x, test.y}, point_vect));
-}
 
 #endif

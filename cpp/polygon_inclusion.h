@@ -8,9 +8,14 @@
 #ifndef POLYGON_INCLUSION_H
 #define POLYGON_INCLUSION_H
 
+#include <vector>
+#include <cstddef>
+#include "common.h"
+
 // a Point is defined by its coordinates {int x, y;}
 //===================================================================
 typedef struct {double x, y;} Point;
+typedef std::vector<Point> pvect;
 
 
 // isLeft(): tests if a point is Left|On|Right of an infinite line.
@@ -79,5 +84,57 @@ wn_PnPoly( Point P, Point* V, int n )
     return wn;
 }
 //===================================================================
+
+/* IC - 28/12/2017 */
+
+
+template <class T>
+pvect make_points(const T& arr) {
+    pvect points;
+    for (size_t i(0); i<arr.size(); ++i) {
+        points.push_back(Point());
+        points[i].x = arr[i][0];
+        points[i].y = arr[i][1];
+    }
+    return points;
+}
+
+
+bool in_shape(const dvect& P_in, const std::vector<dvect>& points) {
+    /* P_in is a `dvect` containing the 2 coordinates of the point to test.
+     * points is a vector of `dvect`, containing the points of the polygon in
+     *      clockwise order.
+     * vertices.
+     */
+    Point P;
+    P.x = P_in[0];
+    P.y = P_in[1];
+    return cn_PnPoly(P, &make_points(points)[0], points.size() - 1);
+}
+
+
+void test_polygon() {
+    std::vector < dvect > point_vect;
+    point_vect.push_back(dvect {0, 0});
+    point_vect.push_back(dvect {0, 1});
+    point_vect.push_back(dvect {1, 0});
+    point_vect.push_back(dvect {0, 0});
+    auto points = make_points(point_vect);
+
+    print("testing polygon inclusion");
+    Point test;
+    test.x = 0.5;
+    test.y = 0.3;
+
+    for (size_t i(0); i<points.size(); ++i) {
+        printf("x=%g, y=%g\n", ((&points)[0])[i].x, ((&points)[0])[i].y); // this works as intended
+    }
+    print("test point");
+    printf("x=%g, y=%g\n", test.x, test.y); // this works as intended
+
+    print(cn_PnPoly(test, &make_points(point_vect)[0], points.size() - 1));
+    print(in_shape(dvect {test.x, test.y}, point_vect));
+}
+
 
 #endif
