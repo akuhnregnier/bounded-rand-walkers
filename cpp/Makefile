@@ -4,6 +4,13 @@ LDLIBS=-Wall -L/usr/local/lib -lcnpy -lz -lnlopt -lm
 # Release version
 CFLAGS=-O3 -I /home/alex/.pyenv/versions/miniconda2-latest/include -I /home/alex/Documents/roboptim-core/include -I /usr/include/eigen3
 
+data_generation: data_generation.o
+	g++ $(CFLAGS) -o data_generation data_generation.o $(LDLIBS)
+	./data_generation
+
+data_generation.o: data_generation.cpp
+	g++ $(CFLAGS) -c data_generation.cpp
+
 rejection_sampling: rejection_sampling.o
 	g++ $(CFLAGS) -o rejection_sampling rejection_sampling.o $(LDLIBS)
 	./rejection_sampling
@@ -44,4 +51,4 @@ method_calling: method_calling.cpp
 	./method_calling
 
 clean:
-	rm -f vtest vectortest.o rejection_sampling rejection_sampling.o roboptim_example.o robotim_example nlopt_example.o nlopt_example nlopt_tophat_example.o nlopt_tophat_example method_calling
+	rm -f vtest vectortest.o rejection_sampling rejection_sampling.o roboptim_example.o robotim_example nlopt_example.o nlopt_example nlopt_tophat_example.o nlopt_tophat_example method_calling data_generation.o data_generation

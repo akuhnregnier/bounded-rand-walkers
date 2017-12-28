@@ -101,7 +101,13 @@ struct interp {
 };
 
 
-class Sampler1D{
+class SamplerBase {
+    public:
+        virtual dvect sample(const dvect& position, double pdf(const dvect &, dvect &, void *)) = 0;  // pure virtual function
+};
+
+
+class Sampler1D: public SamplerBase {
     public:
         dxarray bounds {-1, 1};
         dxarray pdf_values;
@@ -191,7 +197,7 @@ class Sampler1D{
             inv_interpolators.emplace_back(edges_vect, discrete_cdf_vect);
         }
 
-        dvect sample(double position, double pdf(const dvect &, dvect &, void *)) {
+        dvect sample(const dvect& position, double pdf(const dvect &, dvect &, void *)) {
             dvect coord;
             double prob2;
             double ratio;
@@ -199,8 +205,8 @@ class Sampler1D{
                 if (VERBOSE) {
                     print("calling again");
                 }
-                dvect min_step = {-position};
-                dvect max_step = {1 - position};
+                dvect min_step = {-position[0]};
+                dvect max_step = {1 - position[0]};
                 // clip the steps according to the space boundaries
                 if (min_step[0] < bounds[0]) {
                     min_step[0] = bounds[0];
@@ -249,7 +255,7 @@ class Sampler1D{
 };
 
 
-class Sampler2D{
+class Sampler2D: public SamplerBase {
     public:
         dxarray bounds
             {{-2, -2}, // min values
@@ -625,7 +631,7 @@ void testing_1d() {
     unsigned long int L = 1000;
     dvect sample_results(L);
     for (int i=0; i<L; ++i) {
-        sample_results[i] = sampler.sample(0.3, tophat)[0];
+        sample_results[i] = sampler.sample(dvect {0.3}, tophat)[0];
     }
     double end_s = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     double time_s = (end_s - start_s) / 1000.;

@@ -114,7 +114,7 @@ bool in_shape(const dvect& P_in, const std::vector<dvect>& points) {
 
 
 void test_polygon() {
-    std::vector < dvect > point_vect;
+    vect_dvect point_vect;
     point_vect.push_back(dvect {0, 0});
     point_vect.push_back(dvect {0, 1});
     point_vect.push_back(dvect {1, 0});
