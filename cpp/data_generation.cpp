@@ -50,7 +50,7 @@ int main() {
     pdf_data data;
     struct pdf_data *data_ptr = &data;
     // Configuration START
-    size_t samples = (size_t) 1e3;
+    size_t samples = (size_t) 1e8;
     const size_t dims = 2;
     vect_dvect bounds = get_weird_bounds();  // only needed for `dims=2`
     // used for the rejection sampler

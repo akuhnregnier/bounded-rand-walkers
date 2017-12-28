@@ -113,3 +113,4 @@ cpp/*
 !cpp/*.hpp
 !cpp/*.hxx
 !cpp/Makefile
+!cpp/*.py
