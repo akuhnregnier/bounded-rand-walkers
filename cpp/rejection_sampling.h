@@ -244,7 +244,7 @@ class Sampler1D{
             inv_interpolators.emplace_back(edges_vect, discrete_cdf_vect);
         }
 
-        dvect sample(double position, double pdf(const dvect &, void *)) {
+        dvect sample(double position, double pdf(const dvect &, dvect &, void *)) {
             dvect coord;
             double prob2;
             double ratio;
@@ -274,7 +274,7 @@ class Sampler1D{
                 // print("prob");
                 // print(prob);
                 coord = { interpolators[0](prob) };
-                double pdf_val = pdf(coord, func_data_store);
+                double pdf_val = pdf(coord, dummy, func_data_store);
                 if (pdf_val < 1e-6) {
                     ratio = 0.;
                     continue;
@@ -455,7 +455,7 @@ class Sampler2D{
             }
         }
 
-        dvect sample(const dvect& pos, double pdf(const dvect &, void *)) {
+        dvect sample(const dvect& pos, double pdf(const dvect &, dvect &, void *)) {
             dvect coord;
             double prob2;
             double ratio;
@@ -539,7 +539,7 @@ class Sampler2D{
                     }
                 }
 
-                double pdf_val = pdf(coord, func_data_store);
+                double pdf_val = pdf(coord, dummy, func_data_store);
                 if (pdf_val < 1e-6) {
                     ratio = -1.;  // impossible, so skip this iteration of the while loop
                     if (VERBOSE) {
@@ -758,7 +758,6 @@ void testing_2d() {
     data.width = 0.2;
 
     double (*pdf) (const dvect&, dvect&, void*) = arbitrary;
-    double (*pdf_s) (const dvect&, void*) = arbitrary;
 
     print("Initialising 2D sampler");
     Sampler2D sampler (8, pdf, data_ptr);
@@ -797,7 +796,7 @@ void testing_2d() {
     print(clipr);
     print(xt::amin(bounds2, {0}));
 
-    print_1d_vect(sampler.sample(args, pdf_s));
+    print_1d_vect(sampler.sample(args, pdf));
 
     args = {0., 0.};
 
@@ -808,7 +807,7 @@ void testing_2d() {
     print("sampling 2D");
     double start_s = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     for (size_t i=0; i<samples; ++i) {
-        sample = sampler.sample(args, pdf_s);
+        sample = sampler.sample(args, pdf);
         sample_results.push_back(sample[0]);
         sample_results.push_back(sample[1]);
     }
@@ -836,7 +835,6 @@ void testing_2d_redux() {
     dvect pos = {0., 0.};
 
     double (*pdf) (const dvect&, dvect&, void*) = gauss;
-    double (*pdf_s) (const dvect&, void*) = gauss;
 
     print("Initialising 2D sampler");
     Sampler2D sampler (70, pdf, data_ptr);
@@ -849,7 +847,7 @@ void testing_2d_redux() {
     print("sampling 2D");
     double start_s = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     for (size_t i=0; i<samples; ++i) {
-        sample = sampler.sample(pos, pdf_s);
+        sample = sampler.sample(pos, pdf);
         sample_results.push_back(sample[0]);
         sample_results.push_back(sample[1]);
     }
