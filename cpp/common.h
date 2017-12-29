@@ -8,6 +8,7 @@
 #include "xtensor/xarray.hpp"
 #include <sstream>
 #include <string>
+#include <sys/stat.h>
 
 typedef std::vector<double> dvect;
 typedef xt::xarray<double> dxarray;
@@ -113,5 +114,10 @@ void set_seed() {
     // This will mean your seed repeats every second.
 }
 
+
+inline bool file_exists (const std::string& name) {
+  struct stat buffer;
+  return (stat (name.c_str(), &buffer) == 0);
+}
 
 #endif

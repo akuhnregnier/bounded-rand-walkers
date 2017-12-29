@@ -50,11 +50,11 @@ int main() {
     pdf_data data;
     struct pdf_data *data_ptr = &data;
     // Configuration START
-    size_t samples = (size_t) 1e8;
+    size_t samples = (size_t) 1e6;
     const size_t dims = 2;
     vect_dvect bounds = get_weird_bounds();  // only needed for `dims=2`
     // used for the rejection sampler
-    size_t blocks = 70;
+    size_t blocks = 60;
     // set pdf to use here
     double (*pdf) (const dvect&, dvect&, void*) = gauss;
     // adjust this to match the pdf above for the final filenames
@@ -161,26 +161,32 @@ int main() {
     // plot_hist(position_results, position_shape);
     // plot_hist(steps_results, step_shape);
 
-    // save positions
     std::stringstream ss;
     ss.precision(3);
+    // generate end of filename
     ss << std::scientific;
-    ss << "positions_samples_" << (double) samples << "_dims_" << dims << "_pdf_" << pdf_string << "_centre_" << format_1d(data.centre) << "_width_" << data.width << ".npy";
-    std::string filename = ss.str();
-    std::cout << "saving positions to:" << filename << std::endl;
-    save_np(position_results, position_shape, filename);
-    // now reset to initial state for next usage below
+    ss << "_samples_" << (double) samples << "_dims_" << dims << "_pdf_" << pdf_string << "_centre_" << format_1d(data.centre) << "_width_" << data.width << ".npy";
+    std::string filename_suffix = ss.str();
     ss.str("");
     ss.clear();
+
+    // save positions
+    std::string pos_filename = "positions" + filename_suffix;
+    // if this file already exists, prepend an integer to it
+    int i=0;
+    while (file_exists(std::to_string(i) + pos_filename)) {
+        ++i;
+    }
+    pos_filename = std::to_string(i) + pos_filename;
+    std::cout << "saving positions to:" << pos_filename << std::endl;
+    save_np(position_results, position_shape, pos_filename);
+
     // save steps
-    ss.precision(3);
-    ss << std::scientific;
-    ss << "steps_samples_" << (double) samples << "_dims_" << dims << "_pdf_" << pdf_string << "_centre_" << format_1d(data.centre) << "_width_" << data.width << ".npy";
-    filename = ss.str();
-    std::cout << "saving steps to:" << filename << std::endl;
-    save_np(steps_results, step_shape, filename);
-    // now reset to initial state for next usage below
-    ss.str("");
-    ss.clear();
+    std::string step_filename = "steps" + filename_suffix;
+    // re-use the same integer as before
+    step_filename = std::to_string(i) + step_filename;
+    std::cout << "saving steps to:" << step_filename << std::endl;
+    save_np(steps_results, step_shape, step_filename);
+
     return 0;
 }
