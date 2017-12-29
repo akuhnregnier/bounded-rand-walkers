@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from data_generation import DelaunayArray, Delaunay, in_bounds
 from scipy.signal import correlate2d
 from utils import get_centres
+import math
 
 
 def newShaper2D(x_shift, y_shift, relief_matrix, x0, y0):
@@ -54,14 +55,20 @@ def gen_shaper2D(order_divisions, vertices):
         for j, yi in enumerate(ys_centres):
             # print(str(j + len(ys) * i) + ' over ' + str(len(xs) * len(ys)))
 
-            Z[i, j] = round(newShaper2D(
+            # Z[i, j] = round(newShaper2D(
+            #     i - int(divisions_x / 2),
+            #     j - int(divisions_y / 2),
+            #     relief_matrix,
+            #     x0,
+            #     y0),
+            #     3
+            #     )
+            Z[i, j] = newShaper2D(
                 i - int(divisions_x / 2),
                 j - int(divisions_y / 2),
                 relief_matrix,
                 x0,
-                y0),
-                3
-                )
+                y0)
 
     # contour plot
 
@@ -69,17 +76,12 @@ def gen_shaper2D(order_divisions, vertices):
     # ysG = np.linspace(-y0, y0,  divisions_y)
     xsG = xs - CoM[0]
     ysG = ys - CoM[1]
-    X, Y = np.meshgrid(xsG, ysG)
+    X, Y = np.meshgrid(xsG, ysG, indexing='ij')
 
     return X, Y, Z
 
-if __name__ == '__main__':
-    order_divisions = 100
 
-    vertices = np.array([0.1, 0.3, 0.25, 0.98, 0.9, 0.9, 0.7, 0.4, 0.4, 0.05])
-    vertices = vertices.reshape(int(len(vertices) / 2), 2)
-
-    X, Y, Z = gen_shaper2D(order_divisions, vertices)
+def gen_shaper2D_alt(order_divisions, vertices):
 
     bounds = DelaunayArray(vertices, Delaunay(vertices))
     CoM = np.array([np.mean(vertices[:, 0]), np.mean(vertices[:, 1])])
@@ -89,6 +91,9 @@ if __name__ == '__main__':
     divisions_y = order_divisions * int(float(y0) / float(x0))
     xs = np.linspace(CoM[0] - x0,  CoM[0] + x0,  divisions_x + 1)
     ys = np.linspace(CoM[1] - y0,  CoM[1] + y0,  divisions_y + 1)
+    xsG = xs - CoM[0]
+    ysG = ys - CoM[1]
+    X, Y = np.meshgrid(xsG, ysG, indexing='ij')
     xs_centres = get_centres(xs)
     ys_centres = get_centres(ys)
     relief_matrix = np.zeros((divisions_y, divisions_x), dtype=np.int)
@@ -96,34 +101,72 @@ if __name__ == '__main__':
         for j, xj in enumerate(xs_centres):
             relief_matrix[i, j] = in_bounds(np.array([xj, yi]), bounds)
 
-    Z2 = correlate2d(relief_matrix, relief_matrix)
-    trim_x = (Z2.shape[0] - Z.shape[0])/2
-    trim_y = (Z2.shape[1] - Z.shape[1])/2
-    modx = -1 if ((trim_x % 2) == 0) else 0
-    mody = -1 if ((trim_y % 2) == 0) else 0
-    Z2 = Z2[trim_x - modx:Z2.shape[0] - trim_x, trim_y - mody:Z2.shape[1] - trim_y]
+    # transpose due to the way the correlation is carried out - shifting
+    # entries in the matrix 'right' (if printed as a 2d matrix) does not
+    # correspond to the x direction, which goes 'down' in 2d matrix
+    # notation (numpy refers to it as indexing='ij').
+    Z = correlate2d(relief_matrix, relief_matrix).T
+
+    # n -> 2n - 1
+    # This relies on rounding down
+    trim_x = int(math.floor((order_divisions - 1) / 2.))
+    trim_y = int(math.floor((order_divisions - 1) / 2.))
+    modifier = (order_divisions + 1) % 2  # 1 if n is even, 0 if n is odd
+    # Z = Z[trim_x + modifier:Z.shape[0] - trim_x,
+    #         trim_y + modifier:Z.shape[1] - trim_y]
+    Z = Z[trim_x:Z.shape[0] - trim_x - modifier,
+            trim_y:Z.shape[1] - trim_y - modifier]
+
+    Z = np.asarray(Z, dtype=np.float64)
+
+    cell_area = (xs[1] - xs[0]) * (ys[1] - ys[0])
+
+    # normalise
+    Z /= np.sum(Z * cell_area)
+
+    # transpose to make compatible with output above
+    return X, Y, Z
+
+if __name__ == '__main__':
+    plt.close('all')
+    order_divisions = 200
+
+    vertices = np.array([0.1, 0.3, 0.25, 0.98, 0.9, 0.9, 0.7, 0.4, 0.4, 0.05])
+    vertices = vertices.reshape(int(len(vertices) / 2), 2)
+
+    #####
+    x0 = np.max(vertices[:, 0]) - np.min(vertices[:, 0])
+    y0 = np.max(vertices[:, 1]) - np.min(vertices[:, 1])
+    divisions_x = order_divisions
+    divisions_y = order_divisions * int(float(y0) / float(x0))
+    xs = np.linspace(- x0, x0, divisions_x + 1)
+    ys = np.linspace(- y0, y0, divisions_y + 1)
+    cell_area = (xs[1] - xs[0]) * (ys[1] - ys[0])
+    #####
+
+    X, Y, Z = gen_shaper2D(order_divisions, vertices)
+
+    # normalise
+    Z /= np.sum(Z * cell_area)
+
+    X2, Y2, Z2 = gen_shaper2D_alt(order_divisions, vertices)
 
 
-    # plt.figure()
-    # CS = plt.contour(X, Y, Z, 7,
-    #                  colors='b',
-    #                  )
-    # plt.clabel(CS, fontsize=9, inline=1)
+    print("shapes")
+    print(Z.shape)
+    print(Z2.shape)
+
     plt.figure()
     plt.pcolormesh(X, Y, Z)
-
-
-    # plt.figure()
-    # CS = plt.contour(X, Y, Z2, 7,
-    #                  colors='b',
-    #                  )
-    # plt.clabel(CS, fontsize=9, inline=1)
+    plt.colorbar()
 
     plt.figure()
-    plt.pcolormesh(X, Y, Z2.T)
+    plt.pcolormesh(X, Y, Z2)
+    plt.colorbar()
 
-    # plt.figure()
-    # CS = plt.contour(X, Y, Z2, 7,
-    #                  colors='b',
-    #                  )
-    # plt.clabel(CS, fontsize=9, inline=1)
+    print("Zs are close")
+    print(np.all(np.isclose(Z, Z2)))
+    print(np.mean(Z-Z2))
+    print(np.min(Z-Z2))
+    print(np.max(Z-Z2))
+    print(np.std(Z-Z2))

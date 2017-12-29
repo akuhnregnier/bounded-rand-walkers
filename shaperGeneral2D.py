@@ -15,7 +15,7 @@ from relief_matrix_shaper import gen_shaper2D
 from utils import get_centres
 
 
-def get_weird_shaper(x_centres, y_centres, which='binary', divisions=150):
+def get_weird_shaper(x_centres, y_centres, which='binary', divisions=200):
     """Load a saved shaper function and then interpolate this to the
     desired grid.
 
@@ -28,8 +28,8 @@ def get_weird_shaper(x_centres, y_centres, which='binary', divisions=150):
         Z_orig = np.load('weird_Z_121.npy')
     if which == 'binary':
         X_orig, Y_orig, Z_orig = gen_shaper2D(divisions, weird_bounds)
-        x_centres_orig = get_centres(X_orig[0])
-        y_centres_orig = get_centres(Y_orig[:, 0])
+        x_centres_orig = get_centres(X_orig[:, 0])
+        y_centres_orig = get_centres(Y_orig[0, :])
     else:
         raise NotImplementedError(
                 'Choice of which:{:}, not supported'.format(which)
