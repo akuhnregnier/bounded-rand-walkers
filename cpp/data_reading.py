@@ -19,7 +19,7 @@ def load_cpp_data(samples, dims, pdf_string, centre, width,
         centre_str += '{:.3e},'.format(c)
     while True:
         filename = (
-                ("{:}{:}_samples_{:0.3e}_dims_{:}_pdf_"
+                ("data/{:}{:}_samples_{:0.3e}_dims_{:}_pdf_"
                  "{:}_centre_{:}_width_{:0.3e}.npy")
                 .format(
                     version_int,
@@ -42,7 +42,7 @@ def load_cpp_data(samples, dims, pdf_string, centre, width,
 
 
 if __name__ == '__main__':
-    args = [1e4, 2, "gauss", [0., 0.], 0.2, "positions"]
+    args = [1e6, 2, "gauss", [0., 0.], 0.2, "positions"]
     positions = load_cpp_data(*args)
     args[-1] = "steps"
     steps = load_cpp_data(*args)

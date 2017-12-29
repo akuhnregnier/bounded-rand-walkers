@@ -174,17 +174,17 @@ int main() {
     std::string pos_filename = "positions" + filename_suffix;
     // if this file already exists, prepend an integer to it
     int i=0;
-    while (file_exists(std::to_string(i) + pos_filename)) {
+    while (file_exists("data/" + std::to_string(i) + pos_filename)) {
         ++i;
     }
-    pos_filename = std::to_string(i) + pos_filename;
+    pos_filename = "data/" + std::to_string(i) + pos_filename;
     std::cout << "saving positions to:" << pos_filename << std::endl;
     save_np(position_results, position_shape, pos_filename);
 
     // save steps
     std::string step_filename = "steps" + filename_suffix;
     // re-use the same integer as before
-    step_filename = std::to_string(i) + step_filename;
+    step_filename = "data/" + std::to_string(i) + step_filename;
     std::cout << "saving steps to:" << step_filename << std::endl;
     save_np(steps_results, step_shape, step_filename);
 
