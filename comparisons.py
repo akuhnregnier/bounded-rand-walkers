@@ -34,6 +34,7 @@ from data_generation import multi_random_walker, circle_points, weird_bounds
 from utils import get_centres, stats, plot_name_clean
 from shaperGeneral2D import genShaper, get_weird_shaper
 from rad_interp import radial_interp
+from cpp.data_reading import get_cpp_binned_2D
 
 
 output_dir = os.path.abspath(os.path.join(
@@ -42,6 +43,64 @@ output_dir = os.path.abspath(os.path.join(
     ))
 if not os.path.isdir(output_dir):
     os.makedirs(output_dir)
+
+
+def get_binned_numerical_2D(n_processes, f_i, bounds, steps, blocks, pdf_name,
+        pdf_kwargs, x_edges, y_edges, ft_xs, ft_ys):
+    """
+
+    Args:
+        n_processes
+        f_i
+        bounds
+        steps
+        blocks
+        pdf_name
+        pdf_kwargs
+        x_edges: binning g [0, 1]
+        y_edges: binning g [0, 1]
+        ft_xs: binning f [-1, 1]
+        ft_ys: binning f [-1, 1]
+
+    """
+    g_cell_area = np.abs((x_edges[1] - x_edges[0])
+                         * (y_edges[1] - y_edges[0]))
+    ft_cell_area = np.abs((ft_xs[1] - ft_xs[0]) * (ft_ys[1] - ft_ys[0]))
+
+    # numerical result
+    step_values, positions = multi_random_walker(
+            n_processes=N_PROCESSES,
+            f_i=pdf,
+            bounds=bounds,
+            steps=int(num_samples),
+            blocks=blocks
+            )
+    logger.info('Finished numerical run')
+    logger.debug('{:} {:}'.format(step_values.shape, positions.shape))
+    g_numerical, _, _ = np.histogram2d(
+            *positions.T, bins=[x_edges, y_edges],
+            normed=True
+            )
+
+    # normalise g_numerical
+    g_mask = np.isclose(g_numerical, 0)  # avoid dividing by 0
+    g_numerical[~g_mask] /= np.sum((g_numerical * g_cell_area)[~g_mask])
+
+    f_t_numerical, _, _ = np.histogram2d(
+            *step_values.T,
+            bins=[ft_xs, ft_ys],
+            normed=True
+            )
+
+    rot_steps_data = rot_steps(positions.T)
+    rot_probs, _, _ = np.histogram2d(
+        rot_steps_data[0, :],
+        rot_steps_data[1, :],
+        bins=[ft_xs, ft_ys],
+        normed=True
+        )
+
+    return g_numerical, f_t_numerical, rot_probs
 
 
 def compare_1D(pdf, nr_bins, num_samples=int(1e4),
@@ -163,7 +222,8 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
                pdf_name='tophat',
                pdf_kwargs={'test': 10},
                load=True,
-               blocks=50):
+               blocks=50,
+               cpp_data=False):
 
     logger = logging.getLogger(__name__)
 
@@ -179,11 +239,14 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
     else:
         logger.info('not loading {:}'.format(pickle_path))
 
+    # generate the edges in each dimension
     x_edges = np.linspace(-1, 1, nr_bins + 1, endpoint=True)
     y_edges = np.linspace(-1, 1, nr_bins + 1, endpoint=True)
     x_centres = get_centres(x_edges)
     y_centres = get_centres(y_edges)
     xcoords, ycoords = np.meshgrid(x_centres, y_centres)
+    g_cell_area = np.abs((x_edges[1] - x_edges[0])
+                         * (y_edges[1] - y_edges[0]))
 
     g_analytical = g2D(pdf, x_edges, y_edges, bounds=bounds)
 
@@ -194,6 +257,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
     ft_xcoords, ft_ycoords = np.meshgrid(ft_x_values, ft_y_values)
     ft_rads = np.sqrt(ft_xcoords**2. + ft_ycoords**2.)
     f_t_analytical = np.zeros_like(ft_rads)
+    ft_cell_area = np.abs((ft_xs[1] - ft_xs[0]) * (ft_ys[1] - ft_ys[0]))
 
     # Analytical: multiply f_i with shaper to get f_t
     ft_total_mask = np.zeros_like(ft_rads, dtype=bool)
@@ -229,49 +293,26 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
 
     in this case, the cells have equal areas
     """
-    cell_area = np.abs((ft_xs[1] - ft_xs[0]) * (ft_ys[1] - ft_ys[0]))
-    total_p = np.sum(f_t_analytical) * cell_area
+    total_p = np.sum(f_t_analytical) * ft_cell_area
     f_t_analytical /= total_p
 
     logger.info('Finished analytical result, starting numerical run')
 
-    # numerical result
-    step_values, positions = multi_random_walker(
-            n_processes=N_PROCESSES,
-            f_i=pdf,
-            bounds=bounds,
-            steps=int(num_samples),
-            blocks=blocks
-            )
-    logger.info('Finished numerical run')
-    logger.debug('{:} {:}'.format(step_values.shape, positions.shape))
-    g_numerical, _, _ = np.histogram2d(
-            *positions.T, bins=[x_edges, y_edges],
-            normed=True
-            )
+    #####################################################################
+    # numerical section
+    if not cpp_data:
+        g_numerical, f_t_numerical, rot_probs = get_binned_numerical_2D(
+                N_PROCESSES, pdf, bounds, int(num_samples),
+                blocks, pdf_name, pdf_kwargs, x_edges, y_edges, ft_xs, ft_ys
+                )
+    else:
+        g_numerical, f_t_numerical, rot_probs = get_cpp_binned_2D(
+                int(num_samples), bounds_name, pdf_name, pdf_kwargs,
+                x_edges, y_edges, ft_xs, ft_ys
+                )
 
-    # normalise g_numerical
-    g_mask = np.isclose(g_numerical, 0)  # avoid dividing by 0
-    g_numerical[~g_mask] /= np.sum(
-            (g_numerical
-             * ((x_edges[1:] - x_edges[:-1]).reshape(-1, 1))
-                * (y_edges[1:] - y_edges[:-1]).reshape(1, -1)
-             )[~g_mask]
-            )
-
-    f_t_numerical, _, _ = np.histogram2d(
-            *step_values.T,
-            bins=[ft_xs, ft_ys],
-            normed=True
-            )
-
-    rot_steps_data = rot_steps(positions.T)
-    rot_probs, _, _ = np.histogram2d(
-        rot_steps_data[0, :],
-        rot_steps_data[1, :],
-        bins=[ft_xs, ft_ys],
-        normed=True
-        )
+    # end of numerical data generation
+    #####################################################################
 
     # reconstruct f_i from the numerics and the shaper function
     f_i_numerical = np.zeros_like(f_t_numerical)
@@ -282,10 +323,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
     # normalise f_i_numerical
     shaper_mask = np.isclose(shaper, 0)  # avoid dividing by 0
     f_i_numerical[~shaper_mask] /= np.sum(
-            (f_i_numerical
-             * ((ft_xs[1:] - ft_xs[:-1]).reshape(-1, 1))
-                * (ft_ys[1:] - ft_ys[:-1]).reshape(1, -1)
-             )[~shaper_mask]
+            (f_i_numerical * ft_cell_area)[~shaper_mask]
             )
 
     # WORKAROUND - SLIGHTLY HACKY
@@ -309,7 +347,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
     plt.colorbar()
     plt.show()
 
-    f_i_numerical = f_i_numerical2
+    # f_i_numerical = f_i_numerical2
 
     # verify that the shaper function is indeed working correctly - by
     # transforming the analytical f_t to f_i using the shaper function.
@@ -321,10 +359,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
     # normalise f_i_check
     shaper_mask = np.isclose(shaper, 0)  # avoid dividing by 0
     f_i_check[~shaper_mask] /= np.sum(
-            (f_i_check
-             * ((ft_xs[1:] - ft_xs[:-1]).reshape(-1, 1))
-                * (ft_ys[1:] - ft_ys[:-1]).reshape(1, -1)
-             )[~shaper_mask]
+            (f_i_check * ft_cell_area)[~shaper_mask]
             )
 
     f_i_analytical = np.zeros_like(f_i_numerical, dtype=np.float64)
@@ -511,7 +546,8 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
                         bounds_name='circle', pdf_name='tophat',
                         pdf_kwargs={'test': 10},
                         load=True,
-                        blocks=50):
+                        blocks=50,
+                        cpp_data=False):
 
     ((pos_x_edges, pos_y_edges),
      g_analytical,
@@ -540,7 +576,8 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
                    pdf_name=pdf_name,
                    load=load,
                    pdf_kwargs=pdf_kwargs,
-                   blocks=blocks
+                   blocks=blocks,
+                   cpp_data=cpp_data
                    )
         )
 
@@ -742,9 +779,13 @@ if __name__ == '__main__':
         # 2D case
 
         pdfs_args_2D = [
-                (Funky, 'funky', {
+                # (Funky, 'funky', {
+                #     'centre': (0., 0.),
+                #     'width': 2.
+                #     }),
+                (Gaussian, 'gauss', {
                     'centre': (0., 0.),
-                    'width': 2.
+                    'width': 0.8
                     }),
                 ]
 
@@ -752,11 +793,12 @@ if __name__ == '__main__':
         for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 
-            compare_2D_plotting(pdf, bins, steps=int(4e3),
+            compare_2D_plotting(pdf, bins, steps=int(1e7),
                                 pdf_name=pdf_name,
                                 pdf_kwargs=kwargs,
                                 bounds=weird_bounds,
                                 bounds_name='weird',
                                 load=False,
-                                blocks=70)
+                                blocks=70,
+                                cpp_data=True)
 

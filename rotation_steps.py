@@ -12,6 +12,64 @@ from scipy import integrate
 from data_generation import in_bounds, DelaunayArray, weird_bounds
 from scipy.spatial import Delaunay
 from utils import get_centres
+from numba import njit, jit
+
+
+@njit
+def rot_steps_fast(data):
+    """
+    Feed data containing stopping positions in 2D - shape [2 , n-stops]
+
+    Examples:
+        >>> N = 1000
+        >>> pos_data2D = rand.uniform(0, 1, size=(2, N))
+        >>> rot_steps_data = rot_steps(pos_data2D)
+        >>> plt.figure()
+        >>> plt.hist2d(rot_steps[0, :], rot_steps[1, :], bins=50)
+        >>> plt.plot(np.arange(-2, 2, 0.01),
+        ...          np.array([0 for a in np.arange(-2, 2, 0.01)]))
+        >>> plt.title('Observed step-size with fixed incoming direction')
+        >>> plt.gca().set_aspect('equal')
+        >>> plt.show()
+
+    """
+    print("This is rot_steps_fast")
+    rot_steps_data = np.zeros((2, data.shape[1] - 2))
+
+    for i in range(data.shape[1] - 2):
+
+        a = data[:, i]
+        b = data[:, i + 1]
+        c = data[:, i + 2]
+
+        # dot_prod = np.dot(a - b, np.array([0, -1]))
+        left = a - b
+        dot_prod = - left[1]
+
+        phi = np.arccos(
+                dot_prod / np.linalg.norm(a - b))
+
+        if a[0] > b[0]:
+            theta = -phi
+        else:
+            theta = phi
+
+        # R = np.array([[np.cos(theta), -np.sin(theta)],
+        #               [np.sin(theta), np.cos(theta)]],
+        #              dtype=np.float64
+        #              )
+
+        R_0 = np.array([np.cos(theta), -np.sin(theta)])
+        R_1 = np.array([np.sin(theta), np.cos(theta)])
+
+        right = c - b
+        c_rot = np.zeros((2,))
+        c_rot[0] = np.sum(R_0 * right)
+        c_rot[1] = np.sum(R_1 * right)
+
+        rot_steps_data[:, i] = c_rot
+
+    return rot_steps_data
 
 
 def rot_steps(data):
@@ -211,6 +269,12 @@ def g2D(f, xs_edges, ys_edges, bounds=weird_bounds):
 
 
 if __name__ == '__main__':
+    d = np.random.randn(int(1e4), 2)
+    assert np.all(np.isclose(rot_steps(d.T), rot_steps_fast(d.T)))
+    print("test passed")
+
+
+if __name__ == '__main__1':
     N = 100000
     pos_data2D = rand.uniform(0, 1, size=(2, N))
     rot_steps_data = rot_steps(pos_data2D)

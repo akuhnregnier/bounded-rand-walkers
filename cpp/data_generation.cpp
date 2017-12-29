@@ -50,9 +50,10 @@ int main() {
     pdf_data data;
     struct pdf_data *data_ptr = &data;
     // Configuration START
-    size_t samples = (size_t) 1e6;
+    size_t samples = (size_t) 1e7;
     const size_t dims = 2;
     vect_dvect bounds = get_weird_bounds();  // only needed for `dims=2`
+    std::string bounds_name = "weird";
     // used for the rejection sampler
     size_t blocks = 60;
     // set pdf to use here
@@ -61,7 +62,7 @@ int main() {
     std::string pdf_string = "gauss";
     // pdf params are specified here
     data.centre = dvect { 0.0, 0.0};
-    data.width = 0.2;
+    data.width = 0.8;
     // Configuration END
 
     // this is used to select the proper sampler
@@ -165,7 +166,7 @@ int main() {
     ss.precision(3);
     // generate end of filename
     ss << std::scientific;
-    ss << "_samples_" << (double) samples << "_dims_" << dims << "_pdf_" << pdf_string << "_centre_" << format_1d(data.centre) << "_width_" << data.width << ".npy";
+    ss << "_samples_" << (double) samples << "_dims_" << dims << "_bounds_" << bounds_name <<  "_pdf_" << pdf_string << "_centre_" << format_1d(data.centre) << "_width_" << data.width << ".npy";
     std::string filename_suffix = ss.str();
     ss.str("");
     ss.clear();

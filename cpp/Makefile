@@ -6,7 +6,7 @@ CFLAGS=-O3 -I /home/alex/.pyenv/versions/miniconda2-latest/include -I /home/alex
 
 data_generation: data_generation.o
 	g++ $(CFLAGS) -o data_generation data_generation.o $(LDLIBS)
-	./data_generation
+	# ./data_generation
 
 data_generation.o: data_generation.cpp
 	g++ $(CFLAGS) -c data_generation.cpp

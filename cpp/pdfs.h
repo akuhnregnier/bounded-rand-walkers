@@ -34,6 +34,9 @@ double tophat(const dvect &x, dvect &grad, void *my_func_data)
 
 
 double gauss(const dvect &x, dvect &grad, void *my_func_data) {
+    /*
+     * my_func_data -> width, where width describes the std
+     */
     dvect centre_vect = ((pdf_data*) my_func_data) -> centre;
     double width = ((pdf_data*) my_func_data) -> width;
     dvect power_2(x.size());
@@ -44,8 +47,7 @@ double gauss(const dvect &x, dvect &grad, void *my_func_data) {
     for (size_t i=0; i<x.size(); ++i) {
         sum += power_2[i];
     }
-    double rad_dist = std::pow(sum, 0.5);
-    return std::exp(-rad_dist / width);
+    return std::exp(-sum / (2*(std::pow(width, 2.))));
 }
 
 

@@ -139,18 +139,18 @@ class Power(object):
 
 
 class Gaussian(object):
-    def __init__(self, centre=0., scale=1.):
+    def __init__(self, centre=0., width=1.):
         """A Gaussian distribution.
 
         Args:
             centre: Centre of the Gaussian. For a 2D distribution, give a
                 list of x, y position (ie. [x, y]) of the centre of the
                 Gaussian.
-            scale: Used to scale the Gaussian.
+            width: Used to scale the Gaussian.
 
         """
         self.centre = centre
-        self.scale = scale
+        self.width = width
 
     def pdf(self, *args):
         """Calculate the probability at a point.
@@ -166,13 +166,13 @@ class Gaussian(object):
         """
         if len(args) == 1:
             x = args[0]
-            prob = norm.pdf(x, loc=self.centre, scale=self.scale)
+            prob = norm.pdf(x, loc=self.centre, scale=self.width)
         elif len(args) == 2:
             x, y = args
             # symmetric in radius
             prob = norm.pdf(np.sqrt((x - self.centre[0])**2
                             + (y - self.centre[1])**2),
-                            scale=self.scale)
+                            scale=self.width)
         return prob
 
 class Exponential(object):
