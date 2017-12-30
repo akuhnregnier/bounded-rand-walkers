@@ -13,6 +13,7 @@ from data_generation import in_bounds, DelaunayArray, weird_bounds
 from scipy.spatial import Delaunay
 from utils import get_centres
 from numba import njit, jit
+from c_rot_steps import rot_steps as c_rot_steps
 
 
 @njit
@@ -269,9 +270,20 @@ def g2D(f, xs_edges, ys_edges, bounds=weird_bounds):
 
 
 if __name__ == '__main__':
+    # must be run from iPython!!
+    from IPython import get_ipython
+    ipython = get_ipython()
+
     d = np.random.randn(int(1e4), 2)
     assert np.all(np.isclose(rot_steps(d.T), rot_steps_fast(d.T)))
-    print("test passed")
+    assert np.all(np.isclose(rot_steps(d.T), c_rot_steps(d.T)))
+    print("tests passed")
+    print("rot_steps test")
+    ipython.magic('time rot_steps(d.T)')
+    print("rot_steps_fast test")
+    ipython.magic('time rot_steps_fast(d.T)')
+    print("c_rot_steps test")
+    ipython.magic('time c_rot_steps(d.T)')
 
 
 if __name__ == '__main__1':

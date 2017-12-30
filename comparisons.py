@@ -789,7 +789,7 @@ if __name__ == '__main__':
                     }),
                 ]
 
-        bins = 31
+        bins = 211
         for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 
