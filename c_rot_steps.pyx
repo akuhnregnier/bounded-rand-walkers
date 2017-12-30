@@ -1,6 +1,6 @@
 from __future__ import division
 import numpy as np
-from libc.math cimport sin, cos, acos
+from libc.math cimport sin, cos, acos, sqrt
 # "cimport" is used to import special compile-time information
 # about the numpy module (this is stored in a file numpy.pxd which is
 # currently part of the Cython distribution).
@@ -56,16 +56,13 @@ cpdef DTYPE_t[:, :] rot_steps(DTYPE_t[:, :] data):
     cdef int i
     cdef int j
     cdef int columns = data.shape[1]
-    cdef DTYPE_t [:, :] rot_steps_data = (
-        np.zeros([2, columns - 2], dtype=DTYPE))
-    cdef DTYPE_t [:] a = np.zeros([2,], dtype=DTYPE)
-    cdef DTYPE_t [:] b = np.zeros([2,], dtype=DTYPE)
-    cdef DTYPE_t [:] c = np.zeros([2,], dtype=DTYPE)
-    cdef DTYPE_t [:] left = np.zeros([2,], dtype=DTYPE)
-    cdef DTYPE_t [:] R_0 = np.zeros([2,], dtype=DTYPE)
-    cdef DTYPE_t [:] R_1 = np.zeros([2,], dtype=DTYPE)
-    cdef DTYPE_t [:] right = np.zeros([2,], dtype=DTYPE)
-    # cdef np.ndarray[DTYPE_t, ndim=1] c_rot = np.zeros([2,], dtype=DTYPE)
+
+    cdef DTYPE_t [:, :] rot_steps_data = np.empty((2, columns - 2))
+    cdef DTYPE_t [:] a = np.empty((2,))
+    cdef DTYPE_t [:] b = np.empty((2,))
+    cdef DTYPE_t [:] c = np.empty((2,))
+    cdef DTYPE_t [:] right = np.empty((2,))
+
     cdef DTYPE_m dot_prod
     cdef DTYPE_m phi
     cdef DTYPE_m theta
@@ -95,7 +92,7 @@ cpdef DTYPE_t[:, :] rot_steps(DTYPE_t[:, :] data):
         a_b_norm = 0
         for j in range(2):
             a_b_norm += (a[j] - b[j])**2.
-        a_b_norm = a_b_norm**0.5
+        a_b_norm = sqrt(a_b_norm)
 
         phi = acos(
                 dot_prod

@@ -4,7 +4,10 @@ from distutils.core import setup
 from Cython.Build import cythonize
 import numpy
 
-compile_args = ['-O3']
+compile_args = [
+        '-O3',
+        # '-ffast-math',  # could be kind of unsafe
+        ]
 
 ext_modules = [
         Extension('c_rot_steps',
