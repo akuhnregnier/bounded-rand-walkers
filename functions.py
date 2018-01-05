@@ -2,13 +2,22 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from scipy.stats import norm
+from numba import jitclass, int64, float64, njit, char
 
 
+@njit
 def get_centres(edges):
     """Get bin centres from edges."""
     return (edges[1:] + edges[:-1]) / 2.
 
 
+spec = [
+        ('width', float64),
+        ('centre', float64),
+        ]
+
+
+@jitclass(spec)
 class Tophat_1D(object):
     def __init__(self, width=0.5, centre=0.):
         """Tophat uniform pdf.
@@ -30,9 +39,18 @@ class Tophat_1D(object):
             return 0.
 
 
+spec = [
+        ('extent', float64),
+        ('x_centre', float64),
+        ('y_centre', float64),
+        ('type_2D', int64),
+        ]
+
+
+@jitclass(spec)
 class Tophat_2D(object):
     def __init__(self, extent=0.5, x_centre=0., y_centre=0.,
-                 type_2D='circularly-symmetric'):
+                 type_2D=0):
         """Tophat uniform pdf.
 
         The distribution is not normalised.
@@ -47,9 +65,9 @@ class Tophat_2D(object):
                 x-dimension.
             y_centre (float): The centre of the distribution in the
                 y-dimension.
-            type_2D (str): If ``type_2D is 'circularly-symmetric'``, the
+            type_2D (int): If ``type_2D is 0 ('circularly-symmetric')``, the
                 distribution is circular in the 2D plane.
-                If ``type_2D is 'square'``, the
+                If ``type_2D is 1 ('square')``, the
                 distribution is square in the 2D plane.
 
         """
@@ -74,31 +92,41 @@ class Tophat_2D(object):
             p (float): The probability at the point ``(x, y)``.
 
         """
-        if self.type_2D == 'circularly-symmetric':
+        if self.type_2D == 0:
             if (((x - self.x_centre)**2. + (y - self.y_centre)**2.)
                     < (self.extent / 2.)**2.):
                 return 1.
             else:
                 return 0.
-        elif self.type_2D == 'square':
+        elif self.type_2D == 1:
             if ((abs(x - self.x_centre) < (self.extent / 2.))
                     and (abs(y - self.y_centre) < (self.extent / 2.))):
                 return 1.
             else:
                 return 0.
         else:
-            raise NotImplementedError('type_2D value {:} not implemented.'
-                                      .format(self.type_2D))
+            return -1.
+            # raise NotImplementedError('type_2D value {:} not implemented.'
+            #                           .format(self.type_2D))
 
 
+spec = [
+        ('centre', float64[:]),
+        ('exponent', float64),
+        ('binsize', float64),
+        ]
+
+
+@jitclass(spec)
 class Power(object):
     def __init__(self, centre=0., exponent=1., binsize=0.001):
         """A rotationally symmetric power law distribution.
 
         Args:
             centre: Center of the power law. For a 2D distribution, give a
-                list of x, y position (ie. [x, y]) of the centre of the
-                exponential.
+                numpy array of x, y position (ie. [x, y]) of the centre of the
+                exponential. For the 1D distribution, give a 1-element
+                numpy array.
             exponent: characteristic exponent of the probability decay.
             binsize= scale of UV cutoff, should have scale of hist binsize
 
@@ -123,7 +151,7 @@ class Power(object):
         if len(args) == 1:
             x = args[0]
             prob = 0.5*(
-                (np.abs(x-self.centre)+self.binsize)
+                (np.abs(x-self.centre[0])+self.binsize)
                 **(-self.exponent)
                 / (self.binsize)**(1-self.exponent)
                 )
@@ -236,7 +264,7 @@ class Funky(object):
         if len(args) == 1:
             x = args[0]
             position = np.abs(x - self.centre)
-            power_law = Power(centre=(2/3. * self.width), exponent=0.25)
+            power_law = Power(centre=np.array([2/3. * self.width]), exponent=0.25)
             scale = power_law.pdf(2/3. * self.width)
 
             const1 = np.abs(np.sinc(1/3. * self.width * self.frequency)) * (1 + 5 * 1/3. * self.width)
@@ -258,7 +286,7 @@ class Funky(object):
         if len(args) == 2:
             x,y = args
             position = np.sqrt((x - self.centre[0])**2 + (y - self.centre[1])**2)
-            power_law = Power(centre=(2/3. * self.width), exponent=0.25)
+            power_law = Power(centre=np.array([2/3. * self.width]), exponent=0.25)
             scale = power_law.pdf(2/3. * self.width)
 
             const1 = np.abs(np.sinc(1/3. * self.width * self.frequency)) * (1 + 5 * 1/3. * self.width)
@@ -279,15 +307,18 @@ class Funky(object):
 
         return prob
 
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
+    plt.close('all')
+    plt.ion()
 
     # 1D case
     pdfs_args_1D = [
             (Tophat_1D, {'width': 0.7, 'centre': 0.3}),
-            (Gaussian, {'centre': 0.7, 'scale': 0.3}),
+            (Gaussian, {'centre': 0.7, 'width': 0.3}),
             (Power, {
-                'centre': 0.5,
+                'centre': np.array([0.5]),
                 'exponent': 1.,
                 'binsize': 0.5
                 }),
@@ -297,35 +328,34 @@ if __name__ == '__main__':
                 }),
             ]
     x = np.linspace(-1, 1, 10000)
-    #for PDFClass, kwargs in pdfs_args_1D:
-    ##    p = [PDFClass(**kwargs).pdf(v) for v in x]
-    #    plt.figure()
-    #    plt.title(PDFClass.__name__)
-    #    plt.plot(x, p)
-    #plt.show()
+    for PDFClass, kwargs in pdfs_args_1D:
+        p = [PDFClass(**kwargs).pdf(v) for v in x]
+        plt.figure()
+        plt.title(PDFClass.__name__)
+        plt.plot(x, p)
+    plt.show()
+    plt.figure()
     a = Funky([0.5,0.5], width=2.)
     x = [np.sqrt(2) * i/100. for i in range(200)]
     y = [a.pdf(*[i/100., i/100.]) for i in range(200)]
     #y = [a.pdf(i/100) for i in range(100)]
     plt.plot(x,y)
-'''
+    plt.title('funky')
+
     # 2D case
     pdfs_args_2D = [
             (Tophat_2D, {
+                'extent': 0.7,
                 'x_centre': 0.3,
-                'y_centre': -0.4,
-                'extent': 0.6,
-                'type_2D': 'circularly-symmetric'
+                'y_centre':0.1,
+                'type_2D':0
                 }),
-            (Tophat_2D, {
-                'x_centre': 0.3,
-                'y_centre': -0.4,
-                'extent': 0.6,
-                'type_2D': 'square'
+            (Gaussian, {
+                'centre': (0., 0.5),
+                'width': 1.
                 }),
-            (Gaussian, {'centre': (0., 0.5), 'scale': 1.}),
             (Power, {
-                'centre': (0.5, -0.5),
+                'centre': np.array((0.5, -0.5)),
                 'exponent': 0.2,
                 'binsize': 0.8,
                 }),
@@ -341,13 +371,13 @@ if __name__ == '__main__':
     x, y = np.meshgrid(x_centres, y_centres)
     C = np.zeros_like(x, dtype=np.float64)
     for PDFClass, kwargs in pdfs_args_2D:
+        instance = PDFClass(**kwargs)
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
-                C[i, j] = (PDFClass(**kwargs)
-                           .pdf(x[i, j], y[i, j]))
+                C[i, j] = instance.pdf(x[i, j], y[i, j])
         plt.figure()
         plt.title(PDFClass.__name__)
         plt.pcolormesh(x, y, C)
         plt.gca().set_aspect('equal')
     plt.show()
-'''
+

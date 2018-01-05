@@ -237,6 +237,8 @@ def g2D(f, xs_edges, ys_edges, bounds=weird_bounds):
             position_mask[i, j] = is_in_bounds
     x_indices, y_indices = np.where(position_mask)
 
+    ########################################################################
+
     counter = 0
     max_counter = len(x_indices)
     for mask_x_index, mask_y_index in zip(x_indices, y_indices):
