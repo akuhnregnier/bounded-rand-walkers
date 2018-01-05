@@ -2,7 +2,7 @@ LDLIBS=-Wall -L/usr/local/lib -lcnpy -lz -lnlopt -lm
 # DO NOT USE -pg -O0 for final code!!!
 # CFLAGS=-g -O0 -I /home/alex/.pyenv/versions/miniconda2-latest/include -I /home/alex/Documents/roboptim-core/include -I /usr/include/eigen3
 # Release version
-CFLAGS=-O3 -I /home/alex/.pyenv/versions/miniconda2-latest/include -I /home/alex/Documents/roboptim-core/include -I /usr/include/eigen3
+CFLAGS=-O3 -I ~/.pyenv/versions/miniconda2-latest/include -I ~/Documents/roboptim-core/include -I /usr/include/eigen3
 
 data_generation: data_generation.o
 	g++ $(CFLAGS) -o data_generation data_generation.o $(LDLIBS)
