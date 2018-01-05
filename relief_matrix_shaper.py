@@ -28,12 +28,15 @@ def gen_shaper2D(order_divisions, vertices):
     CoM = np.array([np.mean(vertices[:, 0]), np.mean(vertices[:, 1])])
 
     # upper - lower limits of boundary, as defined in plot
-    x0 = np.max(vertices[:, 0]) - np.min(vertices[:, 0])
-    y0 = np.max(vertices[:, 1]) - np.min(vertices[:, 1])
+    # x0 = np.max(vertices[:, 0]) - np.min(vertices[:, 0])
+    # y0 = np.max(vertices[:, 1]) - np.min(vertices[:, 1])
+    x0 = 2
+    y0 = 2
 
     # so that we have no bias in case of asymmetric shape
     divisions_x = order_divisions
-    divisions_y = order_divisions * int(float(y0) / float(x0))
+    # divisions_y = order_divisions * int(float(y0) / float(x0))
+    divisions_y = order_divisions
 
     xs = np.linspace(CoM[0] - x0,  CoM[0] + x0,  divisions_x + 1)
     # issue with centering of bins?

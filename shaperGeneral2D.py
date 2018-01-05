@@ -34,6 +34,14 @@ def get_weird_shaper(x_centres, y_centres, which='binary', divisions=200):
         raise NotImplementedError(
                 'Choice of which:{:}, not supported'.format(which)
                 )
+    interpolate = True
+    if (len(x_centres) == len(y_centres)) and (len(x_centres) == divisions):
+        print("Not interpolating, as nr. divisions match!")
+        interpolate = False
+    else:
+        print("Interpolating, as nr. divisions don't match!")
+    # do the interpolation as a check, since they should return the same
+    # result
     interp = RegularGridInterpolator(
             (x_centres_orig, y_centres_orig),
             Z_orig,
@@ -42,8 +50,17 @@ def get_weird_shaper(x_centres, y_centres, which='binary', divisions=200):
             fill_value=0.
             )
     interp_shaper = interp((X, Y))
-
-    return interp_shaper
+    if not interpolate:
+        # plt.figure()
+        # plt.imshow(interp_shaper)
+        # plt.title('Interp')
+        # plt.figure()
+        # plt.imshow(Z_orig)
+        # plt.title('raw')
+        assert np.all(np.isclose(interp_shaper, Z_orig))
+        return Z_orig
+    else:
+        return interp_shaper
 
 
 def disPtLn(m,c,x,y):

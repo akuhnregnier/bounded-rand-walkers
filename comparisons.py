@@ -275,7 +275,8 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
     f_t_analytical[~ft_total_mask] = 0.
 
     if bounds_name == "weird":
-        shaper = get_weird_shaper(ft_x_values, ft_y_values)
+        shaper = get_weird_shaper(ft_x_values, ft_y_values,
+                                  divisions=nr_bins)
     else:
         shaper = np.zeros_like(f_t_analytical, dtype=np.float64)
         rad_shaper_values = get_pdf_transform_shaper(ft_unique_rads, '1circle')
@@ -341,6 +342,11 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
     plt.figure()
     plt.imshow(f_i_numerical)
     plt.title('old f i')
+    plt.colorbar()
+
+    plt.figure()
+    plt.imshow(shaper)
+    plt.title('shaper')
     plt.colorbar()
 
     plt.figure()
@@ -791,7 +797,7 @@ if __name__ == '__main__':
                     }),
                 ]
 
-        bins = 211
+        bins = 101
         for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 
