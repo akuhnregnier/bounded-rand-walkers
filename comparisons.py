@@ -27,8 +27,10 @@ if not SHOW:
     mpl.use('Agg')
 import matplotlib.pyplot as plt
 from rotation_steps import (g1D, gRadialCircle, Pdf_Transform,
-                            rot_steps, g1D_norm, g2D,
+                            # rot_steps,
+                            g1D_norm, g2D,
                             get_pdf_transform_shaper)
+from c_rot_steps import rot_steps
 from functions import Tophat_1D, Tophat_2D, Power, Exponential, Gaussian, Funky
 from data_generation import multi_random_walker, circle_points, weird_bounds
 from utils import get_centres, stats, plot_name_clean

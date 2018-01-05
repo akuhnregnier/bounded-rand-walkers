@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.pardir))
-from rotation_steps import rot_steps_fast as rot_steps
+# from rotation_steps import rot_steps_fast as rot_steps
+from c_rot_steps import rot_steps
 from time import time
 
 
