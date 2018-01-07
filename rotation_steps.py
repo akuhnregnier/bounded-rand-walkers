@@ -244,7 +244,7 @@ def g2D(f, xs_edges, ys_edges, bounds=weird_bounds):
     return g_values
 
 
-if __name__ == '__main__':
+if __name__ == '__main__2':
     # must be run from iPython!!
     from IPython import get_ipython
     ipython = get_ipython()
@@ -259,7 +259,7 @@ if __name__ == '__main__':
                   '0.0]), width=0.1).pdf, x, y))')
 
 
-if __name__ == '__main__2':
+if __name__ == '__main__':
     # must be run from iPython!!
     from IPython import get_ipython
     ipython = get_ipython()
