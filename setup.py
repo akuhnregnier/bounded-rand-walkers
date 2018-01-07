@@ -14,11 +14,16 @@ ext_modules = [
                   sources=['c_rot_steps.pyx'],
                   include_dirs=[numpy.get_include()],
                   extra_compile_args=compile_args,
+                  language='C'),
+        Extension('c_g2D',
+                  sources=['c_g2D.pyx'],
+                  include_dirs=[numpy.get_include()],
+                  extra_compile_args=compile_args,
                   language='C')
         ]
 
-setup(name='c_rot_steps',
-      description='Fast Rot Steps',
+setup(name='Random Walkers',
+      description='Analysis Code',
       ext_modules=cythonize(ext_modules),
-      cmdclass={'build_ext':build_ext}
+      cmdclass={'build_ext': build_ext}
       )

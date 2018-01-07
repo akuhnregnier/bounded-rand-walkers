@@ -147,7 +147,7 @@ def compare_1D(pdf, nr_bins, num_samples=int(1e4),
     logger.debug('getting analytical f_t')
     shaper = get_pdf_transform_shaper(step_bin_centres, '1Dseg')
     f_i_analytical = np.array(
-            [pdf(x_coord) for x_coord in step_bin_centres],
+            [pdf(np.array([x_coord])) for x_coord in step_bin_centres],
             dtype=np.float64
             )
     f_t_analytical = f_i_analytical * shaper
@@ -196,7 +196,7 @@ def compare_1D(pdf, nr_bins, num_samples=int(1e4),
                             )
 
     f_i_analytical = np.array(
-            [pdf(x_coord) for x_coord in step_bin_centres],
+            [pdf(np.array([x_coord])) for x_coord in step_bin_centres],
             dtype=np.float64
             )
 
@@ -267,7 +267,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
 
     for rad in ft_unique_rads:
         mask = np.isclose(rad, ft_rads)
-        f_t_analytical_value = pdf(rad, 0)
+        f_t_analytical_value = pdf(np.array([rad, 0]))
         f_t_analytical[mask] = f_t_analytical_value
         if not np.isnan(f_t_analytical_value):
             ft_total_mask |= mask
@@ -373,7 +373,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
     f_i_analytical = np.zeros_like(f_i_numerical, dtype=np.float64)
     for i, step_x in enumerate(ft_x_values):
         for j, step_y in enumerate(ft_y_values):
-            f_i_analytical[i, j] = pdf(step_x, step_y)
+            f_i_analytical[i, j] = pdf(np.array((step_x, step_y)))
 
     # try radial calculation
     num_radii = 400
@@ -771,7 +771,7 @@ if __name__ == '__main__':
         pdfs_args_1D = [
                 (Gaussian, 'gauss', {
                     'scale': 0.5,
-                    'centre': 0.
+                    'centre': np.array([0.])
                     }),
                 ]
         bins = 31
@@ -788,16 +788,16 @@ if __name__ == '__main__':
 
         pdfs_args_2D = [
                 # (Funky, 'funky', {
-                #     'centre': (0., 0.),
+                #     'centre': np.array((0., 0.)),
                 #     'width': 2.
                 #     }),
                 (Gaussian, 'gauss', {
-                    'centre': (0., 0.),
+                    'centre': np.array((0., 0.)),
                     'width': 0.8
                     }),
                 ]
 
-        bins = 101
+        bins = 301
         for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 

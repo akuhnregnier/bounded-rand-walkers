@@ -33,7 +33,7 @@ class Tophat_1D(object):
         self.centre = centre
 
     def pdf(self, x):
-        if abs(x - self.centre) < (self.width/2.):
+        if abs(x[0] - self.centre) < (self.width/2.):
             return 1.
         else:
             return 0.
@@ -76,7 +76,7 @@ class Tophat_2D(object):
         self.y_centre = y_centre
         self.type_2D = type_2D
 
-    def pdf(self, x, y):
+    def pdf(self, pos):
         """Tophat uniform pdf.
 
         The distribution is not normalised.
@@ -92,6 +92,8 @@ class Tophat_2D(object):
             p (float): The probability at the point ``(x, y)``.
 
         """
+        x = pos[0]
+        y = pos[1]
         if self.type_2D == 0:
             if (((x - self.x_centre)**2. + (y - self.y_centre)**2.)
                     < (self.extent / 2.)**2.):
@@ -119,7 +121,7 @@ spec = [
 
 @jitclass(spec)
 class Power(object):
-    def __init__(self, centre=0., exponent=1., binsize=0.001):
+    def __init__(self, centre=np.array([0.]), exponent=1., binsize=0.001):
         """A rotationally symmetric power law distribution.
 
         Args:
@@ -135,7 +137,7 @@ class Power(object):
         self.exponent = exponent
         self.binsize = binsize
 
-    def pdf(self, *args):
+    def pdf(self, pos):
         """Calculate the probability at a point.
 
         Args:
@@ -148,16 +150,16 @@ class Power(object):
 
         """
 
-        if len(args) == 1:
-            x = args[0]
+        if len(pos) == 1:
+            x = pos[0]
             prob = 0.5*(
                 (np.abs(x-self.centre[0])+self.binsize)
                 **(-self.exponent)
                 / (self.binsize)**(1-self.exponent)
                 )
 
-        elif len(args) == 2:
-            x, y = args
+        elif len(pos) == 2:
+            x, y = pos
             radius = ((x - self.centre[0])**2
                       + (y - self.centre[1])**2)**0.5 + self.binsize
             prob = 0.5*(radius**(-self.exponent)
@@ -166,8 +168,15 @@ class Power(object):
         return prob
 
 
+spec = [
+        ('centre', float64[:]),
+        ('width', float64),
+        ]
+
+
+@jitclass(spec)
 class Gaussian(object):
-    def __init__(self, centre=0., width=1.):
+    def __init__(self, centre=np.array([0.]), width=1.):
         """A Gaussian distribution.
 
         Args:
@@ -180,7 +189,7 @@ class Gaussian(object):
         self.centre = centre
         self.width = width
 
-    def pdf(self, *args):
+    def pdf(self, pos):
         """Calculate the probability at a point.
 
         Args:
@@ -192,17 +201,25 @@ class Gaussian(object):
             prob: probability at the given point
 
         """
-        if len(args) == 1:
-            x = args[0]
-            prob = norm.pdf(x, loc=self.centre, scale=self.width)
-        elif len(args) == 2:
-            x, y = args
+        if len(pos) == 1:
+            x = pos[0]
+            expon = - (x - self.centre[0])**2 / (2 * self.width**2.)
+        elif len(pos) == 2:
+            x, y = pos
             # symmetric in radius
-            prob = norm.pdf(np.sqrt((x - self.centre[0])**2
-                            + (y - self.centre[1])**2),
-                            scale=self.width)
-        return prob
+            expon = - (((x - self.centre[0])**2
+                        + (y - self.centre[1])**2)
+                       / (2 * self.width**2.))
+        return np.exp(expon)
 
+
+spec = [
+        ('centre', float64[:]),
+        ('decay_rate', float64),
+        ]
+
+
+@jitclass(spec)
 class Exponential(object):
     def __init__(self, centre=0., decay_rate=1.):
         """
@@ -219,7 +236,7 @@ class Exponential(object):
         self.centre = centre
         self.decay_rate = decay_rate
 
-    def pdf(self, *args):
+    def pdf(self, pos):
         """
         Calculates the probability at a point.
 
@@ -233,13 +250,13 @@ class Exponential(object):
 
         """
 
-        if len(args) == 1:
-            x = args[0]
+        if len(pos) == 1:
+            x = pos[0]
             prob = self.decay_rate * np.exp(
-                    - np.abs(x - self.centre) * self.decay_rate
+                    - np.abs(x - self.centre[0]) * self.decay_rate
                     )
-        elif len(args) == 2:
-            x, y = args
+        elif len(pos) == 2:
+            x, y = pos
             # symmetric in radius
             prob = np.exp(
                      - np.sqrt((x - self.centre[0])**2
@@ -249,6 +266,15 @@ class Exponential(object):
         return prob
 
 
+spec = [
+        ('centre', float64[:]),
+        ('width', float64),
+        ('frequency', float64),
+        ('grad', float64),
+        ]
+
+
+@jitclass(spec)
 class Funky(object):
     def __init__(self, centre=0., width=1.):
         """
@@ -259,13 +285,13 @@ class Funky(object):
         self.frequency = 3.7
         self.grad = 1.
 
-    def pdf(self, *args):
+    def pdf(self, pos):
 
-        if len(args) == 1:
-            x = args[0]
-            position = np.abs(x - self.centre)
-            power_law = Power(centre=np.array([2/3. * self.width]), exponent=0.25)
-            scale = power_law.pdf(2/3. * self.width)
+        if len(pos) == 1:
+            x = pos[0]
+            position = np.abs(x - self.centre[0])
+            power_law = Power(np.array([2/3. * self.width]), 0.25, 0.001)
+            scale = power_law.pdf(np.array([2/3. * self.width]))
 
             const1 = np.abs(np.sinc(1/3. * self.width * self.frequency)) * (1 + 5 * 1/3. * self.width)
             const2 = const1 * ( 1 + self.grad *  1/3. * self.width)
@@ -281,13 +307,14 @@ class Funky(object):
             elif position > 1/3. * self.width and position <= 2/3. * self.width:
                 prob = const1 * ( 1 + self.grad * (position - 1/3. * self.width))
             elif position > 2/3. * self.width:
-                prob = power_law.pdf(position) / scale * const2
+                prob = power_law.pdf(np.array([position])) / scale * const2
 
-        if len(args) == 2:
-            x,y = args
+        if len(pos) == 2:
+            x,y = pos
             position = np.sqrt((x - self.centre[0])**2 + (y - self.centre[1])**2)
-            power_law = Power(centre=np.array([2/3. * self.width]), exponent=0.25)
-            scale = power_law.pdf(2/3. * self.width)
+            power_law = Power(np.array([2/3. * self.width]),
+                    0.25, 0.001)
+            scale = power_law.pdf(np.array([2/3. * self.width]))
 
             const1 = np.abs(np.sinc(1/3. * self.width * self.frequency)) * (1 + 5 * 1/3. * self.width)
             const2 = const1 * ( 1 + self.grad *  1/3. * self.width)
@@ -303,7 +330,7 @@ class Funky(object):
             elif position > 1/3. * self.width and position <= 2/3. * self.width:
                 prob = const1 * ( 1 + self.grad * (position - 1/3. * self.width))
             elif position > 2/3. * self.width:
-                prob = power_law.pdf(position) / scale * const2
+                prob = power_law.pdf(np.array([position])) / scale * const2
 
         return prob
 
@@ -316,30 +343,31 @@ if __name__ == '__main__':
     # 1D case
     pdfs_args_1D = [
             (Tophat_1D, {'width': 0.7, 'centre': 0.3}),
-            (Gaussian, {'centre': 0.7, 'width': 0.3}),
+            (Gaussian, {'centre': np.array([0.7]), 'width': 0.3}),
             (Power, {
                 'centre': np.array([0.5]),
                 'exponent': 1.,
                 'binsize': 0.5
                 }),
             (Exponential, {
-                'centre': 0.,
+                'centre': np.array([0.]),
                 'decay_rate': 1.
                 }),
             ]
     x = np.linspace(-1, 1, 10000)
     for PDFClass, kwargs in pdfs_args_1D:
-        p = [PDFClass(**kwargs).pdf(v) for v in x]
+        print PDFClass, kwargs
+        p = [PDFClass(**kwargs).pdf(np.array([v])) for v in x]
         plt.figure()
         plt.title(PDFClass.__name__)
         plt.plot(x, p)
     plt.show()
     plt.figure()
-    a = Funky([0.5,0.5], width=2.)
+    a = Funky(centre=np.array([0.5, 0.5]), width=2.)
     x = [np.sqrt(2) * i/100. for i in range(200)]
-    y = [a.pdf(*[i/100., i/100.]) for i in range(200)]
+    y = [a.pdf(np.array([i/100., i/100.])) for i in range(200)]
     #y = [a.pdf(i/100) for i in range(100)]
-    plt.plot(x,y)
+    plt.plot(x, y)
     plt.title('funky')
 
     # 2D case
@@ -347,11 +375,11 @@ if __name__ == '__main__':
             (Tophat_2D, {
                 'extent': 0.7,
                 'x_centre': 0.3,
-                'y_centre':0.1,
-                'type_2D':0
+                'y_centre': 0.1,
+                'type_2D': 0
                 }),
             (Gaussian, {
-                'centre': (0., 0.5),
+                'centre': np.array((0., 0.5)),
                 'width': 1.
                 }),
             (Power, {
@@ -360,7 +388,7 @@ if __name__ == '__main__':
                 'binsize': 0.8,
                 }),
             (Exponential, {
-                'centre': (0.5, -0.5),
+                'centre': np.array([0.5, -0.5]),
                 'decay_rate': 0.5,
                 }),
             ]
@@ -371,10 +399,11 @@ if __name__ == '__main__':
     x, y = np.meshgrid(x_centres, y_centres)
     C = np.zeros_like(x, dtype=np.float64)
     for PDFClass, kwargs in pdfs_args_2D:
+        print PDFClass, kwargs
         instance = PDFClass(**kwargs)
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
-                C[i, j] = instance.pdf(x[i, j], y[i, j])
+                C[i, j] = instance.pdf(np.array([x[i, j], y[i, j]]))
         plt.figure()
         plt.title(PDFClass.__name__)
         plt.pcolormesh(x, y, C)

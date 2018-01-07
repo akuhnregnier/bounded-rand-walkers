@@ -56,7 +56,7 @@ class Sampler(object):
         for indices in np.ndindex(*self.pdf_values.shape):
             values = [centres[index] for centres, index in
                       zip(self.centres_list, indices)]
-            self.pdf_values[indices] = self.pdf(*values)
+            self.pdf_values[indices] = self.pdf(np.array(values))
 
         # within each grid domain, find the maximum pdf value, which will
         # form the basis for getting the 'g' function below.
@@ -68,7 +68,7 @@ class Sampler(object):
         self.max_box_values = np.zeros_like(self.pdf_values)
 
         def inv_pdf(x):
-            return - self.pdf(*x)
+            return - self.pdf(np.array(x))
 
         for indices in np.ndindex(*self.pdf_values.shape):
             min_edges = [edges[index] for edges, index in
@@ -95,7 +95,7 @@ class Sampler(object):
                         approx_grad=True,
                         disp=0)[0]
                 max_args.append(x_max)
-                max_values.append(self.pdf(*x_max))
+                max_values.append(self.pdf(np.array(x_max)))
                 if max_values[-1] > target_value:
                     break
             max_value = np.max(max_values)
@@ -109,8 +109,8 @@ class Sampler(object):
                         approx_grad=True,
                         disp=0)[0]
             self.logger.debug('max value:{:} at {:}'
-                              .format(self.pdf(*x_max), x_max))
-            self.max_box_values[indices] = self.pdf(*x_max)
+                              .format(self.pdf(np.array(x_max)), x_max))
+            self.max_box_values[indices] = self.pdf(np.array(x_max))
 
         self.max_box_values += 1e-7
         # prevent minuscule differences from
@@ -287,7 +287,7 @@ class Sampler(object):
 
         # check that the probabilities in ``probs`` are indeed lower than
         # those returned by the original pdf
-        pdf_val = self.pdf(*output)
+        pdf_val = self.pdf(np.array(output))
         max_box_val = self.max_box_values[tuple(centre_indices)]
         ratio = pdf_val / max_box_val
         prob = np.random.uniform(0, 1)

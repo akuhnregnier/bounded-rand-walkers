@@ -14,6 +14,7 @@ from scipy.spatial import Delaunay
 from utils import get_centres
 from numba import njit, jit
 from c_rot_steps import rot_steps as c_rot_steps
+from c_g2D import c_g2D_func
 
 
 @njit
@@ -227,51 +228,38 @@ def g2D(f, xs_edges, ys_edges, bounds=weird_bounds):
     bounds = DelaunayArray(bounds, Delaunay(bounds))
     xs_centres = get_centres(xs_edges)
     ys_centres = get_centres(ys_edges)
-    g_values = np.zeros((xs_centres.shape[0], ys_centres.shape[0]),
-                        dtype=np.float64)
     # should be True if the region is within the bounds
-    position_mask = np.zeros_like(g_values, dtype=bool)
+    position_mask = np.zeros((xs_centres.shape[0], ys_centres.shape[0]), dtype=bool)
     for i, x in enumerate(xs_centres):
         for j, y in enumerate(ys_centres):
             is_in_bounds = in_bounds(np.array([x, y]), bounds)
             position_mask[i, j] = is_in_bounds
     x_indices, y_indices = np.where(position_mask)
-
-    ########################################################################
-
-    counter = 0
-    max_counter = len(x_indices)
-    for mask_x_index, mask_y_index in zip(x_indices, y_indices):
-        # evaluate the pdf at each position relative to the current
-        # positions. But only iterate over the positions that are
-        # actually in the boundary.
-        if max_counter < 20:
-            print('counter:', counter + 1, 'out of:', max_counter)
-        else:
-            if ((counter) % (max_counter / 10)) == 0:
-                print('{:07.2%}'.format(float(counter) / (max_counter - 1)))
-        counter += 1
-        x, y = (xs_centres[mask_x_index],
-                ys_centres[mask_y_index])
-        x_mod = xs_centres - x
-        y_mod = ys_centres - y
-
-        for mask_x_index, mask_y_index in zip(x_indices, y_indices):
-            relative_position = (x_mod[mask_x_index],
-                                 y_mod[mask_y_index])
-            g_values[mask_x_index, mask_y_index] += f(*relative_position)
-
-    cell_areas = ((xs_edges[1:] - xs_edges[:-1]).reshape(-1, 1)
-                  * (ys_edges[1:] - ys_edges[:-1]).reshape(1, -1)
-                  )
-    total_prob = cell_areas * g_values
-    g_mask = np.isclose(g_values, 0)
-    # return the normalised g values
-    g_values[~g_mask] /= np.sum(total_prob[~g_mask])
+    g_values = np.asarray(c_g2D_func(f, xs_edges, ys_edges, xs_centres,
+                      ys_centres, x_indices, y_indices,
+                      ))
+    # now need to normalise
+    area = (xs_centres[1] - xs_centres[0]) * (ys_centres[1] - ys_centres[0])
+    g_values /= np.sum(area * g_values)
     return g_values
 
 
 if __name__ == '__main__':
+    # must be run from iPython!!
+    from IPython import get_ipython
+    ipython = get_ipython()
+    from functions import Gaussian, Funky
+    N = 200
+    x = np.linspace(-2, 2, N)
+    y = x
+
+    ipython.magic('time '
+                  'plt.imshow'
+                  '(g2D(Gaussian(centre=np.array([0.0, '
+                  '0.0]), width=0.1).pdf, x, y))')
+
+
+if __name__ == '__main__2':
     # must be run from iPython!!
     from IPython import get_ipython
     ipython = get_ipython()
@@ -289,7 +277,7 @@ if __name__ == '__main__':
 
 
 if __name__ == '__main__1':
-    N = 100000
+    N = 500000
     pos_data2D = rand.uniform(0, 1, size=(2, N))
     rot_steps_data = rot_steps(pos_data2D)
     plt.figure()
