@@ -56,13 +56,14 @@ int main() {
     std::string bounds_name = "weird";
     // used for the rejection sampler
     size_t blocks = 60;
-    // set pdf to use here
-    double (*pdf) (const dvect&, dvect&, void*) = gauss;
-    // adjust this to match the pdf above for the final filenames
-    std::string pdf_string = "gauss";
+    // set pdf to use here!!
+    double (*pdf) (const dvect&, dvect&, void*) = funky;
+    // adjust this to match the pdf above for the final filenames!!
+    std::string pdf_string = "funky";
     // pdf params are specified here
+    // these params vary for each pdf!!
     data.centre = dvect { 0.0, 0.0};
-    data.width = 0.8;
+    data.width = 2.;
     // Configuration END
 
     // this is used to select the proper sampler

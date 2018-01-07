@@ -787,17 +787,17 @@ if __name__ == '__main__':
         # 2D case
 
         pdfs_args_2D = [
-                # (Funky, 'funky', {
-                #     'centre': np.array((0., 0.)),
-                #     'width': 2.
-                #     }),
-                (Gaussian, 'gauss', {
+                (Funky, 'funky', {
                     'centre': np.array((0., 0.)),
-                    'width': 0.8
+                    'width': 2.
                     }),
+                # (Gaussian, 'gauss', {
+                #     'centre': np.array((0., 0.)),
+                #     'width': 0.8
+                #     }),
                 ]
 
-        bins = 301
+        bins = 101
         for PDFClass, pdf_name, kwargs in pdfs_args_2D:
             pdf = PDFClass(**kwargs).pdf
 

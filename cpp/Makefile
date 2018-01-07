@@ -50,5 +50,9 @@ method_calling: method_calling.cpp
 	g++ $(CFLAGS) method_calling.cpp -o method_calling $(LDLIBS)
 	./method_calling
 
+test_pdf: test_pdf.cpp
+	g++ $(CFLAGS) test_pdf.cpp -o test_pdf $(LDLIBS)
+	./test_pdf
+
 clean:
-	rm -f vtest vectortest.o rejection_sampling rejection_sampling.o roboptim_example.o robotim_example nlopt_example.o nlopt_example nlopt_tophat_example.o nlopt_tophat_example method_calling data_generation.o data_generation
+	rm -f vtest vectortest.o rejection_sampling rejection_sampling.o roboptim_example.o robotim_example nlopt_example.o nlopt_example nlopt_tophat_example.o nlopt_tophat_example method_calling data_generation.o data_generation test_pdf

@@ -9,6 +9,7 @@
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
+#include <sys/time.h>
 
 typedef std::vector<double> dvect;
 typedef xt::xarray<double> dxarray;
@@ -28,6 +29,9 @@ struct Int2Type
 struct pdf_data {
     dvect centre;
     double width;
+    double decay_rate;
+    double exponent;
+    double binsize;
 };
 
 
