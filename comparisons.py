@@ -376,7 +376,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
             f_i_analytical[i, j] = pdf(np.array((step_x, step_y)))
 
     # try radial calculation
-    num_radii = 400
+    num_radii = 70
     num_points_per_radius = 200
     avg_f_t_analytical, avg_f_t_ana_radii = radial_interp(
             f_t_analytical, ft_x_values, ft_y_values,
