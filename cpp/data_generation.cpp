@@ -29,6 +29,54 @@ auto get_weird_bounds() {
 }
 
 
+auto get_circle_bounds() {
+    // bounds with x coords in the first column and y coords in the second
+    // has to be given in clockwise order!
+    vect_dvect circle_bounds_vect;
+    circle_bounds_vect.push_back({ 1.00000000e+00,  0.00000000e+00 });
+    circle_bounds_vect.push_back({ 9.87688341e-01,  1.56434465e-01 });
+    circle_bounds_vect.push_back({ 9.51056516e-01,  3.09016994e-01 });
+    circle_bounds_vect.push_back({ 8.91006524e-01,  4.53990500e-01 });
+    circle_bounds_vect.push_back({ 8.09016994e-01,  5.87785252e-01 });
+    circle_bounds_vect.push_back({ 7.07106781e-01,  7.07106781e-01 });
+    circle_bounds_vect.push_back({ 5.87785252e-01,  8.09016994e-01 });
+    circle_bounds_vect.push_back({ 4.53990500e-01,  8.91006524e-01 });
+    circle_bounds_vect.push_back({ 3.09016994e-01,  9.51056516e-01 });
+    circle_bounds_vect.push_back({ 1.56434465e-01,  9.87688341e-01 });
+    circle_bounds_vect.push_back({ 6.12323400e-17,  1.00000000e+00 });
+    circle_bounds_vect.push_back({-1.56434465e-01,  9.87688341e-01 });
+    circle_bounds_vect.push_back({-3.09016994e-01,  9.51056516e-01 });
+    circle_bounds_vect.push_back({-4.53990500e-01,  8.91006524e-01 });
+    circle_bounds_vect.push_back({-5.87785252e-01,  8.09016994e-01 });
+    circle_bounds_vect.push_back({-7.07106781e-01,  7.07106781e-01 });
+    circle_bounds_vect.push_back({-8.09016994e-01,  5.87785252e-01 });
+    circle_bounds_vect.push_back({-8.91006524e-01,  4.53990500e-01 });
+    circle_bounds_vect.push_back({-9.51056516e-01,  3.09016994e-01 });
+    circle_bounds_vect.push_back({-9.87688341e-01,  1.56434465e-01 });
+    circle_bounds_vect.push_back({-1.00000000e+00,  1.22464680e-16 });
+    circle_bounds_vect.push_back({-9.87688341e-01, -1.56434465e-01 });
+    circle_bounds_vect.push_back({-9.51056516e-01, -3.09016994e-01 });
+    circle_bounds_vect.push_back({-8.91006524e-01, -4.53990500e-01 });
+    circle_bounds_vect.push_back({-8.09016994e-01, -5.87785252e-01 });
+    circle_bounds_vect.push_back({-7.07106781e-01, -7.07106781e-01 });
+    circle_bounds_vect.push_back({-5.87785252e-01, -8.09016994e-01 });
+    circle_bounds_vect.push_back({-4.53990500e-01, -8.91006524e-01 });
+    circle_bounds_vect.push_back({-3.09016994e-01, -9.51056516e-01 });
+    circle_bounds_vect.push_back({-1.56434465e-01, -9.87688341e-01 });
+    circle_bounds_vect.push_back({-1.83697020e-16, -1.00000000e+00 });
+    circle_bounds_vect.push_back({ 1.56434465e-01, -9.87688341e-01 });
+    circle_bounds_vect.push_back({ 3.09016994e-01, -9.51056516e-01 });
+    circle_bounds_vect.push_back({ 4.53990500e-01, -8.91006524e-01 });
+    circle_bounds_vect.push_back({ 5.87785252e-01, -8.09016994e-01 });
+    circle_bounds_vect.push_back({ 7.07106781e-01, -7.07106781e-01 });
+    circle_bounds_vect.push_back({ 8.09016994e-01, -5.87785252e-01 });
+    circle_bounds_vect.push_back({ 8.91006524e-01, -4.53990500e-01 });
+    circle_bounds_vect.push_back({ 9.51056516e-01, -3.09016994e-01 });
+    circle_bounds_vect.push_back({ 9.87688341e-01, -1.56434465e-01 });
+    return circle_bounds_vect;
+}
+
+
 typedef Int2Type<1> one_d;
 typedef Int2Type<2> two_d;
 
@@ -52,8 +100,8 @@ int main() {
     // Configuration START
     size_t samples = (size_t) 1e7;
     const size_t dims = 2;
-    vect_dvect bounds = get_weird_bounds();  // only needed for `dims=2`
-    std::string bounds_name = "weird";
+    vect_dvect bounds = get_circle_bounds();  // only needed for `dims=2`
+    std::string bounds_name = "circle";
     // used for the rejection sampler
     size_t blocks = 60;
     // set pdf to use here!!
