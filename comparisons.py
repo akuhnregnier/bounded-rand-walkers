@@ -376,7 +376,7 @@ def compare_2D(pdf, nr_bins, num_samples=int(1e4),
             f_i_analytical[i, j] = pdf(np.array((step_x, step_y)))
 
     # try radial calculation
-    num_radii = 400
+    num_radii = 70
     num_points_per_radius = 200
     avg_f_t_analytical, avg_f_t_ana_radii = radial_interp(
             f_t_analytical, ft_x_values, ft_y_values,
@@ -496,10 +496,10 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
     fig3 = plt.figure()
     ax3 = fig3.add_subplot(111)
     # ax3.set_title(r'Comparing Analytical and Numerical $g(x)$')
-    ax3.plot(pos_bin_centres, g_analytical, label='Analytical')
+    ax3.plot(pos_bin_centres, g_analytical, label='Analytical', zorder=5)
     ax3.plot(pos_bin_centres, g_numerical, label='Numerical',
                  linestyle='', marker='x', markerfacecolor='C3',
-                 markeredgecolor='C3',
+                 markeredgecolor='C3', zorder=3
                  )
     ax3.set_ylabel('$g(x)$')
     ax3.set_xlabel('x (step size)')
@@ -508,10 +508,10 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
     fig4 = plt.figure()
     ax4 = fig4.add_subplot(111)
     # ax4.set_title(r'Comparing Analytical and Numerical $f_t(x)$')
-    ax4.plot(step_bin_centres, f_t_analytical, label='Analytical')
+    ax4.plot(step_bin_centres, f_t_analytical, label='Analytical', zorder=5)
     ax4.plot(step_bin_centres, f_t_numerical, label='Numerical',
                  linestyle='', marker='x', markerfacecolor='C3',
-                 markeredgecolor='C3',
+                 markeredgecolor='C3', zorder=3
                  )
     ax4.set_xlabel('x (step size)')
     ax4.set_ylabel('$f_t(x)$')
@@ -522,9 +522,9 @@ def compare_1D_plotting(pdf, nr_bins, steps=int(1e3), pdf_name='tophat',
     # ax5.set_title(r'Comparing Analytical and Numerical $f_i(x)$')
     ax5.plot(step_bin_centres, f_i_analytical, label='Analytical')
     ax5.plot(step_bin_centres, f_i_numerical, label='Numerical',
-                 linestyle='', marker='x', markerfacecolor='C3',
-                 markeredgecolor='C3',
-                 )
+             linestyle='', marker='x', markerfacecolor='C3',
+             markeredgecolor='C3', zorder=3
+             )
     ax5.set_xlabel('x (step size)')
     ax5.set_ylabel('$f_i(x)$')
     ax5.legend(loc='best')
@@ -717,22 +717,24 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     out of adjacctives, cool radial function stuff
     """
     fig4, axis = plt.subplots(1, 1, squeeze=True)
-    plt.plot(avg_f_t_ana_radii, avg_f_t_analytical, label='Analytical')
+    plt.plot(avg_f_t_ana_radii, avg_f_t_analytical, label='Analytical',
+             zorder=5)
     plt.plot(avg_f_t_num_radii, avg_f_t_numerical, label='Numerical',
              linestyle='', marker='x', markerfacecolor='C3',
-             markeredgecolor='C3')
+             markeredgecolor='C3', zorder=3)
     # plt.title(r'Average Radial Distribution of $f_t$')
     plt.xlabel('r (step size)')
     plt.ylabel('$f_t(r)$')
     plt.legend(loc='best')
 
     fig5, axis = plt.subplots(1, 1, squeeze=True)
-    plt.plot(avg_f_i_ana_radii, avg_f_i_analytical, label='Analytical')
+    plt.plot(avg_f_i_ana_radii, avg_f_i_analytical, label='Analytical',
+             zorder=4)
     plt.plot(avg_f_i_num_radii, avg_f_i_numerical, label='Numerical',
              linestyle='', marker='x', markerfacecolor='C3',
-             markeredgecolor='C3')
+             markeredgecolor='C3', zorder=3)
     plt.plot(avg_f_i_chk_radii, avg_f_i_check, label='Transformed Analytical',
-             color='C2', linestyle='--')
+             color='C2', linestyle='--', zorder=5)
     # plt.title(r'Average Radial Distribution of $f_i$')
     plt.xlabel('r (step size)')
     plt.ylabel('$f_i(r)$')
