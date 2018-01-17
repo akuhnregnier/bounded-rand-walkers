@@ -132,7 +132,7 @@ def gen_shaper2D_alt(order_divisions, vertices):
 
 if __name__ == '__main__':
     plt.close('all')
-    order_divisions = 200
+    order_divisions = 140
 
     vertices = np.array([0.1, 0.3, 0.25, 0.98, 0.9, 0.9, 0.7, 0.4, 0.4, 0.05])
     vertices = vertices.reshape(int(len(vertices) / 2), 2)
@@ -148,6 +148,12 @@ if __name__ == '__main__':
     #####
 
     X, Y, Z = gen_shaper2D(order_divisions, vertices)
+
+    plt.figure()
+    CS = plt.contour(get_centres(xs), get_centres(ys), Z.T, 7,
+                     colors='b',
+                     )
+    plt.clabel(CS, fontsize=9, inline=1)
 
     # normalise
     Z /= np.sum(Z * cell_area)
@@ -166,6 +172,8 @@ if __name__ == '__main__':
     plt.figure()
     plt.pcolormesh(X, Y, Z2)
     plt.colorbar()
+
+
 
     print("Zs are close")
     print(np.all(np.isclose(Z, Z2)))
