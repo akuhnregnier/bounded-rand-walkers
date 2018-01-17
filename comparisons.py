@@ -806,8 +806,8 @@ if __name__ == '__main__':
             compare_2D_plotting(pdf, bins, steps=int(1e7),
                                 pdf_name=pdf_name,
                                 pdf_kwargs=kwargs,
-                                bounds=weird_bounds,
-                                bounds_name='weird',
+                                bounds=circle_points(samples=40),
+                                bounds_name='circle',
                                 load=False,
                                 blocks=70,
                                 cpp_data=True)
