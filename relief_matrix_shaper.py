@@ -12,6 +12,15 @@ from data_generation import DelaunayArray, Delaunay, in_bounds
 from scipy.signal import correlate2d
 from utils import get_centres
 import math
+import os
+
+
+output_dir = os.path.abspath(os.path.join(
+    os.path.dirname(__file__),
+    'output'
+    ))
+if not os.path.isdir(output_dir):
+    os.makedirs(output_dir)
 
 
 def newShaper2D(x_shift, y_shift, relief_matrix, x0, y0):
@@ -88,10 +97,15 @@ def gen_shaper2D_alt(order_divisions, vertices):
 
     bounds = DelaunayArray(vertices, Delaunay(vertices))
     CoM = np.array([np.mean(vertices[:, 0]), np.mean(vertices[:, 1])])
-    x0 = np.max(vertices[:, 0]) - np.min(vertices[:, 0])
-    y0 = np.max(vertices[:, 1]) - np.min(vertices[:, 1])
+    # x0 = np.max(vertices[:, 0]) - np.min(vertices[:, 0])
+    # y0 = np.max(vertices[:, 1]) - np.min(vertices[:, 1])
+    x0 = 2
+    y0 = 2
+
     divisions_x = order_divisions
-    divisions_y = order_divisions * int(float(y0) / float(x0))
+    # divisions_y = order_divisions * int(float(y0) / float(x0))
+    divisions_y = divisions_x
+
     xs = np.linspace(CoM[0] - x0,  CoM[0] + x0,  divisions_x + 1)
     ys = np.linspace(CoM[1] - y0,  CoM[1] + y0,  divisions_y + 1)
     xsG = xs - CoM[0]
@@ -134,14 +148,21 @@ if __name__ == '__main__':
     plt.close('all')
     order_divisions = 140
 
-    vertices = np.array([0.1, 0.3, 0.25, 0.98, 0.9, 0.9, 0.7, 0.4, 0.4, 0.05])
+    # shape = 'weird'
+    shape = 'square'
+    if shape == 'weird':
+        vertices = np.array([0.1, 0.3, 0.25, 0.98, 0.9, 0.9, 0.7, 0.4, 0.4, 0.05])
+    elif shape == 'square':
+        vertices = np.array([0, 0, 0, 1, 1, 1, 1, 0])
     vertices = vertices.reshape(int(len(vertices) / 2), 2)
 
     #####
-    x0 = np.max(vertices[:, 0]) - np.min(vertices[:, 0])
-    y0 = np.max(vertices[:, 1]) - np.min(vertices[:, 1])
+    # x0 = np.max(vertices[:, 0]) - np.min(vertices[:, 0])
+    # y0 = np.max(vertices[:, 1]) - np.min(vertices[:, 1])
+    x0 = y0 = 2
     divisions_x = order_divisions
-    divisions_y = order_divisions * int(float(y0) / float(x0))
+    divisions_y = divisions_x
+    # divisions_y = order_divisions * int(float(y0) / float(x0))
     xs = np.linspace(- x0, x0, divisions_x + 1)
     ys = np.linspace(- y0, y0, divisions_y + 1)
     cell_area = (xs[1] - xs[0]) * (ys[1] - ys[0])
@@ -150,16 +171,41 @@ if __name__ == '__main__':
     X, Y, Z = gen_shaper2D(order_divisions, vertices)
 
     plt.figure()
-    CS = plt.contour(get_centres(xs), get_centres(ys), Z.T, 7,
-                     colors='b',
-                     )
-    plt.clabel(CS, fontsize=9, inline=1)
-
-    # normalise
-    Z /= np.sum(Z * cell_area)
+    if shape == 'weird':
+        CS = plt.contour(
+                get_centres(xs),
+                get_centres(ys),
+                Z.T,
+                7,
+                colors='#1f77b4ff',
+                )
+        plt.clabel(CS, fontsize=9, inline=1)
+        plt.xlim(-1, 1)
+        plt.ylim(-1, 1)
+        plt.gca().set_aspect('equal')
+        plt.xlabel('x (steps)')
+        plt.ylabel('y (steps)')
+        plt.savefig(os.path.join(output_dir, 'improvedA1shaper.pdf'), bbox_inches='tight')
+    elif shape == 'square':
+        CS = plt.contour(
+                get_centres(xs),
+                get_centres(ys),
+                Z.T,
+                6,
+                colors='#1f77b4ff',
+                )
+        plt.clabel(CS, fontsize=9, inline=1)
+        plt.xlim(-1, 1)
+        plt.ylim(-1, 1)
+        plt.gca().set_aspect('equal')
+        plt.xlabel('x (steps)')
+        plt.ylabel('y (steps)')
+        plt.savefig(os.path.join(output_dir, 'Shaper2Dsquare.pdf'), bbox_inches='tight')
 
     X2, Y2, Z2 = gen_shaper2D_alt(order_divisions, vertices)
 
+    # normalise
+    Z /= np.sum(Z * cell_area)
 
     print("shapes")
     print(Z.shape)
@@ -172,8 +218,6 @@ if __name__ == '__main__':
     plt.figure()
     plt.pcolormesh(X, Y, Z2)
     plt.colorbar()
-
-
 
     print("Zs are close")
     print(np.all(np.isclose(Z, Z2)))
