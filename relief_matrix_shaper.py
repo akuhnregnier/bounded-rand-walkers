@@ -148,12 +148,26 @@ if __name__ == '__main__':
     plt.close('all')
     order_divisions = 140
 
-    # shape = 'weird'
-    shape = 'square'
+    shape = 'weird'
+    # shape = 'square'
     if shape == 'weird':
         vertices = np.array([0.1, 0.3, 0.25, 0.98, 0.9, 0.9, 0.7, 0.4, 0.4, 0.05])
     elif shape == 'square':
         vertices = np.array([0, 0, 0, 1, 1, 1, 1, 0])
+
+    fig = plt.figure(figsize=(5, 3))
+    plt.plot(list(vertices[0::2]) + [vertices[0]],
+             list(vertices[1::2]) + [vertices[1]]
+             )
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.xlim(0, 1)
+    plt.ylim(0, 1)
+    plt.gca().set_aspect('equal')
+    plt.savefig(os.path.join(output_dir, '{:}_boundary.pdf'.format(shape)),
+                bbox_inches='tight'
+                )
+
     vertices = vertices.reshape(int(len(vertices) / 2), 2)
 
     #####
@@ -170,18 +184,19 @@ if __name__ == '__main__':
 
     X, Y, Z = gen_shaper2D(order_divisions, vertices)
 
-    plt.figure()
+    plt.figure(figsize=(7.5, 3.0))
     if shape == 'weird':
         CS = plt.contour(
                 get_centres(xs),
                 get_centres(ys),
                 Z.T,
-                7,
+                6,
                 colors='#1f77b4ff',
                 )
         plt.clabel(CS, fontsize=9, inline=1)
-        plt.xlim(-1, 1)
-        plt.ylim(-1, 1)
+        limits = 0.7
+        plt.xlim(-limits, limits)
+        plt.ylim(-limits, limits)
         plt.gca().set_aspect('equal')
         plt.xlabel('x (steps)')
         plt.ylabel('y (steps)')
@@ -191,7 +206,7 @@ if __name__ == '__main__':
                 get_centres(xs),
                 get_centres(ys),
                 Z.T,
-                6,
+                4,
                 colors='#1f77b4ff',
                 )
         plt.clabel(CS, fontsize=9, inline=1)
