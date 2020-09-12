@@ -11,24 +11,6 @@
 #include <string>
 #include <vector>
 
-template <class T, class T2>
-// std::vector<long unsigned int>
-void plot_square(T v, const T2 shape) {
-  cnpy::npy_save("/tmp/v_test.npy", &v[0], shape, "w");
-  std::system("./visualisation.py /tmp/v_test.npy");
-}
-
-// return an evenly spaced 1-d grid of doubles.
-// from http://rncarpio.github.io/linterp/
-std::vector<double> linspace(double first, double last, int len) {
-  std::vector<double> result(len);
-  double step = (last - first) / (len - 1);
-  for (int i = 0; i < len; i++) {
-    result[i] = first + i * step;
-  }
-  return result;
-}
-
 int main() {
   srand(time(NULL));
   float max_rand = RAND_MAX;
