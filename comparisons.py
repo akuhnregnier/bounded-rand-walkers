@@ -615,12 +615,18 @@ def compare_2D_plotting(pdf, nr_bins, steps=int(1e3),
     # use this max/min value with the hexbin vmax/vmin option
     # in order to have the same colour scaling for both
     # hexbin plots, such that the same colorbar may be used
-    max_value = np.max([np.max(g_analytical[~np.isnan(g_analytical)]),
-                        np.max(g_numerical[~np.isnan(g_numerical)])
-                        ])
-    min_value = np.min([np.min(g_analytical[~np.isnan(g_analytical)]),
-                        np.min(g_numerical[~np.isnan(g_numerical)])
-                        ])
+    if not np.all(np.isnan(g_numerical)):
+        max_value = np.max([np.max(g_analytical[~np.isnan(g_analytical)]),
+                            np.max(g_numerical[~np.isnan(g_numerical)])
+                            ])
+        min_value = np.min([np.min(g_analytical[~np.isnan(g_analytical)]),
+                            np.min(g_numerical[~np.isnan(g_numerical)])
+                            ])
+    else:
+        print('\nWARNING --- ALL G_NUMERICAL DATA IS NAN!!!\n')
+        max_value = np.max(g_analytical[~np.isnan(g_analytical)])
+        min_value = np.min(g_analytical[~np.isnan(g_analytical)])
+
     axes[0].set_title(r'a.) Analytical $g(x, y)$')
 
     analytical_mesh = axes[0].pcolormesh(
@@ -793,10 +799,10 @@ if __name__ == '__main__':
                     'centre': np.array((0., 0.)),
                     'width': 2.
                     }),
-                # (Gaussian, 'gauss', {
-                #     'centre': np.array((0., 0.)),
-                #     'width': 0.8
-                #     }),
+                (Gaussian, 'gauss', {
+                    'centre': np.array((0., 0.)),
+                    'width': 0.8
+                    }),
                 ]
 
         bins = 301
@@ -806,8 +812,8 @@ if __name__ == '__main__':
             compare_2D_plotting(pdf, bins, steps=int(1e7),
                                 pdf_name=pdf_name,
                                 pdf_kwargs=kwargs,
-                                bounds=circle_points(samples=40),
-                                bounds_name='circle',
+                                bounds=weird_bounds,
+                                bounds_name='weird',
                                 load=False,
                                 blocks=70,
                                 cpp_data=True)
