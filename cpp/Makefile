@@ -1,12 +1,8 @@
 LDLIBS=-Wall -L/usr/local/lib -lcnpy -lz -lnlopt -lm
-# DO NOT USE -pg -O0 for final code!!!
-# CFLAGS=-g -O0 -I /home/alex/.pyenv/versions/miniconda2-latest/include -I /home/alex/Documents/roboptim-core/include -I /usr/include/eigen3
-# Release version
-CFLAGS=-O3 -I ~/.pyenv/versions/miniconda2-latest/include -I ~/Documents/roboptim-core/include -I /usr/include/eigen3
+CFLAGS=-O3 -I ~/.pyenv/versions/miniconda3-latest/include -I ~/Documents/roboptim-core/include -I /usr/include/eigen3
 
 data_generation: data_generation.o
 	g++ $(CFLAGS) -o data_generation data_generation.o $(LDLIBS)
-	# ./data_generation
 
 data_generation.o: data_generation.cpp
 	g++ $(CFLAGS) -c data_generation.cpp
@@ -24,13 +20,6 @@ vtest: vectortest.o
 
 vectortest.o: vectortest.cpp
 	g++ $(CFLAGS) -c vectortest.cpp
-
-roboptim_example: roboptim_example.o
-	g++ $(CFLAGS) -o roboptim_example roboptim_example.o $(LDLIBS)
-	./roboptim_example
-
-roboptim_example.o: roboptim_example.cpp
-	g++ $(CFLAGS) -c roboptim_example.cpp
 
 nlopt_example: nlopt_example.o
 	g++ $(CFLAGS) -o nlopt_example nlopt_example.o $(LDLIBS)
