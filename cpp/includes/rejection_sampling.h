@@ -28,6 +28,7 @@
 #include "xtensor/xindex_view.hpp"
 #include "xtensor/xslice.hpp"
 #include "xtensor/xeval.hpp"
+#include "xtensor/xview.hpp"
 #include "polygon_inclusion.h"
 #include "common.h"
 #include "pdfs.h"
@@ -498,7 +499,7 @@ class Sampler2D: public SamplerBase {
                     if (VERBOSE) {
                         print("pdf coord param:");
                         print_1d(coord);
-                        printf("first max val index %d\n", first_max_val_index);
+                        printf("first max val index %ld\n", first_max_val_index);
                         printf("min step %g, max step %g, min prob %g, max prob %g, 2nd prob %g\n", min_step[0], max_step[0], min_prob, max_prob, second_prob[0]);
                         printf("pdf val = %g, therefore re-doing\n", pdf_val);
                     }

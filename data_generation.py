@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 From an arbitrary intrinsic step size distribution and
@@ -8,33 +8,27 @@ size distributions numerically.
 """
 import logging
 import multiprocessing
+from time import time
+
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial import Delaunay
-import matplotlib.pyplot as plt
-from time import time
-from functions import Tophat_1D, Tophat_2D, Gaussian, Power, Exponential
+
+from functions import Tophat_1D, Tophat_2D
 from rejection_sampling import Sampler
 
-
 # bounds with x coords in the first column and y coords in the second
-weird_bounds = np.array([
-    [0.1, 0.3],
-    [0.25, 0.98],
-    [0.9, 0.9],
-    [0.7, 0.4],
-    [0.4, 0.05]]
-    )
+weird_bounds = np.array([[0.1, 0.3], [0.25, 0.98], [0.9, 0.9], [0.7, 0.4], [0.4, 0.05]])
 
 
-def circle_points(radius=1., samples=20):
-    angles = np.linspace(0, 2*np.pi, samples, endpoint=False)
+def circle_points(radius=1.0, samples=20):
+    angles = np.linspace(0, 2 * np.pi, samples, endpoint=False)
     x = (np.cos(angles) * radius).reshape(-1, 1)
     y = (np.sin(angles) * radius).reshape(-1, 1)
     return np.hstack((x, y))
 
 
 class DelaunayArray(np.ndarray):
-
     def __new__(cls, input_array, tri=None):
         # Input array is an already formed ndarray instance
         # We first cast to be our class type
@@ -48,7 +42,7 @@ class DelaunayArray(np.ndarray):
         # see InfoArray.__array_finalize__ for comments
         if obj is None:
             return
-        self.tri = getattr(obj, 'tri', None)
+        self.tri = getattr(obj, "tri", None)
 
 
 def in_bounds(position, bounds):
@@ -71,7 +65,7 @@ def in_bounds(position, bounds):
         # more than 1D
         return np.all(bounds.tri.find_simplex(position) != -1)
     else:
-        return ((position >= bounds[0]) and (position < bounds[1]))
+        return (position >= bounds[0]) and (position < bounds[1])
 
 
 def format_time(time_value):
@@ -90,19 +84,19 @@ def format_time(time_value):
             and its associated units are returned.
 
     """
-    units = 's'
+    units = "s"
     rounded_time = int(round(time_value))
     nr_digits = len(str(rounded_time))
     if nr_digits > 2:
         # convert to minutes
-        units = 'm'
-        time_value /= 60.
+        units = "m"
+        time_value /= 60.0
         rounded_time = int(round(time_value))
         nr_digits = len(str(rounded_time))
         if nr_digits > 2:
             # convert to hours
-            units = 'h'
-            time_value /= 60.
+            units = "h"
+            time_value /= 60.0
     return time_value, units
 
 
@@ -219,31 +213,38 @@ def random_walker(f_i, bounds, steps=int(1e2), sampler=None, blocks=50):
     # give random initial position
     positions[0] = np.random.uniform(low=0.0, high=1.0, size=dimensions)
     while not in_bounds(positions[0], bounds):
-        logger.debug('creating new initial position')
+        logger.debug("creating new initial position")
         positions[0] = np.random.uniform(low=0.0, high=1.0, size=dimensions)
-    logger.info('Initial walker position:{:}'.format(positions[0]))
+    logger.info("Initial walker position:{:}".format(positions[0]))
     start_time = time()
     for position_index in range(1, steps + 1):
-        logger.debug('position index:{:} {:}'
-                     .format(position_index, steps + 1))
+        logger.debug("position index:{:} {:}".format(position_index, steps + 1))
         if ((position_index % ((steps + 1) / 10)) == 0 or (steps < 10)) or (
-                position_index == int(4e3)):
+            position_index == int(4e3)
+        ):
             elapsed_time = time() - start_time
             elapsed_time_per_step = elapsed_time / position_index
             remaining_time = (steps - position_index) * elapsed_time_per_step
             elapsed_time, elapsed_time_units = format_time(elapsed_time)
             remaining_time, remaining_time_units = format_time(remaining_time)
-            logger.info('Position index:{:.1e} out of {:.1e}'
-                        .format(position_index, steps + 1))
-            logger.info('Time elapsed:{:>4.1f} {:}, remaining:{:0.1f} {:}'
-                        .format(elapsed_time, elapsed_time_units,
-                                remaining_time, remaining_time_units))
-        logger.debug('Current position:{:}'
-                     .format(positions[position_index - 1]))
+            logger.info(
+                "Position index:{:.1e} out of {:.1e}".format(position_index, steps + 1)
+            )
+            logger.info(
+                "Time elapsed:{:>4.1f} {:}, remaining:{:0.1f} {:}".format(
+                    elapsed_time,
+                    elapsed_time_units,
+                    remaining_time,
+                    remaining_time_units,
+                )
+            )
+        logger.debug("Current position:{:}".format(positions[position_index - 1]))
         step_index = position_index - 1
         found = False
         while not found:
-            step = sampler.sample(positions[position_index - 1]).reshape(-1,)
+            step = sampler.sample(positions[position_index - 1]).reshape(
+                -1,
+            )
             next_position = positions[position_index - 1] + step
             if in_bounds(next_position, bounds):
                 positions[position_index] = next_position
@@ -251,7 +252,7 @@ def random_walker(f_i, bounds, steps=int(1e2), sampler=None, blocks=50):
                 found = True
     elapsed_time = time() - start_time
     elapsed_time_per_step = elapsed_time / position_index
-    logger.info('time per step:{:.1e} s'.format(elapsed_time_per_step))
+    logger.info("time per step:{:.1e} s".format(elapsed_time_per_step))
     return step_values, positions
 
 
@@ -281,13 +282,10 @@ def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2), blocks=50):
     if n_processes == 1:
         # simply execute random_walker while ignoring the multiprocessing
         step_values, positions = random_walker(
-                f_i=f_i,
-                bounds=bounds,
-                steps=steps,
-                blocks=blocks
-                )
-        print('data shapes (steps, positions)')
-        print(step_values.shape, positions.shape)
+            f_i=f_i, bounds=bounds, steps=steps, blocks=blocks
+        )
+        print("data shapes (steps, positions)")
+        print((step_values.shape, positions.shape))
         return step_values, positions
 
     if bounds.size == bounds.shape[0]:
@@ -298,13 +296,10 @@ def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2), blocks=50):
 
     def rand_walk_worker(procnum, return_dict):
         """Worker function which executes the random_walker"""
-        print('process ' + str(procnum) + ' has started!')
+        print(("process " + str(procnum) + " has started!"))
         step_values, positions = random_walker(
-                f_i=f_i,
-                bounds=bounds,
-                steps=int(steps / n_processes),
-                sampler=sampler
-                )
+            f_i=f_i, bounds=bounds, steps=int(steps / n_processes), sampler=sampler
+        )
         return_dict[procnum] = (step_values, positions)
 
     manager = multiprocessing.Manager()
@@ -312,26 +307,25 @@ def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2), blocks=50):
     jobs = []
     for i in range(n_processes):
         np.random.seed(i)
-        p = multiprocessing.Process(target=rand_walk_worker,
-                                    args=(i, return_dict))
+        p = multiprocessing.Process(target=rand_walk_worker, args=(i, return_dict))
         jobs.append(p)
         p.start()
 
     for proc in jobs:
         proc.join()
 
-    step_values = [i[0] for i in return_dict.values()]
-    positions = [i[1] for i in return_dict.values()]
+    step_values = [i[0] for i in list(return_dict.values())]
+    positions = [i[1] for i in list(return_dict.values())]
     step_values = np.vstack(step_values)
     positions = np.vstack(positions)
 
-    print('data shapes (steps, positions)')
-    print(step_values.shape, positions.shape)
+    print("data shapes (steps, positions)")
+    print((step_values.shape, positions.shape))
 
     return step_values, positions
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     ONE_D = False
@@ -345,20 +339,20 @@ if __name__ == '__main__':
     if ONE_D:
 
         step_values, positions = multi_random_walker(
-                n_processes=4,
-                f_i=Tophat_1D(width=0.5, centre=0.2).pdf,
-                bounds=np.array([0, 1]),
-                steps=int(1e3),
-                )
+            n_processes=4,
+            f_i=Tophat_1D(width=0.5, centre=0.2).pdf,
+            bounds=np.array([0, 1]),
+            steps=int(1e3),
+        )
 
-        print('data shapes')
-        print(step_values.shape, positions.shape)
+        print("data shapes")
+        print((step_values.shape, positions.shape))
 
         fig, axes = plt.subplots(1, 2, squeeze=True)
-        axes[0].hist(step_values, bins='auto')
-        axes[0].set_title('Step Values')
-        axes[1].hist(positions, bins='auto')
-        axes[1].set_title('Positions')
+        axes[0].hist(step_values, bins="auto")
+        axes[0].set_title("Step Values")
+        axes[1].hist(positions, bins="auto")
+        axes[1].set_title("Positions")
         plt.show()
 
     if TWO_D:
@@ -369,19 +363,15 @@ if __name__ == '__main__':
         #     [1, 0]],
         #     dtype=np.float64
         #     )
-        bounds = np.array([
-            [1, 0],
-            [-1, 1],
-            [-1, -1]]
-            )
+        bounds = np.array([[1, 0], [-1, 1], [-1, -1]])
 
         step_values, positions = multi_random_walker(
-                n_processes=4,
-                f_i=Tophat_2D(extent=1.5).pdf,
-                bounds=bounds,
-                steps=int(1e4),
-                blocks=3
-                )
+            n_processes=4,
+            f_i=Tophat_2D(extent=1.5).pdf,
+            bounds=bounds,
+            steps=int(1e4),
+            blocks=3,
+        )
 
         fig, axes = plt.subplots(1, 2, squeeze=True)
         fig.subplots_adjust(right=0.8)
@@ -395,18 +385,18 @@ if __name__ == '__main__':
         # use this max value with the hexbin vmax option
         # in order to have the same colour scaling for both
         # hexbin plots, such that the same colorbar may be used
-        max_value = np.max([np.max(steps_bin.get_array()),
-                            np.max(positions_bin.get_array())
-                            ])
+        max_value = np.max(
+            [np.max(steps_bin.get_array()), np.max(positions_bin.get_array())]
+        )
         steps_bin = axes[0].hexbin(*step_values.T, vmin=0, vmax=max_value)
         steps_bin = axes[0].hexbin(*step_values.T, vmin=0, vmax=max_value)
         positions_bin = axes[1].hexbin(*positions.T, vmin=0, vmax=max_value)
         positions_bin = axes[1].hexbin(*positions.T, vmin=0, vmax=max_value)
 
-        axes[0].set_title('Step Values')
-        axes[1].set_title('Positions')
+        axes[0].set_title("Step Values")
+        axes[1].set_title("Positions")
         for ax in axes:
-            ax.set_aspect('equal')
+            ax.set_aspect("equal")
 
         cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
         fig.colorbar(positions_bin, cax=cbar_ax)

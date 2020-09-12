@@ -104,13 +104,3 @@ ENV/
 output*/*
 shape1.jpg
 *.zip
-
-# object files
-*.o
-cpp/*
-!cpp/*.cpp
-!cpp/*.h
-!cpp/*.hpp
-!cpp/*.hxx
-!cpp/Makefile
-!cpp/*.py

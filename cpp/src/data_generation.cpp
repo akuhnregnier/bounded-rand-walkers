@@ -97,8 +97,9 @@ int main() {
     set_seed();
     pdf_data data;
     struct pdf_data *data_ptr = &data;
+
     // Configuration START
-    size_t samples = (size_t) 1e7;
+    size_t samples = (size_t) 1e4;
     const size_t dims = 2;
     vect_dvect bounds = get_circle_bounds();  // only needed for `dims=2`
     std::string bounds_name = "circle";

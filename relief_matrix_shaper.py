@@ -1,35 +1,31 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Dec 11 18:42:24 2017
-
-@author: luca
-"""
-import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-from data_generation import DelaunayArray, Delaunay, in_bounds
-from scipy.signal import correlate2d
-from utils import get_centres
 import math
 import os
 
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.signal import correlate2d
 
-output_dir = os.path.abspath(os.path.join(
-    os.path.dirname(__file__),
-    'output'
-    ))
+from data_generation import Delaunay, DelaunayArray, in_bounds
+from utils import get_centres
+
+output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "output"))
 if not os.path.isdir(output_dir):
     os.makedirs(output_dir)
 
 
 def newShaper2D(x_shift, y_shift, relief_matrix, x0, y0):
-    #print('first', np.shape(relief_matrix) )
-    #print('second', np.shape(np.roll(np.roll(relief_matrix,y_shift,axis=0),x_shift,axis=1)) )
+    # print('first', np.shape(relief_matrix) )
+    # print('second', np.shape(np.roll(np.roll(relief_matrix,y_shift,axis=0),x_shift,axis=1)) )
     comp_reliefs = relief_matrix & np.roll(
-        np.roll(relief_matrix, y_shift, axis=0), x_shift, axis=1)
-    return (np.sum(comp_reliefs) * (2 * x0 / float(relief_matrix.shape[0]))
-            * (2 * y0 / float(relief_matrix.shape[1])))
+        np.roll(relief_matrix, y_shift, axis=0), x_shift, axis=1
+    )
+    return (
+        np.sum(comp_reliefs)
+        * (2 * x0 / float(relief_matrix.shape[0]))
+        * (2 * y0 / float(relief_matrix.shape[1]))
+    )
 
 
 def gen_shaper2D(order_divisions, vertices):
@@ -47,9 +43,9 @@ def gen_shaper2D(order_divisions, vertices):
     # divisions_y = order_divisions * int(float(y0) / float(x0))
     divisions_y = order_divisions
 
-    xs = np.linspace(CoM[0] - x0,  CoM[0] + x0,  divisions_x + 1)
+    xs = np.linspace(CoM[0] - x0, CoM[0] + x0, divisions_x + 1)
     # issue with centering of bins?
-    ys = np.linspace(CoM[1] - y0,  CoM[1] + y0,  divisions_y + 1)
+    ys = np.linspace(CoM[1] - y0, CoM[1] + y0, divisions_y + 1)
 
     xs_centres = get_centres(xs)
     ys_centres = get_centres(ys)
@@ -80,7 +76,8 @@ def gen_shaper2D(order_divisions, vertices):
                 j - int(divisions_y / 2),
                 relief_matrix,
                 x0,
-                y0)
+                y0,
+            )
 
     # contour plot
 
@@ -88,7 +85,7 @@ def gen_shaper2D(order_divisions, vertices):
     # ysG = np.linspace(-y0, y0,  divisions_y)
     xsG = xs - CoM[0]
     ysG = ys - CoM[1]
-    X, Y = np.meshgrid(xsG, ysG, indexing='ij')
+    X, Y = np.meshgrid(xsG, ysG, indexing="ij")
 
     return X, Y, Z
 
@@ -106,11 +103,11 @@ def gen_shaper2D_alt(order_divisions, vertices):
     # divisions_y = order_divisions * int(float(y0) / float(x0))
     divisions_y = divisions_x
 
-    xs = np.linspace(CoM[0] - x0,  CoM[0] + x0,  divisions_x + 1)
-    ys = np.linspace(CoM[1] - y0,  CoM[1] + y0,  divisions_y + 1)
+    xs = np.linspace(CoM[0] - x0, CoM[0] + x0, divisions_x + 1)
+    ys = np.linspace(CoM[1] - y0, CoM[1] + y0, divisions_y + 1)
     xsG = xs - CoM[0]
     ysG = ys - CoM[1]
-    X, Y = np.meshgrid(xsG, ysG, indexing='ij')
+    X, Y = np.meshgrid(xsG, ysG, indexing="ij")
     xs_centres = get_centres(xs)
     ys_centres = get_centres(ys)
     relief_matrix = np.zeros((divisions_y, divisions_x), dtype=np.int)
@@ -126,13 +123,14 @@ def gen_shaper2D_alt(order_divisions, vertices):
 
     # n -> 2n - 1
     # This relies on rounding down
-    trim_x = int(math.floor((order_divisions - 1) / 2.))
-    trim_y = int(math.floor((order_divisions - 1) / 2.))
+    trim_x = int(math.floor((order_divisions - 1) / 2.0))
+    trim_y = int(math.floor((order_divisions - 1) / 2.0))
     modifier = (order_divisions + 1) % 2  # 1 if n is even, 0 if n is odd
     # Z = Z[trim_x + modifier:Z.shape[0] - trim_x,
     #         trim_y + modifier:Z.shape[1] - trim_y]
-    Z = Z[trim_x:Z.shape[0] - trim_x - modifier,
-            trim_y:Z.shape[1] - trim_y - modifier]
+    Z = Z[
+        trim_x : Z.shape[0] - trim_x - modifier, trim_y : Z.shape[1] - trim_y - modifier
+    ]
 
     Z = np.asarray(Z, dtype=np.float64)
 
@@ -144,29 +142,28 @@ def gen_shaper2D_alt(order_divisions, vertices):
     # transpose to make compatible with output above
     return X, Y, Z
 
-if __name__ == '__main__':
-    plt.close('all')
+
+if __name__ == "__main__":
+    plt.close("all")
     order_divisions = 140
 
-    shape = 'weird'
+    shape = "weird"
     # shape = 'square'
-    if shape == 'weird':
+    if shape == "weird":
         vertices = np.array([0.1, 0.3, 0.25, 0.98, 0.9, 0.9, 0.7, 0.4, 0.4, 0.05])
-    elif shape == 'square':
+    elif shape == "square":
         vertices = np.array([0, 0, 0, 1, 1, 1, 1, 0])
 
     fig = plt.figure(figsize=(5, 3))
-    plt.plot(list(vertices[0::2]) + [vertices[0]],
-             list(vertices[1::2]) + [vertices[1]]
-             )
-    plt.xlabel('x')
-    plt.ylabel('y')
+    plt.plot(list(vertices[0::2]) + [vertices[0]], list(vertices[1::2]) + [vertices[1]])
+    plt.xlabel("x")
+    plt.ylabel("y")
     plt.xlim(0, 1)
     plt.ylim(0, 1)
-    plt.gca().set_aspect('equal')
-    plt.savefig(os.path.join(output_dir, '{:}_boundary.pdf'.format(shape)),
-                bbox_inches='tight'
-                )
+    plt.gca().set_aspect("equal")
+    plt.savefig(
+        os.path.join(output_dir, "{:}_boundary.pdf".format(shape)), bbox_inches="tight"
+    )
 
     vertices = vertices.reshape(int(len(vertices) / 2), 2)
 
@@ -177,45 +174,47 @@ if __name__ == '__main__':
     divisions_x = order_divisions
     divisions_y = divisions_x
     # divisions_y = order_divisions * int(float(y0) / float(x0))
-    xs = np.linspace(- x0, x0, divisions_x + 1)
-    ys = np.linspace(- y0, y0, divisions_y + 1)
+    xs = np.linspace(-x0, x0, divisions_x + 1)
+    ys = np.linspace(-y0, y0, divisions_y + 1)
     cell_area = (xs[1] - xs[0]) * (ys[1] - ys[0])
     #####
 
     X, Y, Z = gen_shaper2D(order_divisions, vertices)
 
     plt.figure(figsize=(7.5, 3.0))
-    if shape == 'weird':
+    if shape == "weird":
         CS = plt.contour(
-                get_centres(xs),
-                get_centres(ys),
-                Z.T,
-                6,
-                colors='#1f77b4ff',
-                )
+            get_centres(xs),
+            get_centres(ys),
+            Z.T,
+            6,
+            colors="#1f77b4ff",
+        )
         plt.clabel(CS, fontsize=9, inline=1)
         limits = 0.7
         plt.xlim(-limits, limits)
         plt.ylim(-limits, limits)
-        plt.gca().set_aspect('equal')
-        plt.xlabel('x (steps)')
-        plt.ylabel('y (steps)')
-        plt.savefig(os.path.join(output_dir, 'improvedA1shaper.pdf'), bbox_inches='tight')
-    elif shape == 'square':
+        plt.gca().set_aspect("equal")
+        plt.xlabel("x (steps)")
+        plt.ylabel("y (steps)")
+        plt.savefig(
+            os.path.join(output_dir, "improvedA1shaper.pdf"), bbox_inches="tight"
+        )
+    elif shape == "square":
         CS = plt.contour(
-                get_centres(xs),
-                get_centres(ys),
-                Z.T,
-                4,
-                colors='#1f77b4ff',
-                )
+            get_centres(xs),
+            get_centres(ys),
+            Z.T,
+            4,
+            colors="#1f77b4ff",
+        )
         plt.clabel(CS, fontsize=9, inline=1)
         plt.xlim(-1, 1)
         plt.ylim(-1, 1)
-        plt.gca().set_aspect('equal')
-        plt.xlabel('x (steps)')
-        plt.ylabel('y (steps)')
-        plt.savefig(os.path.join(output_dir, 'Shaper2Dsquare.pdf'), bbox_inches='tight')
+        plt.gca().set_aspect("equal")
+        plt.xlabel("x (steps)")
+        plt.ylabel("y (steps)")
+        plt.savefig(os.path.join(output_dir, "Shaper2Dsquare.pdf"), bbox_inches="tight")
 
     X2, Y2, Z2 = gen_shaper2D_alt(order_divisions, vertices)
 
@@ -223,8 +222,8 @@ if __name__ == '__main__':
     Z /= np.sum(Z * cell_area)
 
     print("shapes")
-    print(Z.shape)
-    print(Z2.shape)
+    print((Z.shape))
+    print((Z2.shape))
 
     plt.figure()
     plt.pcolormesh(X, Y, Z)
@@ -235,8 +234,8 @@ if __name__ == '__main__':
     plt.colorbar()
 
     print("Zs are close")
-    print(np.all(np.isclose(Z, Z2)))
-    print(np.mean(Z-Z2))
-    print(np.min(Z-Z2))
-    print(np.max(Z-Z2))
-    print(np.std(Z-Z2))
+    print((np.all(np.isclose(Z, Z2))))
+    print((np.mean(Z - Z2)))
+    print((np.min(Z - Z2)))
+    print((np.max(Z - Z2)))
+    print((np.std(Z - Z2)))

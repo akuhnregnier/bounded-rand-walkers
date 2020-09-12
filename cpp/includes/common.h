@@ -74,7 +74,7 @@ std::string format_1d(T v){
 template <class T, class T2>
 void plot_square(const T& v, const T2& shape){
     cnpy::npy_save("/tmp/v_test.npy", &v[0], shape, "w");
-    std::system("./visualisation.py /tmp/v_test.npy");
+    std::system("../visualisation.py /tmp/v_test.npy");
 }
 
 

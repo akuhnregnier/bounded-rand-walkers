@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-#
 import numpy as np
 from statsmodels.stats.weightstats import DescrStatsW
 
@@ -7,7 +6,7 @@ from statsmodels.stats.weightstats import DescrStatsW
 def get_centres(bin_edges):
     left_edges = bin_edges[:-1]
     right_edges = bin_edges[1:]
-    bin_centres = (left_edges + right_edges) / 2.
+    bin_centres = (left_edges + right_edges) / 2.0
     return bin_centres
 
 
@@ -27,7 +26,7 @@ def stats(data1, data2, weights=None):
 
     """
     if len(data1) != len(data2):
-        raise Exception('Two data sets have different lengths')
+        raise Exception("Two data sets have different lengths")
 
     abs_difference = np.abs(data2 - data1)
     weighted_stats = DescrStatsW(abs_difference, weights=weights)
@@ -37,20 +36,20 @@ def stats(data1, data2, weights=None):
 
 def plot_name_clean(name):
     replace_pairs = [
-            ('{', '_'),
-            ('}', '_'),
-            ('(', '_'),
-            (')', '_'),
-            (':', '_'),
-            ("'", ''),
-            (',', '_'),
-            ('.', '_'),
-            (' ', '_'),
-            ('__', '_'),
-            ('__', '_'),
-            ('__', '_'),
-            ('_png', '.png')
-            ]
+        ("{", "_"),
+        ("}", "_"),
+        ("(", "_"),
+        (")", "_"),
+        (":", "_"),
+        ("'", ""),
+        (",", "_"),
+        (".", "_"),
+        (" ", "_"),
+        ("__", "_"),
+        ("__", "_"),
+        ("__", "_"),
+        ("_png", ".png"),
+    ]
     for i, j in replace_pairs:
         name = name.replace(i, j)
     return name

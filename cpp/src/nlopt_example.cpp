@@ -31,7 +31,7 @@ double myfunc(unsigned n, const double *x, double *grad, void *my_func_data)
 double myconstraint(unsigned n, const double *x, double *grad, void *data)
 {
     return std::abs(x[0] - 0.3);
-} 
+}
 
 int main(){
     double lb[2] = { -0.5, 0.1 }; /* lower bounds */

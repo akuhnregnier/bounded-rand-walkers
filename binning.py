@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Nov 15 14:22:19 2017
-
-@author: men14
-"""
-import logging
-import numpy as np
 import copy
+import logging
+
+import numpy as np
 
 
 def binning1D(binsize, data, normalising):
@@ -39,7 +35,7 @@ def binning1D(binsize, data, normalising):
 
     # Bin the positive values
     flag = True
-    counter = 1.
+    counter = 1.0
     while flag:
         indeces = np.where((data - counter * binsize) < 0)[0]
 
@@ -78,7 +74,7 @@ def binning2D(binsize, data, normalising):
     if isinstance(data, list):
         data = np.asarray(data)
     if len(data.shape) == 0:
-        raise Exception('Passed empty data set to 2D binning function')
+        raise Exception("Passed empty data set to 2D binning function")
 
     min_value = np.min(data[:, 0])
     bin_num = np.ceil(np.abs(min_value / float(binsize[0])))
@@ -88,9 +84,9 @@ def binning2D(binsize, data, normalising):
     copy_data[:, 0] = data[:, 0] + bin_num * binsize[0]
 
     flag = True
-    n_elements = data.size / 2.
+    n_elements = data.size / 2.0
     histogram2D = []
-    counter = 1.
+    counter = 1.0
 
     while flag:
         indeces = np.where((copy_data[:, 0] - counter * binsize[0]) < 0)[0]
@@ -102,11 +98,19 @@ def binning2D(binsize, data, normalising):
         if ybin > 0:
             for l in range(len(ybin)):
                 if normalising:
-                    histogram2D.append([[binsize[0] * (counter-0.5 - bin_num),
-                                         ybin[l][0]], ybin[l][1] / n_elements])
+                    histogram2D.append(
+                        [
+                            [binsize[0] * (counter - 0.5 - bin_num), ybin[l][0]],
+                            ybin[l][1] / n_elements,
+                        ]
+                    )
                 else:
-                    histogram2D.append([[binsize[0] * (counter-0.5 - bin_num),
-                                         ybin[l][0]], ybin[l][1]])
+                    histogram2D.append(
+                        [
+                            [binsize[0] * (counter - 0.5 - bin_num), ybin[l][0]],
+                            ybin[l][1],
+                        ]
+                    )
 
         if not copy_data.size:
             flag = False
@@ -149,7 +153,7 @@ def estimate_gx(binsize, length_list):
     # Calculate cumulative list
     length_list = np.squeeze(length_list)
     cum_array = np.cumsum(length_list, axis=0)
-    print np.min(cum_array), np.max(cum_array)
+    print((np.min(cum_array), np.max(cum_array)))
 
     if len(cum_array.shape) == 1:
         binned = binning1D(binsize, cum_array, True)
@@ -163,8 +167,9 @@ def estimate_gx(binsize, length_list):
         return xpos, ypos, freq_array
 
     else:
-        raise NotImplementedError('The input array is neither 1 or 2D which '
-                                  'this process cannot handle')
+        raise NotImplementedError(
+            "The input array is neither 1 or 2D which " "this process cannot handle"
+        )
     return binned
 
 
@@ -189,18 +194,18 @@ def convert_array_1D(histogram1D, bin_size=None):
         # try to determine automatically
         centre_diffs = np.diff(centres)
         unique_centre_diffs = np.unique(centre_diffs)
-        occurrences = [(centre_diff, np.sum(
-                        np.isclose(centre_diffs, centre_diff)))
-                       for centre_diff in unique_centre_diffs]
-        sorted_occurrences = sorted(occurrences, key=lambda x: x[1],
-                                    reverse=True)
+        occurrences = [
+            (centre_diff, np.sum(np.isclose(centre_diffs, centre_diff)))
+            for centre_diff in unique_centre_diffs
+        ]
+        sorted_occurrences = sorted(occurrences, key=lambda x: x[1], reverse=True)
         bin_size = sorted_occurrences[0][0]
-        ratio = ((np.max(centres) - np.min(centres)) / bin_size)
-        assert np.isclose(np.round(ratio), ratio), (
-                '{:} {:} {:}'.format(bin_size, np.round(ratio), ratio))
+        ratio = (np.max(centres) - np.min(centres)) / bin_size
+        assert np.isclose(np.round(ratio), ratio), "{:} {:} {:}".format(
+            bin_size, np.round(ratio), ratio
+        )
 
-    bin_centres = np.arange(np.min(centres), np.max(centres) + bin_size,
-                            bin_size)
+    bin_centres = np.arange(np.min(centres), np.max(centres) + bin_size, bin_size)
     out_frequencies = np.zeros_like(bin_centres, dtype=np.float64)
     for i, bin_centre in enumerate(bin_centres):
         matching_index = np.where(np.isclose(centres, bin_centre))[0]
@@ -241,11 +246,12 @@ def convert_array_2D(histogram2D, binsize):
     min_y = np.min(ypos)
     max_y = np.max(ypos)
 
-    freq_array = np.zeros((int(np.round(np.floor((max_y - min_y)
-                               / float(binsize[1])))) + 2,
-                           int(np.round(np.floor((max_x - min_x)
-                               / float(binsize[0])))) + 2)
-                          )
+    freq_array = np.zeros(
+        (
+            int(np.round(np.floor((max_y - min_y) / float(binsize[1])))) + 2,
+            int(np.round(np.floor((max_x - min_x) / float(binsize[0])))) + 2,
+        )
+    )
 
     logger.debug(freq_array.shape)
 

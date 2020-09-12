@@ -1,16 +1,17 @@
-#!/usr/bin/env python2
-# coding: utf-8
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+import logging
+
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.interpolate import RegularGridInterpolator
 from scipy import optimize
+from scipy.interpolate import RegularGridInterpolator
+
 from utils import get_centres
-import logging
 
 
 class Sampler(object):
-    def __init__(self, pdf, dimensions, blocks=100,
-                 bounds=None):
+    def __init__(self, pdf, dimensions, blocks=100, bounds=None):
         """
 
         Args:
@@ -28,14 +29,13 @@ class Sampler(object):
 
         """
         self.logger = logging.getLogger(__name__)
-        self.logger.debug('starting init')
+        self.logger.debug("starting init")
         self.pdf = pdf
         if bounds is None:
             if dimensions == 1:
                 self.bounds = np.array([-1, 1]).reshape(2, 1)
             elif dimensions == 2:
-                self.bounds = np.array([[-2, -2],
-                                        [2, 2]])
+                self.bounds = np.array([[-2, -2], [2, 2]])
         else:
             self.bounds = bounds
         self.dims = dimensions
@@ -54,8 +54,9 @@ class Sampler(object):
         # centres_lists, filling in the resulting values into
         # self.pdf_values
         for indices in np.ndindex(*self.pdf_values.shape):
-            values = [centres[index] for centres, index in
-                      zip(self.centres_list, indices)]
+            values = [
+                centres[index] for centres, index in zip(self.centres_list, indices)
+            ]
             self.pdf_values[indices] = self.pdf(np.array(values))
 
         # within each grid domain, find the maximum pdf value, which will
@@ -64,19 +65,20 @@ class Sampler(object):
         # that across their specific intervals always have a value that is at
         # least that of the pdf in the same interval.
 
-        self.logger.debug('starting fn max finding')
+        self.logger.debug("starting fn max finding")
         self.max_box_values = np.zeros_like(self.pdf_values)
 
         def inv_pdf(x):
-            return - self.pdf(np.array(x))
+            return -self.pdf(np.array(x))
 
         for indices in np.ndindex(*self.pdf_values.shape):
-            min_edges = [edges[index] for edges, index in
-                         zip(self.edges_list, indices)]
-            max_edges = [edges[index + 1] for edges, index in
-                         zip(self.edges_list, indices)]
-            centres = [centres[index] for centres, index in
-                       zip(self.centres_list, indices)]
+            min_edges = [edges[index] for edges, index in zip(self.edges_list, indices)]
+            max_edges = [
+                edges[index + 1] for edges, index in zip(self.edges_list, indices)
+            ]
+            centres = [
+                centres[index] for centres, index in zip(self.centres_list, indices)
+            ]
 
             edges_array = np.array((min_edges, max_edges))
             max_args = []
@@ -87,13 +89,14 @@ class Sampler(object):
                 # now perform the function minimization from ``min_edges`` to
                 # ``max_edges``, in order to find the maximum in that range.
                 # This is achieved by minimizing -1 * pdf.
-                self.logger.debug('calling at:{:}'.format(x0))
+                self.logger.debug("calling at:{:}".format(x0))
                 x_max = optimize.fmin_tnc(
-                        func=inv_pdf,
-                        x0=x0,
-                        bounds=[(l, u) for l, u in zip(min_edges, max_edges)],
-                        approx_grad=True,
-                        disp=0)[0]
+                    func=inv_pdf,
+                    x0=x0,
+                    bounds=[(l, u) for l, u in zip(min_edges, max_edges)],
+                    approx_grad=True,
+                    disp=0,
+                )[0]
                 max_args.append(x_max)
                 max_values.append(self.pdf(np.array(x_max)))
                 if max_values[-1] > target_value:
@@ -101,15 +104,17 @@ class Sampler(object):
             max_value = np.max(max_values)
             if np.isclose(max_value, 0):
                 # the minimisation has been completed successfully
-                self.logger.debug('calling centre:{:}'.format(centres))
+                self.logger.debug("calling centre:{:}".format(centres))
                 x_max = optimize.fmin_tnc(
-                        func=inv_pdf,
-                        x0=centres,
-                        bounds=[(l, u) for l, u in zip(min_edges, max_edges)],
-                        approx_grad=True,
-                        disp=0)[0]
-            self.logger.debug('max value:{:} at {:}'
-                              .format(self.pdf(np.array(x_max)), x_max))
+                    func=inv_pdf,
+                    x0=centres,
+                    bounds=[(l, u) for l, u in zip(min_edges, max_edges)],
+                    approx_grad=True,
+                    disp=0,
+                )[0]
+            self.logger.debug(
+                "max value:{:} at {:}".format(self.pdf(np.array(x_max)), x_max)
+            )
             self.max_box_values[indices] = self.pdf(np.array(x_max))
 
         self.max_box_values += 1e-7
@@ -120,7 +125,7 @@ class Sampler(object):
         invalid_indices = np.where(diffs < 0)
         self.max_box_values[invalid_indices] = np.max(self.max_box_values)
         diffs2 = self.max_box_values - self.pdf_values
-        assert np.min(diffs2) >= 0, 'g(x) needs to be > f(x)'
+        assert np.min(diffs2) >= 0, "g(x) needs to be > f(x)"
         # trim the boundaries by reducing the bounds such that only
         # non-zero parts of the pdf within the sampling region.
         # This is important for a very narrow tophat distribution, for
@@ -145,11 +150,12 @@ class Sampler(object):
             # If there are some zero elements left, AND if the bounds have
             # changed compared to the input bounds - last condition is
             # necessary to avoid an endless loop in the 2D case
-            self.logger.debug('calling init again with reduced bounds:\n{:}'
-                              .format(bounds))
+            self.logger.debug(
+                "calling init again with reduced bounds:\n{:}".format(bounds)
+            )
             self.__init__(pdf, dimensions, blocks, bounds)
 
-        self.logger.debug('starting lin_interp')
+        self.logger.debug("starting lin_interp")
         self.lin_interp_cdf()
 
     def lin_interp_cdf(self):
@@ -178,11 +184,11 @@ class Sampler(object):
         self.inverse_interpolators = []
         nr_axes = self.dims
         # discrete cdf along each axis
-        first_discrete_cdf = np.cumsum(np.sum(
-                self.max_box_values,
-                axis=(tuple([i for i in range(nr_axes)
-                             if i != 0]))
-                ))
+        first_discrete_cdf = np.cumsum(
+            np.sum(
+                self.max_box_values, axis=(tuple([i for i in range(nr_axes) if i != 0]))
+            )
+        )
         # now we want the inverse of this to get the position along the
         # first axis. Also rescale this such that the maximum value is 1.
         first_discrete_cdf /= np.max(first_discrete_cdf)  # rescale to [0, 1]
@@ -193,75 +199,88 @@ class Sampler(object):
 
         # from ipdb import set_trace
         # set_trace()
-        first_probs = np.hstack((np.array([0]).reshape(1, 1),
-                                first_discrete_cdf.reshape(1, -1))
-                                )
+        first_probs = np.hstack(
+            (np.array([0]).reshape(1, 1), first_discrete_cdf.reshape(1, -1))
+        )
         self.first_interpolator = RegularGridInterpolator(
-                # add the first 0 explicitly - this corresponds to the
-                # lowest coordinate possible, ie. the first edge
-                first_probs.reshape(1, -1),
-                first_edges.reshape(-1,)
-                )
+            # add the first 0 explicitly - this corresponds to the
+            # lowest coordinate possible, ie. the first edge
+            first_probs.reshape(1, -1),
+            first_edges.reshape(
+                -1,
+            ),
+        )
         self.first_inv_interpolator = RegularGridInterpolator(
-                first_edges.reshape(1, -1),
-                first_probs.reshape(-1,)
-                )
+            first_edges.reshape(1, -1),
+            first_probs.reshape(
+                -1,
+            ),
+        )
         # the first interpolator in this list will be used in order to find
         # the second interpolator to use and so on, one for each dimension
         self.interpolators.append(self.first_interpolator)
         self.inverse_interpolators.append(self.first_inv_interpolator)
         if nr_axes == 2:
-            second_discrete_cdf = np.cumsum(np.sum(
-                self.max_box_values,
-                axis=(tuple([i for i in range(nr_axes)
-                             if i not in (0, 1)]))
+            second_discrete_cdf = np.cumsum(
+                np.sum(
+                    self.max_box_values,
+                    axis=(tuple([i for i in range(nr_axes) if i not in (0, 1)])),
                 ),
                 axis=1  # such that the cumulative sum increases in the
-                        # y-direction, and one cumulative sum is made for each
-                        # entry in the x-axis
-                )
+                # y-direction, and one cumulative sum is made for each
+                # entry in the x-axis
+            )
             filled_discrete_cdf = np.zeros(
-                    (second_discrete_cdf.shape[0],
-                     second_discrete_cdf.shape[1] + 1),
-                    dtype=np.float64
-                    )
+                (second_discrete_cdf.shape[0], second_discrete_cdf.shape[1] + 1),
+                dtype=np.float64,
+            )
             filled_discrete_cdf[:, 1:] = second_discrete_cdf
             edges = self.edges_list[1]
             self.second_interpolators = []
             self.second_inv_interpolators = []
             for discrete_cdf_series in filled_discrete_cdf:
                 discrete_cdf_series /= np.max(discrete_cdf_series)
-                self.second_interpolators.append(RegularGridInterpolator(
-                    discrete_cdf_series.reshape(1, -1),
-                    edges.reshape(-1,)
-                    ))
-                self.second_inv_interpolators.append(RegularGridInterpolator(
-                    edges.reshape(1, -1),
-                    discrete_cdf_series.reshape(-1,)
-                    ))
+                self.second_interpolators.append(
+                    RegularGridInterpolator(
+                        discrete_cdf_series.reshape(1, -1),
+                        edges.reshape(
+                            -1,
+                        ),
+                    )
+                )
+                self.second_inv_interpolators.append(
+                    RegularGridInterpolator(
+                        edges.reshape(1, -1),
+                        discrete_cdf_series.reshape(
+                            -1,
+                        ),
+                    )
+                )
             self.interpolators.append(self.second_interpolators)
             self.inverse_interpolators.append(self.second_inv_interpolators)
         if nr_axes > 2:
-            raise NotImplementedError('Higher Dimensions not Implemented')
+            raise NotImplementedError("Higher Dimensions not Implemented")
 
     def sample(self, position):
         output = []
         centre_indices = []
-        if self. dims == 1:
-            axes_step_bounds = np.array((-position,
-                                         1 - position)).reshape(1, 2)
+        if self.dims == 1:
+            axes_step_bounds = np.array((-position, 1 - position)).reshape(1, 2)
         elif self.dims == 2:
             position = position.reshape(2, 1)
             axes_step_bounds = np.array([-1, 1]).reshape(1, 2) - position
         axes_step_bounds = np.clip(
-                axes_step_bounds,
-                np.min(self.bounds, axis=0),
-                np.max(self.bounds, axis=0)
-                )
+            axes_step_bounds, np.min(self.bounds, axis=0), np.max(self.bounds, axis=0)
+        )
 
         for (i, (interpolators, edges, inv_interpolators, step_bounds)) in enumerate(
-                zip(self.interpolators, self.edges_list,
-                    self.inverse_interpolators, axes_step_bounds)):
+            zip(
+                self.interpolators,
+                self.edges_list,
+                self.inverse_interpolators,
+                axes_step_bounds,
+            )
+        ):
             if i == 0:
                 # only single interpolator
                 interpolator = interpolators
@@ -298,30 +317,30 @@ class Sampler(object):
         if prob < ratio:
             return np.array(output)
         else:
-            self.logger.debug('{:} more than {:}, calling again'
-                              .format(prob, ratio))
+            self.logger.debug("{:} more than {:}, calling again".format(prob, ratio))
             return self.sample(position=position)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    plt.close('all')
+    plt.close("all")
 
-    print('Starting')
+    print("Starting")
 
     from time import time
-    import sys
-    from functions import Gaussian, Tophat_2D, Tophat_1D, Funky
-    pdf2 = Funky(centre=(0., 0.), width=2.0).pdf
+
+    from functions import Funky
+
+    pdf2 = Funky(centre=(0.0, 0.0), width=2.0).pdf
     start = time()
     sampler2 = Sampler(pdf2, dimensions=2, blocks=20)
-    print('setup time:{:}'.format(time() - start))
+    print(("setup time:{:}".format(time() - start)))
 
     fig, axes = plt.subplots(1, 2, squeeze=True, sharey=True)
     p1 = axes[0].imshow(sampler2.pdf_values)
-    axes[0].set_aspect('equal')
+    axes[0].set_aspect("equal")
     p2 = axes[1].imshow(sampler2.max_box_values)
-    axes[1].set_aspect('equal')
+    axes[1].set_aspect("equal")
 
     fig2, ax2 = plt.subplots()
     ps = np.linspace(0, 1, 100)
@@ -332,17 +351,17 @@ if __name__ == '__main__':
     fig3 = plt.figure()
     plt.hist(ys, bins=60)
 
-    print('sampling')
+    print("sampling")
     samples = []
     start = time()
     N = int(7e3)
     for i in range(N):
         samples.append(sampler2.sample(position=np.array((0.0, -1))))
     duration = time() - start
-    print('duration1:{:}'.format(duration))
-    print('per sample:{:0.1e}'.format(duration / float(N)))
+    print(("duration1:{:}".format(duration)))
+    print(("per sample:{:0.1e}".format(duration / float(N))))
     samples = np.squeeze(np.array(samples))
     fig, ax = plt.subplots()
     sampling = ax.hexbin(samples[:, 0], samples[:, 1])
-    ax.set_aspect('equal')
+    ax.set_aspect("equal")
     fig.colorbar(sampling)

@@ -1,13 +1,12 @@
-#!/usr/bin/env python2
-# coding: utf-8
-from PIL import Image
-import numpy as np
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import matplotlib.pyplot as plt
+import numpy as np
+from PIL import Image
 from scipy import ndimage
 from scipy.spatial import Delaunay
 
-
-image = Image.open('shape1.jpg')
+image = Image.open("shape1.jpg")
 data = np.asarray(image)
 data = np.sum(data, axis=2)
 
@@ -30,15 +29,15 @@ d2[d2.mask] = 0
 a = 4
 b = 2
 d2 = ndimage.morphology.binary_erosion(
-        d2,
-        np.ones((b, b)),
-        iterations=1,
-        ).astype(d2.dtype)
+    d2,
+    np.ones((b, b)),
+    iterations=1,
+).astype(d2.dtype)
 d2 = ndimage.morphology.binary_dilation(
-        d2,
-        np.ones((a, a)),
-        iterations=1,
-        ).astype(d2.dtype)
+    d2,
+    np.ones((a, a)),
+    iterations=1,
+).astype(d2.dtype)
 
 plt.figure()
 plt.imshow(d2)
@@ -71,5 +70,5 @@ tri = Delaunay(points)
 
 plt.figure()
 plt.triplot(points[:, 0], points[:, 1], tri.simplices.copy())
-plt.plot(points[:, 0], points[:, 1], 'o')
-plt.gca().set_aspect('equal')
+plt.plot(points[:, 0], points[:, 1], "o")
+plt.gca().set_aspect("equal")
