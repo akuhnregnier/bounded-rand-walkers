@@ -4,17 +4,18 @@ Code for modifying sequence of positions via rotations to make the
 asymmetry clear Valid for 2D case
 
 """
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.random as rand
-import matplotlib.pyplot as plt
 import scipy as sp
+from numba import njit
 from scipy import integrate
-from data_generation import in_bounds, DelaunayArray, weird_bounds
 from scipy.spatial import Delaunay
-from utils import get_centres
-from numba import njit, jit
-from c_rot_steps import rot_steps as c_rot_steps
+
 from c_g2D import c_g2D_func
+from c_rot_steps import rot_steps as c_rot_steps
+from data_generation import DelaunayArray, in_bounds, weird_bounds
+from utils import get_centres
 
 
 @njit
@@ -46,10 +47,9 @@ def rot_steps_fast(data):
 
         # dot_prod = np.dot(a - b, np.array([0, -1]))
         left = a - b
-        dot_prod = - left[1]
+        dot_prod = -left[1]
 
-        phi = np.arccos(
-                dot_prod / np.linalg.norm(a - b))
+        phi = np.arccos(dot_prod / np.linalg.norm(a - b))
 
         if a[0] > b[0]:
             theta = -phi
@@ -99,16 +99,14 @@ def rot_steps(data):
         b = data[:, i + 1]
         c = data[:, i + 2]
 
-        phi = np.arccos(
-            np.dot(a - b, np.array([0, -1])) / np.linalg.norm(a - b))
+        phi = np.arccos(np.dot(a - b, np.array([0, -1])) / np.linalg.norm(a - b))
 
         if a[0] > b[0]:
             theta = -phi
         else:
             theta = phi
 
-        R = np.matrix([[np.cos(theta), -np.sin(theta)],
-                       [np.sin(theta), np.cos(theta)]])
+        R = np.matrix([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
 
         # print(R.dot())
         c_rot = R.dot(c - b)
@@ -120,7 +118,7 @@ def rot_steps(data):
 
 def Corr_spatial_1D(data, binnumber):
 
-    binwidth = 1. / binnumber
+    binwidth = 1.0 / binnumber
     print(binwidth)
     correlations = []
 
@@ -135,15 +133,20 @@ def Corr_spatial_1D(data, binnumber):
 
                 prev.append(data[0, j + 1] - data[0, j])
                 post.append(data[0, j + 2] - data[0, j + 1])
-                prod.append((data[0, j + 1] - data[0, j]) *
-                            (data[0, j + 2] - data[0, j + 1]))
+                prod.append(
+                    (data[0, j + 1] - data[0, j]) * (data[0, j + 2] - data[0, j + 1])
+                )
 
         corr = np.mean(prod) - np.mean(post) * np.mean(prev)
         correlations.append(corr)
 
     print(correlations)
-    plt.bar([binwidth * i for i in range(binnumber)],
-            correlations, width=binwidth, alpha=0.4)
+    plt.bar(
+        [binwidth * i for i in range(binnumber)],
+        correlations,
+        width=binwidth,
+        alpha=0.4,
+    )
 
 
 def Pdf_Transform(step, f, geometry):
@@ -153,18 +156,20 @@ def Pdf_Transform(step, f, geometry):
     steps) & '1circle' (takes 2 element arrays)
 
     """
-    if geometry == '1Dseg':
+    if geometry == "1Dseg":
         if not isinstance(step, float):
-            raise TypeError('for 1D pdf use float for step')
+            raise TypeError("for 1D pdf use float for step")
 
         return f(step) * (1 - np.abs(step)) * 0.5 * (np.sign(1 - np.abs(step)) + 1)
 
-    if geometry == '1circle':
+    if geometry == "1circle":
         if type(step) != np.ndarray:
-            raise TypeError('for 2D pdf use 1d, 2 entry array, for step')
+            raise TypeError("for 2D pdf use 1d, 2 entry array, for step")
 
         l = np.linalg.norm(step)
-        return f(step, 0) * (2 * np.arccos(l / 2) - 0.5 * np.sqrt((4 - l**2) * l**2))
+        return f(step, 0) * (
+            2 * np.arccos(l / 2) - 0.5 * np.sqrt((4 - l ** 2) * l ** 2)
+        )
 
 
 def get_pdf_transform_shaper(steps, geometry):
@@ -176,14 +181,15 @@ def get_pdf_transform_shaper(steps, geometry):
     steps) & '1circle' (takes 2 element arrays)
 
     """
-    if geometry == '1Dseg':
+    if geometry == "1Dseg":
         return (1 - np.abs(steps)) * 0.5 * (np.sign(1 - np.abs(steps)) + 1)
 
-    if geometry == '1circle':
+    if geometry == "1circle":
         shaper = np.zeros_like(steps, dtype=np.float64)
-        mask = steps < 2.
-        shaper[mask] = (2 * np.arccos(steps[mask] / 2)
-                        - 0.5 * np.sqrt((4 - steps[mask]**2) * steps[mask]**2))
+        mask = steps < 2.0
+        shaper[mask] = 2 * np.arccos(steps[mask] / 2) - 0.5 * np.sqrt(
+            (4 - steps[mask] ** 2) * steps[mask] ** 2
+        )
         return shaper
 
 
@@ -193,13 +199,12 @@ def g1D(x, f):
 
 
 def g1D_norm(f):
-    den = integrate.dblquad(lambda z, y: f(
-        z), 0, 1, lambda z: -z, lambda z: 1 - z)
+    den = integrate.dblquad(lambda z, y: f(z), 0, 1, lambda z: -z, lambda z: 1 - z)
     return den[0]
 
 
 def betaCircle(r, l):
-    return np.pi - np.arccos((r**2 + l**2 - 1)/(2*r*l))
+    return np.pi - np.arccos((r ** 2 + l ** 2 - 1) / (2 * r * l))
 
 
 def gRadialCircle(r, f):
@@ -212,19 +217,21 @@ def gRadialCircle(r, f):
         grow linearly (as observed).
 
     """
-    if np.isclose(r, 0.):
-        return (
-            sp.integrate.quad(lambda d: f(d,0)*2*np.pi*d, 0, 1-r)[0]
-            )
+    if np.isclose(r, 0.0):
+        return sp.integrate.quad(lambda d: f(d, 0) * 2 * np.pi * d, 0, 1 - r)[0]
     return (
-        sp.integrate.quad(lambda d: f(d,0)*2*np.pi*d, 0, 1-r)[0]
-         + sp.integrate.quad(
-            lambda l: 2*np.pi*l*f(l,0)*(1-betaCircle(r, l)/np.pi), 1-r, 1+r)[0]
-        )
+        sp.integrate.quad(lambda d: f(d, 0) * 2 * np.pi * d, 0, 1 - r)[0]
+        + sp.integrate.quad(
+            lambda l: 2 * np.pi * l * f(l, 0) * (1 - betaCircle(r, l) / np.pi),
+            1 - r,
+            1 + r,
+        )[0]
+    )
+
 
 def g2D(f, xs_edges, ys_edges, bounds=weird_bounds):
     """2D position probability."""
-    print('G2D')
+    print("G2D")
     bounds = DelaunayArray(bounds, Delaunay(bounds))
     xs_centres = get_centres(xs_edges)
     ys_centres = get_centres(ys_edges)
@@ -235,33 +242,46 @@ def g2D(f, xs_edges, ys_edges, bounds=weird_bounds):
             is_in_bounds = in_bounds(np.array([x, y]), bounds)
             position_mask[i, j] = is_in_bounds
     x_indices, y_indices = np.where(position_mask)
-    g_values = np.asarray(c_g2D_func(f, xs_edges, ys_edges, xs_centres,
-                      ys_centres, x_indices, y_indices,
-                      ))
+    g_values = np.asarray(
+        c_g2D_func(
+            f,
+            xs_edges,
+            ys_edges,
+            xs_centres,
+            ys_centres,
+            x_indices,
+            y_indices,
+        )
+    )
     # now need to normalise
     area = (xs_centres[1] - xs_centres[0]) * (ys_centres[1] - ys_centres[0])
     g_values /= np.sum(area * g_values)
     return g_values
 
 
-if __name__ == '__main__2':
+if __name__ == "__main__2":
     # must be run from iPython!!
     from IPython import get_ipython
+
     ipython = get_ipython()
-    from functions import Gaussian, Funky
+    from functions import Funky
+
     N = 200
     x = np.linspace(-2, 2, N)
     y = x
 
-    ipython.magic('time '
-                  'plt.imshow'
-                  '(g2D(Gaussian(centre=np.array([0.0, '
-                  '0.0]), width=0.1).pdf, x, y))')
+    ipython.magic(
+        "time "
+        "plt.imshow"
+        "(g2D(Gaussian(centre=np.array([0.0, "
+        "0.0]), width=0.1).pdf, x, y))"
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # must be run from iPython!!
     from IPython import get_ipython
+
     ipython = get_ipython()
 
     d = np.random.randn(int(1e4), 2)
@@ -269,27 +289,26 @@ if __name__ == '__main__':
     assert np.all(np.isclose(rot_steps(d.T), c_rot_steps(d.T)))
     print("tests passed")
     print("rot_steps test")
-    ipython.magic('time rot_steps(d.T)')
+    ipython.magic("time rot_steps(d.T)")
     print("rot_steps_fast test")
-    ipython.magic('time rot_steps_fast(d.T)')
+    ipython.magic("time rot_steps_fast(d.T)")
     print("c_rot_steps test")
-    ipython.magic('time c_rot_steps(d.T)')
+    ipython.magic("time c_rot_steps(d.T)")
 
 
-if __name__ == '__main__1':
+if __name__ == "__main__1":
     N = 500000
     pos_data2D = rand.uniform(0, 1, size=(2, N))
     rot_steps_data = rot_steps(pos_data2D)
     plt.figure()
     plt.hist2d(rot_steps_data[0, :], rot_steps_data[1, :], bins=50)
-    plt.plot(np.arange(-2, 2, 0.01),
-             np.array([0 for a in np.arange(-2, 2, 0.01)]))
-    plt.title('Observed step-size with fixed incoming direction')
-    plt.gca().set_aspect('equal')
+    plt.plot(np.arange(-2, 2, 0.01), np.array([0 for a in np.arange(-2, 2, 0.01)]))
+    plt.title("Observed step-size with fixed incoming direction")
+    plt.gca().set_aspect("equal")
 
     from functions import Funky
 
-    pdf = Funky(centre=(0., 0.)).pdf
+    pdf = Funky(centre=(0.0, 0.0)).pdf
     bins = 81
     min_x = -1
     max_x = 1
@@ -300,6 +319,5 @@ if __name__ == '__main__1':
     g_values = g2D(pdf, xs_edges, ys_edges)
     plt.figure()
     plt.pcolormesh(xs_edges, ys_edges, g_values)
-    plt.gca().set_aspect('equal')
+    plt.gca().set_aspect("equal")
     plt.show()
-
