@@ -1,6 +1,9 @@
 #include "rejection_sampling.h"
+#include <filesystem>
 #include <sstream>
 #include <string>
+
+namespace fs = std::filesystem;
 
 auto get_triangle_bounds() {
   // bounds with x coords in the first column and y coords in the second
@@ -177,7 +180,7 @@ int main() {
     steps.push_back(step);
 
     // timing information
-    if ((i > 2) && (i == (size_t)1e3) ||
+    if (((i > 2) && (i == (size_t)1e3)) ||
         (((i + 1) % ((size_t)(samples / 10))) == 0)) {
       // get current time
       double current = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -231,8 +234,11 @@ int main() {
   std::string pos_filename = "positions" + filename_suffix;
   // if this file already exists, prepend an integer to it
   std::string dir_name = "data/";
+  // create directory if it does not exist
+  fs::create_directories(dir_name);
+
   int i = 0;
-  while (file_exists(dir_name + std::to_string(i) + pos_filename)) {
+  while (fs::exists(dir_name + std::to_string(i) + pos_filename)) {
     ++i;
   }
   pos_filename = dir_name + std::to_string(i) + pos_filename;

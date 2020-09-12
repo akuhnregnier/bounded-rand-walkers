@@ -7,7 +7,6 @@
 #include <random>
 #include <sstream>
 #include <string>
-#include <sys/stat.h>
 #include <sys/time.h>
 #include <vector>
 
@@ -65,7 +64,7 @@ template <class T, class T2> void plot_square(const T &v, const T2 &shape) {
 
 template <class T, class T2> void plot_hist(const T &v, const T2 &shape) {
   cnpy::npy_save("/tmp/v_test.npy", &v[0], shape, "w");
-  std::system("./visualisation.py /tmp/v_test.npy hist");
+  (void)std::system("./visualisation.py /tmp/v_test.npy hist");
 }
 
 template <class T, class T2>
@@ -100,11 +99,6 @@ void set_seed() {
 
   // Do not make the MISTAKE of using just the tv_usec
   // This will mean your seed repeats every second.
-}
-
-inline bool file_exists(const std::string &name) {
-  struct stat buffer;
-  return (stat(name.c_str(), &buffer) == 0);
 }
 
 #endif

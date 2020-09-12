@@ -5,8 +5,8 @@ VPATH = ../src
 
 CXX = g++
 CC = $(CXX)
-# -Wall -Wextra -O3
-CXXFLAGS = -I$(HOME)/.pyenv/versions/miniconda3-latest/envs/random-walkers/include -I/usr/include/eigen3 -I$(INCPATH)
+
+CXXFLAGS = -O3 --std=c++17 -I$(HOME)/.pyenv/versions/miniconda3-latest/envs/random-walkers/include -I$(INCPATH)
 
 data_generation: data_generation.o
 

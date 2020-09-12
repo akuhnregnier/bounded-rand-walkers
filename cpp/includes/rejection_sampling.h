@@ -70,7 +70,7 @@ double find_maximum(nlopt::vfunc func, dvect &x, dvect &lb, dvect &ub,
   max_pos = xt::zeros<double>({
       x.size(),
   });
-  for (int i = 0; i < x.size(); ++i) {
+  for (long unsigned int i = 0; i < x.size(); ++i) {
     max_pos[i] = x[i];
   }
   return maxf;
@@ -131,7 +131,6 @@ public:
     };
 
     dxarray centre = xt::adapt(centre_vect, centre_shape);
-    double width = func_data->width;
 
     pdf_values = xt::zeros<double>({
         blocks,
@@ -172,7 +171,7 @@ public:
       if (VERBOSE) {
         print("finding maxes");
       }
-      for (int j = 0; j < starts.size(); ++j) {
+      for (long unsigned int j = 0; j < starts.size(); ++j) {
         if (VERBOSE) {
           print(j);
           print(starts.size());
@@ -254,7 +253,7 @@ public:
       }
 
       int max_val_index = 0;
-      for (int i = 0; i < edges.size(); ++i) {
+      for (long unsigned int i = 0; i < edges.size(); ++i) {
         if (coord[0] < edges[i]) {
           max_val_index = i - 1;
           break;
@@ -307,7 +306,6 @@ public:
     };
 
     dxarray centre = xt::adapt(centre_vect, centre_shape);
-    double width = func_data->width;
 
     pdf_values = xt::zeros<double>({blocks, blocks});
     max_box_values = xt::zeros<double>({blocks, blocks});
@@ -334,8 +332,8 @@ public:
     auto coord_grid = xt::meshgrid(centres, centres);
     auto x_coords = std::get<0>(coord_grid);
     auto y_coords = std::get<1>(coord_grid);
-    for (size_t i = 0; i != blocks; ++i) {
-      for (size_t j = 0; j != blocks; ++j) {
+    for (long unsigned int i = 0; i != blocks; ++i) {
+      for (long unsigned int j = 0; j != blocks; ++j) {
         coord = {xt::index_view(x_coords, {{i, j}})[0],
                  xt::index_view(y_coords, {{i, j}})[0]};
         if (VERBOSE) {
@@ -358,7 +356,7 @@ public:
         if (VERBOSE) {
           print("finding maxes");
         }
-        for (int j = 0; j < starts.size(); ++j) {
+        for (long unsigned int j = 0; j < starts.size(); ++j) {
           if (VERBOSE) {
             print(j);
             print(starts.size());
@@ -415,7 +413,7 @@ public:
     // leave a column of 0s on the very 'left' (beginning) for the same
     // reason as the additional 0 element was added to the
     // first_discrete_cdf above.
-    for (size_t row(0); row < blocks; ++row) {
+    for (long unsigned int row(0); row < blocks; ++row) {
       // reset to 0s just to be sure. 1 extra zero as explained above.
       second_discrete_cdf = xt::zeros<double>({
           blocks + 1,
@@ -571,7 +569,7 @@ public:
 
 template <class x_type> inline dvect transform_to_vect(const x_type &arr) {
   dvect arr_vect(arr.size());
-  for (unsigned long int it = 0; it < arr.size(); ++it) {
+  for (long unsigned int it = 0; it < arr.size(); ++it) {
     arr_vect[it] = arr[it];
   }
   return arr_vect;
@@ -579,7 +577,7 @@ template <class x_type> inline dvect transform_to_vect(const x_type &arr) {
 
 template <class arr_type> auto cumsum(const arr_type &arr) {
   auto cum_sum = arr;
-  for (int i = 1; i < arr.size(); ++i) {
+  for (long unsigned int i = 1; i < arr.size(); ++i) {
     cum_sum[i] += cum_sum[i - 1];
   }
   return cum_sum;
@@ -664,9 +662,9 @@ void testing_1d() {
   double start_s = std::chrono::duration_cast<std::chrono::milliseconds>(
                        std::chrono::system_clock::now().time_since_epoch())
                        .count();
-  unsigned long int L = 1000;
+  long unsigned int L = 1000;
   dvect sample_results(L);
-  for (int i = 0; i < L; ++i) {
+  for (long unsigned int i = 0; i < L; ++i) {
     sample_results[i] = sampler.sample(dvect{0.3}, tophat)[0];
   }
   double end_s = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -741,7 +739,6 @@ void testing_2d() {
   //     print(*it);
   // }
   print(bounds.size());
-  double test2 = xt::index_view(bounds, {{0, 0}})[0];
 
   //////////////////////////////////////////////////
 
