@@ -6,9 +6,9 @@ import numpy as np
 from scipy.integrate import dblquad
 from scipy.interpolate import RegularGridInterpolator
 
-from data_generation import weird_bounds
-from relief_matrix_shaper import gen_shaper2D
-from utils import get_centres
+from .data_generation import weird_bounds
+from .relief_matrix_shaper import gen_shaper2D
+from .utils import get_centres
 
 
 def get_weird_shaper(x_centres, y_centres, which="binary", divisions=200):

@@ -6,16 +6,15 @@ asymmetry clear Valid for 2D case
 """
 import matplotlib.pyplot as plt
 import numpy as np
-import numpy.random as rand
 import scipy as sp
 from numba import njit
 from scipy import integrate
 from scipy.spatial import Delaunay
 
-from c_g2D import c_g2D_func
-from c_rot_steps import rot_steps as c_rot_steps
-from data_generation import DelaunayArray, in_bounds, weird_bounds
-from utils import get_centres
+from .c_g2D import c_g2D_func
+from .c_rot_steps import rot_steps as c_rot_steps
+from .data_generation import DelaunayArray, in_bounds, weird_bounds
+from .utils import get_centres
 
 
 @njit
@@ -25,15 +24,14 @@ def rot_steps_fast(data):
 
     Examples:
         >>> N = 1000
-        >>> pos_data2D = rand.uniform(0, 1, size=(2, N))
+        >>> pos_data2D = np.random.uniform(0, 1, size=(2, N))
         >>> rot_steps_data = rot_steps(pos_data2D)
-        >>> plt.figure()
-        >>> plt.hist2d(rot_steps[0, :], rot_steps[1, :], bins=50)
-        >>> plt.plot(np.arange(-2, 2, 0.01),
-        ...          np.array([0 for a in np.arange(-2, 2, 0.01)]))
-        >>> plt.title('Observed step-size with fixed incoming direction')
-        >>> plt.gca().set_aspect('equal')
-        >>> plt.show()
+        >>> plt.figure()  # doctest: +SKIP
+        >>> plt.hist2d(*rot_steps_data, bins=50)  # doctest: +SKIP
+        >>> plt.plot([-2, 2], [0, 0], c='C0')  # doctest: +SKIP
+        >>> plt.title('Observed step-size with fixed incoming direction')  # doctest: +SKIP
+        >>> plt.gca().set_aspect('equal')  # doctest: +SKIP
+        >>> plt.show()  # doctest: +SKIP
 
     """
     print("This is rot_steps_fast")
@@ -80,15 +78,15 @@ def rot_steps(data):
 
     Examples:
         >>> N = 1000
-        >>> pos_data2D = rand.uniform(0, 1, size=(2, N))
+        >>> pos_data2D = np.random.uniform(0, 1, size=(2, N))
         >>> rot_steps_data = rot_steps(pos_data2D)
-        >>> plt.figure()
-        >>> plt.hist2d(rot_steps[0, :], rot_steps[1, :], bins=50)
-        >>> plt.plot(np.arange(-2, 2, 0.01),
-        ...          np.array([0 for a in np.arange(-2, 2, 0.01)]))
-        >>> plt.title('Observed step-size with fixed incoming direction')
-        >>> plt.gca().set_aspect('equal')
-        >>> plt.show()
+        >>> plt.figure()  # doctest: +SKIP
+        >>> plt.hist2d(rot_steps[0, :], rot_steps[1, :], bins=50)  # doctest: +SKIP
+        >>> plt.plot(np.arange(-2, 2, 0.01),  # doctest: +SKIP
+        ...          np.array([0 for a in np.arange(-2, 2, 0.01)]))  # doctest: +SKIP
+        >>> plt.title('Observed step-size with fixed incoming direction')  # doctest: +SKIP
+        >>> plt.gca().set_aspect('equal')  # doctest: +SKIP
+        >>> plt.show()  # doctest: +SKIP
 
     """
     rot_steps_data = np.zeros([2, np.shape(data)[1] - 2])
@@ -243,15 +241,7 @@ def g2D(f, xs_edges, ys_edges, bounds=weird_bounds):
             position_mask[i, j] = is_in_bounds
     x_indices, y_indices = np.where(position_mask)
     g_values = np.asarray(
-        c_g2D_func(
-            f,
-            xs_edges,
-            ys_edges,
-            xs_centres,
-            ys_centres,
-            x_indices,
-            y_indices,
-        )
+        c_g2D_func(f, xs_edges, ys_edges, xs_centres, ys_centres, x_indices, y_indices)
     )
     # now need to normalise
     area = (xs_centres[1] - xs_centres[0]) * (ys_centres[1] - ys_centres[0])
@@ -298,7 +288,7 @@ if __name__ == "__main__":
 
 if __name__ == "__main__1":
     N = 500000
-    pos_data2D = rand.uniform(0, 1, size=(2, N))
+    pos_data2D = np.random.uniform(0, 1, size=(2, N))
     rot_steps_data = rot_steps(pos_data2D)
     plt.figure()
     plt.hist2d(rot_steps_data[0, :], rot_steps_data[1, :], bins=50)

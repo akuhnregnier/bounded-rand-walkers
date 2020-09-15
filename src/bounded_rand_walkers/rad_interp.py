@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
+"""Averaging of a 2D distribution to a 1D 'slice'."""
 import cv2
 import numpy as np
 from scipy.interpolate import griddata
+from tqdm import tqdm
+
+from bounded_rand_walkers.utils import get_centres
 
 
 def rotation(x, y, angle):
-    """
-    rotates x,y position for angle theta
-    """
+    """Rotate x, y position by angle theta."""
 
     x_rot = x * np.cos(angle) - y * np.sin(angle)
     y_rot = x * np.sin(angle) + y * np.cos(angle)
@@ -18,11 +20,7 @@ def rotation(x, y, angle):
 def radial_interp(
     data, xcentre, ycentre, num_radii, num_points_per_radius, dtype="float"
 ):
-    """
-    Does radially interolation to average radially to get radial shape on
-    given grid shape
-
-    """
+    """Radial interpolation from 2D distribution."""
     if dtype == "float":
         data_copy = np.zeros(data.shape, dtype=np.int32)
         for row in range(data.shape[0]):
@@ -100,5 +98,53 @@ def radial_interp(
     # normalising averages weighted by area
     total = np.sum(avg) * max_rad / float(num_radii)
     avg /= total
+
+    return avg, radii
+
+
+def radial_interp_circ(data, num_radii, dtype="float", verbose=True):
+    """Radial interpolation from 2D distribution.
+
+    Averaging is carried out using concentric circles and unbinned data.
+
+    If the number of data points is large, this function may take very long to
+    execute.
+
+    TODO: Compare speed to straight binning of distances, which is equivalent.
+
+    """
+    min_coord = np.min(data)
+    max_coord = np.max(data)
+
+    max_abs = max(np.abs(min_coord), np.abs(max_coord))
+
+    radii_edges = np.linspace(0, max_abs, num_radii + 1)
+    radii = get_centres(radii_edges)
+
+    avg = np.zeros_like(radii)
+
+    # Calculate distances from the origin.
+    distances = np.linalg.norm(data, axis=1)
+
+    for (i, (mean_rad, rad_u)) in enumerate(
+        zip(
+            tqdm(
+                radii,
+                desc="Averaging over radii",
+                disable=not verbose,
+                smoothing=0,
+            ),
+            radii_edges[1:],
+        )
+    ):
+        # Selected all samples that are between the two concentric circles.
+        # Since we are using concentric circles centred at the origin, we can simply
+        # test the number of samples that are within the outer circle, removing these
+        # elements from the array before the next iteration.
+        selection = distances < rad_u
+        avg[i] = np.sum(selection)
+
+        # Discard these distances for the next iteration.
+        distances = distances[~selection]
 
     return avg, radii

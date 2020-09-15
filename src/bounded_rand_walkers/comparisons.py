@@ -4,6 +4,8 @@
 """
 Compare analytical and numerical stepsize and positions distributions.
 
+   isort:skip_file
+
 """
 import logging
 import os
@@ -12,33 +14,33 @@ import matplotlib as mpl
 import matplotlib.colors as colors
 import numpy as np
 
-try:
-    import pickle as pickle
-except ImportError:
-    import pickle
+import pickle
 
-N_PROCESSES = 4
-SHOW = True
-mpl.rcParams["lines.markersize"] = 9.0
-mpl.rcParams["legend.loc"] = "best"
-mpl.rcParams["savefig.dpi"] = 600
-mpl.rcParams["savefig.bbox"] = "tight"
-mpl.rcParams["contour.negative_linestyle"] = "solid"
-mpl.rc("text", usetex=True)
-mpl.rc("font", family="serif", size=15)
-if not SHOW:
-    mpl.use("Agg")
+if __name__ == "__main__":
+    # This has to be done before importing pyplot.
+    N_PROCESSES = 4
+    SHOW = True
+    mpl.rcParams["lines.markersize"] = 9.0
+    mpl.rcParams["legend.loc"] = "best"
+    mpl.rcParams["savefig.dpi"] = 600
+    mpl.rcParams["savefig.bbox"] = "tight"
+    mpl.rcParams["contour.negative_linestyle"] = "solid"
+    mpl.rc("text", usetex=True)
+    mpl.rc("font", family="serif", size=15)
+    if not SHOW:
+        mpl.use("Agg")
+
 import matplotlib.pyplot as plt
 
-from c_rot_steps import rot_steps
-from cpp.data_reading import get_cpp_binned_2D
-from data_generation import circle_points, multi_random_walker, weird_bounds
-from functions import Funky, Gaussian
-from rad_interp import radial_interp
-from rotation_steps import g2D  # rot_steps,
-from rotation_steps import g1D, g1D_norm, get_pdf_transform_shaper
-from shaperGeneral2D import get_weird_shaper
-from utils import get_centres, plot_name_clean, stats
+from .c_rot_steps import rot_steps
+from .cpp.data_reading import get_cpp_binned_2D
+from .data_generation import circle_points, multi_random_walker, weird_bounds
+from .functions import Funky, Gaussian
+from .rad_interp import radial_interp
+from .rotation_steps import g2D  # rot_steps,
+from .rotation_steps import g1D, g1D_norm, get_pdf_transform_shaper
+from .shaperGeneral2D import get_weird_shaper
+from .utils import get_centres, plot_name_clean, stats
 
 output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "output"))
 if not os.path.isdir(output_dir):
@@ -520,10 +522,7 @@ def compare_1D_plotting(
 
     fig2, axes2 = plt.subplots(1, 2, squeeze=True)
     axes2[0].set_title(r"a.) Analytical $f_t(x)$")
-    axes2[0].plot(
-        step_bin_centres,
-        f_t_analytical,
-    )
+    axes2[0].plot(step_bin_centres, f_t_analytical)
     axes2[1].set_title(r"b.) Numerical $f_t(x)$")
     axes2[1].plot(
         step_bin_centres,
@@ -867,9 +866,7 @@ if __name__ == "__main__":
 
     if ONE_D:
         # 1D case
-        pdfs_args_1D = [
-            (Gaussian, "gauss", {"scale": 0.5, "centre": np.array([0.0])}),
-        ]
+        pdfs_args_1D = [(Gaussian, "gauss", {"scale": 0.5, "centre": np.array([0.0])})]
         bins = 31
         for PDFClass, pdf_name, kwargs in pdfs_args_1D:
             pdf = PDFClass(**kwargs).pdf

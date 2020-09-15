@@ -7,7 +7,7 @@ import numpy as np
 from scipy import optimize
 from scipy.interpolate import RegularGridInterpolator
 
-from utils import get_centres
+from .utils import get_centres
 
 
 class Sampler(object):

@@ -1,7 +1,14 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
+*.egg-info/
+.ipynb_checkpoints/
+dist/
+build/
 *.py[cod]
 *$py.class
+
+# OS X
+.DS_Store
 
 # C extensions
 *.so
@@ -104,3 +111,12 @@ ENV/
 output*/*
 shape1.jpg
 *.zip
+
+# Compiled.
+*.o
+
+# Data
+*.pickle
+
+# Version file.
+_version.py

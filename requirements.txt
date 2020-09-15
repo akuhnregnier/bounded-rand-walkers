@@ -1,5 +1,11 @@
 matplotlib
 numba
 numpy
+opencv
+pytest
+pytest-cov
 scipy
+statsmodels
+tqdm
 xtensor
+xtensor-python

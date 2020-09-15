@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import numpy as np
-from numba import float64, int64, jitclass, njit
+from numba import float64, int64, njit
+from numba.experimental import jitclass
 
 
 @njit
@@ -32,7 +33,7 @@ class Tophat_1D(object):
         self.centre = centre
 
     def pdf(self, x):
-        if abs(x[0] - self.centre) < (self.width / 2.0):
+        if np.abs(x[0] - self.centre) < (self.width / 2.0):
             return 1.0
         else:
             return 0.0
@@ -100,8 +101,8 @@ class Tophat_2D(object):
             else:
                 return 0.0
         elif self.type_2D == 1:
-            if (abs(x - self.x_centre) < (self.extent / 2.0)) and (
-                abs(y - self.y_centre) < (self.extent / 2.0)
+            if (np.abs(x - self.x_centre) < (self.extent / 2.0)) and (
+                np.abs(y - self.y_centre) < (self.extent / 2.0)
             ):
                 return 1.0
             else:

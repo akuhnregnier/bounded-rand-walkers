@@ -8,11 +8,55 @@ Random walk data is generated using `C++` and analysed using `Python 3`.
 
 For required `Python` packages (and `xtensor`, which is required for the `C++` code) see `requirements.txt`.
 
-For the `C++` code, the [`xtensor`](https://xtensor.readthedocs.io/en/latest/installation.html), [`nlopt`](https://github.com/stevengj/nlopt), and [`cnpy`](https://github.com/rogersce/cnpy) libraries are required.
+For the `C++` code, the [`xtensor`](https://xtensor.readthedocs.io/en/latest/installation.html), [`xtensor-python`](https://github.com/xtensor-stack/xtensor-python), [`nlopt`](https://github.com/stevengj/nlopt), (?([`cnpy`](https://github.com/rogersce/cnpy))), and (already installed via conda as xtensor-python dependency?([`pybind11`](https://github.com/pybind/pybind11))) libraries are required.
 
-Compiling the `C++` code (the primary `data_generation` executable) can be done by running `make` in the directory `cpp/build/`:
+Installation (C++ code compilation)
+-----------------------------------
 
-```bash
-cd cpp/build
-make
+**On Unix (Linux, OS X)**
+
+ - clone this repository
+ - `pip install ./bounded-random-walkers`
+
+**On Windows (Requires Visual Studio 2015)**
+
+ - For Python 3.5:
+     - clone this repository
+     - `pip install ./bounded-random-walkers`
+ - For earlier versions of Python, including Python 2.7:
+
+   xtensor requires a C++14 compliant compiler (i.e. Visual Studio 2015 on
+   Windows). Running a regular `pip install` command will detect the version
+   of the compiler used to build Python and attempt to build the extension
+   with it. We must force the use of Visual Studio 2015.
+
+     - clone this repository
+     - `"%VS140COMNTOOLS%\..\..\VC\vcvarsall.bat" x64`
+     - `set DISTUTILS_USE_SDK=1`
+     - `set MSSdk=1`
+     - `pip install ./bounded-random-walkers`
+
+   Note that this requires the user building `bounded-random-walkers` to have registry edition
+   rights on the machine, to be able to run the `vcvarsall.bat` script.
+
+
+Windows runtime requirements
+----------------------------
+
+On Windows, the Visual C++ 2015 redistributable packages are a runtime
+requirement for this project. It can be found [here](https://www.microsoft.com/en-us/download/details.aspx?id=48145).
+
+If you use the Anaconda python distribution, you may require the Visual Studio
+runtime as a platform-dependent runtime requirement for you package:
+
+```yaml
+requirements:
+  build:
+    - python
+    - setuptools
+    - pybind11
+
+  run:
+   - python
+   - vs2015_runtime  # [win]
 ```

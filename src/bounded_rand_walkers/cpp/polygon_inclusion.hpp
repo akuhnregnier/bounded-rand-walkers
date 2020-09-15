@@ -8,7 +8,7 @@
 #ifndef POLYGON_INCLUSION_H
 #define POLYGON_INCLUSION_H
 
-#include "common.h"
+#include "common.hpp"
 #include <cstddef>
 #include <vector>
 

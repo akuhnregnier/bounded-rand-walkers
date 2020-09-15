@@ -23,8 +23,13 @@ repos:
             name: cpp-clean
             entry: clang-format -i
             language: system
-            files: \.(cpp|h|c)$
-
+            files: \.(cpp|hpp|h|c)$
+          - id: pytest
+            name: pytest
+            entry: pytest -m "not slow" --ignore-glob='joblib/**/func_code.py'
+            pass_filenames: false
+            language: system
+            verbose: true
     - repo: https://github.com/pre-commit/pre-commit-hooks
       rev: v2.2.1
       hooks:

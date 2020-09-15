@@ -179,13 +179,11 @@ def convert_array_1D(histogram1D, bin_size=None):
     bin centres and an array containing the frequencies.
 
     Examples:
-        >>> from binning import convert_array_1D
+        >>> from bounded_rand_walkers.binning import convert_array_1D
         >>> histogram1D = [(.1, 0.2), (.2, 0.3), (.4, 0.1), (.5, 0.2)]
         >>> centres, frequencies = convert_array_1D(histogram1D)
-        >>> centres
-        array([ 0.1,  0.2,  0.3,  0.4,  0.5])
-        >>> frequencies
-        array([ 0.2,  0.3,  0. ,  0.1,  0.2])
+        >>> np.testing.assert_allclose(centres, np.array([0.1, 0.2, 0.3, 0.4, 0.5]))
+        >>> np.testing.assert_allclose(frequencies, np.array([0.2, 0.3, 0., 0.1, 0.2]))
 
     """
     centres = np.asarray([element[0] for element in histogram1D])

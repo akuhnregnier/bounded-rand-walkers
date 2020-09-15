@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import correlate2d
 
-from data_generation import Delaunay, DelaunayArray, in_bounds
-from utils import get_centres
+from .data_generation import Delaunay, DelaunayArray, in_bounds
+from .utils import get_centres
 
 output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "output"))
 if not os.path.isdir(output_dir):

@@ -2,10 +2,10 @@
 #define REJECTION_SAMPLING_H
 
 #include "boost/multi_array.hpp"
-#include "common.h"
-#include "linterp.h"
-#include "pdfs.h"
-#include "polygon_inclusion.h"
+#include "common.hpp"
+#include "linterp.hpp"
+#include "pdfs.hpp"
+#include "polygon_inclusion.hpp"
 #include "xtensor/xadapt.hpp"
 #include "xtensor/xarray.hpp"
 #include "xtensor/xcontainer.hpp"
@@ -28,10 +28,15 @@
 #include <memory>
 #include <nlopt.hpp>
 #include <random>
+#include <stdexcept>
 #include <string>
 #include <sys/time.h>
 #include <typeinfo>
 #include <vector>
+
+#define FORCE_IMPORT_ARRAY
+#include "xtensor-python/pyarray.hpp"
+#include "xtensor-python/pyvectorize.hpp"
 
 double find_maximum(nlopt::vfunc func, dvect &x, dvect &lb, dvect &ub,
                     void *my_func_data) {
@@ -48,12 +53,13 @@ double find_maximum(nlopt::vfunc func, dvect &x, dvect &lb, dvect &ub,
   opt.set_lower_bounds(lb);
   opt.set_upper_bounds(ub);
   opt.set_max_objective(*func, my_func_data);
-  opt.set_xtol_rel(1e-4);
+  opt.set_xtol_rel(1e-5); // 1e-4
   double maxf; /* `*`the` `minimum` `objective` `value,` `upon` `return`*` */
   int result = opt.optimize(x, maxf);
   if (result < 0) {
     printf("nlopt failed!\n");
     print(result);
+    throw std::invalid_argument("Find maximum: nlopt failed!");
   } else {
     if (x.size() == 1) {
       if (VERBOSE) {
@@ -76,18 +82,56 @@ double find_maximum(nlopt::vfunc func, dvect &x, dvect &lb, dvect &ub,
   return maxf;
 }
 
+dxarray find_maximum_pos(nlopt::vfunc func, dvect &x, dvect &lb, dvect &ub,
+                         void *my_func_data) {
+  /* func: pdf
+   * x: initial guess
+   * lb: lower bound
+   * ub: upper bound
+   * All entries (except for func) are n-dimensional vectors, where n is
+   * the number of dimensions in the problem.
+   */
+  nlopt::opt opt;
+  opt =
+      nlopt::opt(nlopt::LN_COBYLA, x.size()); /* algorithm and dimensionality */
+  opt.set_lower_bounds(lb);
+  opt.set_upper_bounds(ub);
+  opt.set_max_objective(*func, my_func_data);
+  opt.set_xtol_rel(1e-4);
+  double minf; /* `*`the` `minimum` `objective` `value,` `upon` `return`*` */
+  int result = opt.optimize(x, minf);
+  if (result < 0) {
+    printf("nlopt failed!\n");
+    print(result);
+  } else {
+    if (x.size() == 1) {
+      printf("found maximum at f(%g) = %0.10g\n", x[0], minf);
+    } else if (x.size() == 2) {
+      printf("found maximum at f(%g,%g) = %0.10g\n", x[0], x[1], minf);
+    }
+  }
+  // nlopt_destroy(opt);
+  dxarray max_pos;
+  max_pos = xt::zeros<double>({
+      x.size(),
+  });
+  for (int i = 0; i < x.size(); ++i) {
+    max_pos[i] = x[i];
+  }
+  return max_pos;
+}
+
 struct interp {
   InterpMultilinear<1, double> *interp_ML_ptr;
 
   interp(dvect &grid, dvect &f_values) {
-    // std::vector<double> grid = linspace(0.0, 1.0, l);
     std::vector<std::vector<double>::iterator> grid_iter_list;
     grid_iter_list.push_back(grid.begin());
     array<int, 1> grid_sizes;
     grid_sizes[0] = grid.size();
     int num_elements = grid_sizes[0];
-    // construct the interpolator. the last two arguments are pointers to the
-    // underlying data now assign this to the pointer so it can be used later
+    // Construct the interpolator. The last two arguments are pointers to the
+    // underlying data. Assign this to the pointer so it can be used later.
     interp_ML_ptr = new InterpMultilinear<1, double>(
         grid_iter_list.begin(), grid_sizes.begin(), f_values.data(),
         f_values.data() + num_elements);
@@ -183,7 +227,8 @@ public:
         }
       }
       if (max_value < pdf_values[i]) {
-        throw 10;
+        throw std::invalid_argument(
+            "Maximum value needs to be larger than pdf value.");
       }
       max_box_values[i] = max_value;
       starts.clear();
@@ -235,12 +280,6 @@ public:
       auto min_prob = inv_interpolators[0](min_step);
       auto max_prob = inv_interpolators[0](max_step);
 
-      // std::random_device rd;  //Will be used to obtain a seed for the random
-      // number engine std::mt19937 gen(rd()); //Standard
-      // mersenne_twister_engine seeded with rd()
-      // std::uniform_real_distribution<double> dis(min_prob, max_prob); //
-      // uniform, unbiased dvect prob = {dis(gen)};
-
       dvect prob = {random_real(min_prob, max_prob)};
 
       // print("prob");
@@ -261,9 +300,6 @@ public:
       }
       auto max_box_val = max_box_values[max_val_index];
       ratio = pdf_val / max_box_val;
-
-      // std::uniform_real_distribution<double> dis2(0., 1.); // uniform,
-      // unbiased prob2 = dis2(gen);
 
       prob2 = random_real(0., 1.);
     } while (prob2 >= ratio); // ie. return if (prob < ratio)
@@ -348,27 +384,29 @@ public:
         starts.push_back(lower_edge);
         starts.push_back(upper_edge);
         starts.push_back(coord);
-        trial_coord = {edges[i], edges[j + 1]};
-        starts.push_back(trial_coord);
-        trial_coord = {edges[i + 1], edges[j]};
-        starts.push_back(trial_coord);
+
+        // Add remaining vertices.
+        starts.push_back({edges[i], edges[j + 1]});
+        starts.push_back({edges[i + 1], edges[j]});
+
         max_value = 0;
         if (VERBOSE) {
           print("finding maxes");
         }
-        for (long unsigned int j = 0; j < starts.size(); ++j) {
+        for (long unsigned int k = 0; k < starts.size(); ++k) {
           if (VERBOSE) {
-            print(j);
+            print(k);
             print(starts.size());
           }
           found_max =
-              find_maximum(pdf, starts[j], lower_edge, upper_edge, func_data);
+              find_maximum(pdf, starts[k], lower_edge, upper_edge, func_data);
           if (found_max > max_value) {
             max_value = found_max;
           }
         }
         if (max_value < pdf_values[i]) {
-          throw 10;
+          throw std::invalid_argument(
+              "Maximum value needs to be larger than pdf value.");
         }
         xt::index_view(max_box_values, {{i, j}}) = max_value;
         starts.clear();
@@ -567,14 +605,6 @@ public:
   }
 };
 
-template <class x_type> inline dvect transform_to_vect(const x_type &arr) {
-  dvect arr_vect(arr.size());
-  for (long unsigned int it = 0; it < arr.size(); ++it) {
-    arr_vect[it] = arr[it];
-  }
-  return arr_vect;
-}
-
 template <class arr_type> auto cumsum(const arr_type &arr) {
   auto cum_sum = arr;
   for (long unsigned int i = 1; i < arr.size(); ++i) {
@@ -583,89 +613,46 @@ template <class arr_type> auto cumsum(const arr_type &arr) {
   return cum_sum;
 }
 
-void testing_1d() {
-  dvect dummy{};
-
-  dvect arr = {0., 1., 2., 2.5};
-  dvect arr2 = cumsum(arr);
-  print("arr");
-  for (auto const &value : arr) {
-    print(value);
-  }
-  print("arr2");
-  for (auto const &value : arr2) {
-    print(value);
-  }
-  print("Max of arr");
-  print(*std::max_element(arr.begin(), arr.end()));
-
-  int l = 5;
-  std::vector<double> grid = linspace(0.0, 1.0, l);
-  std::vector<double> f_values = linspace(1.0, 5.0, l);
-
-  interp interp_s(grid, f_values);
-
-  std::vector<double> args = {0.53};
-  print(interp_s(args));
-
-  std::vector<interp> struct_instances;
-  struct_instances.emplace_back(grid, f_values);
-
-  args = {0.59};
-  print(struct_instances[0](args));
-
+xt::pyarray<double> testing_1d(unsigned long int N = 1000,
+                               std::string pdf_name = "gauss",
+                               double start_pos = 0, dvect centre = {0.0, 0.0},
+                               double width = 0.2, double decay_rate = 1,
+                               double exponent = 1, double binsize = 0.1,
+                               long unsigned int blocks = 100) {
+  // Set up the necessary data structures.
   pdf_data data;
   struct pdf_data *data_ptr = &data;
-  data.centre = dvect{0.3, 0.0};
-  data.width = 0.2;
+  data.centre = centre;
+  data.width = width;
+  data.decay_rate = decay_rate;
+  data.exponent = exponent;
+  data.binsize = binsize;
 
-  print("pdf test");
-  dvect coord{0.3, 1.2};
-  print("size");
-  // print(coord)
-  print(coord.size());
-  print(tophat(coord, dummy, data_ptr));
+  // Retrieve the pdf to be tested.
+  double (*pdf)(const dvect &, dvect &, void *) = get_pdf(pdf_name);
 
-  // double start =
-  // std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-  // int EVALS = 100;
-  // double result;
-  // for (int i=0; i<EVALS; ++i) {
-  //     result = tophat(coord, dummy, data_ptr);
-  // }
-  // double end =
-  // std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-  // double time = (end - start) / 1000.;
-  // print("time taken:");
-  // print(time);
-  // print("per evaluation");
-  // print(time/((double)EVALS));
-
-  Sampler1D sampler(2000, tophat, data_ptr);
+  Sampler1D sampler(blocks, pdf, data_ptr);
 
   // print("edges");
   // print(sampler.edges);
   // print(sampler.edges.size());
+  // print("centres");
   // print(sampler.centres);
   // print(sampler.centres.size());
+  // print("pdf_values");
   // print(sampler.pdf_values);
+  // print("max_box_values");
   // print(sampler.max_box_values);
 
-  print("interp testing");
-  print_1d(args);
-  print(sampler.interpolators[0](args));
-  args = {0.67};
-  print_1d(args);
-  print(sampler.interpolators[0](args));
-
-  print("sampling");
+  print("sampling...");
   double start_s = std::chrono::duration_cast<std::chrono::milliseconds>(
                        std::chrono::system_clock::now().time_since_epoch())
                        .count();
-  long unsigned int L = 1000;
-  dvect sample_results(L);
-  for (long unsigned int i = 0; i < L; ++i) {
-    sample_results[i] = sampler.sample(dvect{0.3}, tophat)[0];
+
+  xt::pyarray<double> sample_results = xt::empty<double>({N});
+
+  for (long unsigned int i = 0; i < N; ++i) {
+    sample_results[i] = sampler.sample(dvect{start_pos}, pdf)[0];
   }
   double end_s = std::chrono::duration_cast<std::chrono::milliseconds>(
                      std::chrono::system_clock::now().time_since_epoch())
@@ -674,173 +661,145 @@ void testing_1d() {
   print("time taken:");
   print(time_s);
   print("per evaluation");
-  print(time_s / ((double)L));
+  print(time_s / ((double)N));
 
-  const std::vector<long unsigned int> shape{
-      L,
-  };
-  plot_hist(sample_results, shape);
-
-  /*
-  xt::xarray<double> arr;
-  arr = xt::linspace<double>(-1., 1., 5);
-  std::cout << arr*2 << std::endl;
-
-
-  print(tophat.centre);
-  print(tophat.width);
-  print(tophat.pdf(0.1));
-  print(tophat.pdf(0.5));
-  xt::xarray<double> results;
-  // results = xt::zeros<double>({arr.size(),});
-  results = xt::linspace<double>(1., 2., arr.size());
-  print("starting loop");
-  print(results);
-  for(auto it=arr.begin(); it!=arr.end(); ++it){
-      print("it");
-      print(*it);
-      print("diff");
-      print(it - arr.begin());
-      results[it - arr.begin()] = tophat.pdf(*it);
-  }
-  print("results");
-  print(results);
-
-  // const std::vector<long unsigned int> shape {arr.size(),};
-  // plot_square(results, shape);
-
-  */
+  return sample_results;
 }
 
-void testing_2d() {
-  int blocks = 4;
-  dxarray bounds{{-2, -2}, {2, 2}};
-  auto test = xt::index_view(bounds, {{0, 0}});
-  print(test);
-  auto edges =
-      xt::linspace<double>(xt::index_view(bounds, {{0, 0}})[0],
-                           xt::index_view(bounds, {{1, 0}})[0], blocks + 1);
-  print(edges);
-  print(edges.size());
-  auto centres = (xt::view(edges, xt::range(1, blocks + 1)) +
-                  xt::view(edges, xt::range(0, blocks))) /
-                 2.;
-  print(centres);
-  print_1d(centres.shape());
-  auto coord_grid = xt::meshgrid(centres, centres);
-  print_1d(std::get<0>(coord_grid).shape());
-  print_1d(std::get<0>(coord_grid));
-  print_1d(std::get<1>(coord_grid));
-  auto x_coords = std::get<1>(coord_grid);
+// void testing_2d_old() {
+//   int blocks = 4;
+//   dxarray bounds{{-2, -2}, {2, 2}};
+//   auto test = xt::index_view(bounds, {{0, 0}});
+//   print(test);
+//   auto edges =
+//       xt::linspace<double>(xt::index_view(bounds, {{0, 0}})[0],
+//                            xt::index_view(bounds, {{1, 0}})[0], blocks + 1);
+//   print(edges);
+//   print(edges.size());
+//   auto centres = (xt::view(edges, xt::range(1, blocks + 1)) +
+//                   xt::view(edges, xt::range(0, blocks))) /
+//                  2.;
+//   print(centres);
+//   print_1d(centres.shape());
+//   auto coord_grid = xt::meshgrid(centres, centres);
+//   print_1d(std::get<0>(coord_grid).shape());
+//   print_1d(std::get<0>(coord_grid));
+//   print_1d(std::get<1>(coord_grid));
+//   auto x_coords = std::get<1>(coord_grid);
+//
+//   // print("iteration");
+//   // for(auto it=x_coords.begin(); it!=x_coords.end(); ++it) {
+//   // // for (int i=0; i<x_coords.size(); ++i) {
+//   //     print(*it);
+//   // }
+//   print(bounds.size());
+//
+//   //////////////////////////////////////////////////
+//
+//   pdf_data data;
+//   struct pdf_data *data_ptr = &data;
+//   data.centre = dvect{0.6, 0.0};
+//   data.width = 0.2;
+//
+//   double (*pdf)(const dvect &, dvect &, void *) = arbitrary;
+//
+//   print("Initialising 2D sampler");
+//   Sampler2D sampler(8, pdf, data_ptr);
+//   print("Finished Initialising");
+//
+//   print("sampler internals");
+//   print(sampler.edges);
+//   print(sampler.edges.size());
+//   print(sampler.centres);
+//   print(sampler.centres.size());
+//   print(sampler.pdf_values);
+//   print(sampler.max_box_values);
+//
+//   return;
+//
+//   std::vector<double> args = {0.53, 0.2};
+//   print("interp testing");
+//   print_1d(args);
+//   print(sampler.interpolators[0](args));
+//   args = {0.67, 0.};
+//   print_1d(args);
+//   print(sampler.interpolators[0](args));
+//
+//   print(sampler.second_discrete_cdf);
+//
+//   dxarray bounds2 = {{-2, -2}, {2, 2}};
+//   dxarray axes_step_bounds = {{-1 + 0.1, 1 - 0.2}, {-1 + 0.1, 1 - 0.2}};
+//
+//   auto clipr = xt::clip(axes_step_bounds, xt::amin(bounds2, {0}),
+//                         xt::amax(bounds2, {0}));
+//
+//   print("clipping");
+//   print(clipr);
+//   print(xt::amin(bounds2, {0}));
+//
+//   print_1d(sampler.sample(args, pdf));
+//
+//   args = {0., 0.};
+//
+//   dvect sample_results;
+//   dvect sample;
+//   size_t samples = 1000;
+//
+//   print("sampling 2D");
+//   double start_s = std::chrono::duration_cast<std::chrono::milliseconds>(
+//                        std::chrono::system_clock::now().time_since_epoch())
+//                        .count();
+//   for (size_t i = 0; i < samples; ++i) {
+//     sample = sampler.sample(args, pdf);
+//     sample_results.push_back(sample[0]);
+//     sample_results.push_back(sample[1]);
+//   }
+//   double end_s = std::chrono::duration_cast<std::chrono::milliseconds>(
+//                      std::chrono::system_clock::now().time_since_epoch())
+//                      .count();
+//   double time_s = (end_s - start_s) / 1000.;
+//   print("time taken:");
+//   print(time_s);
+//   print("per evaluation");
+//   print(time_s / ((double)samples));
+//
+//   const std::vector<size_t> s_shape{samples, 2};
+//   // plot_hist(sample_results, s_shape);
+// }
 
-  // print("iteration");
-  // for(auto it=x_coords.begin(); it!=x_coords.end(); ++it) {
-  // // for (int i=0; i<x_coords.size(); ++i) {
-  //     print(*it);
-  // }
-  print(bounds.size());
-
-  //////////////////////////////////////////////////
-
+xt::pyarray<double>
+testing_2d(unsigned long int N = 1000, std::string pdf_name = "gauss",
+           dvect start_pos = {0.0, 0.0}, dvect centre = {0.0, 0.0},
+           double width = 0.2, double decay_rate = 1, double exponent = 1,
+           double binsize = 0.1, long unsigned int blocks = 100) {
+  // Set up the necessary data structures.
   pdf_data data;
   struct pdf_data *data_ptr = &data;
-  data.centre = dvect{0.6, 0.0};
-  data.width = 0.2;
+  data.centre = centre;
+  data.width = width;
+  data.decay_rate = decay_rate;
+  data.exponent = exponent;
+  data.binsize = binsize;
 
-  double (*pdf)(const dvect &, dvect &, void *) = arbitrary;
+  // Retrieve the pdf to be tested.
+  double (*pdf)(const dvect &, dvect &, void *) = get_pdf(pdf_name);
 
   print("Initialising 2D sampler");
-  Sampler2D sampler(8, pdf, data_ptr);
+  Sampler2D sampler(blocks, pdf, data_ptr);
   print("Finished Initialising");
 
-  print("sampler internals");
-  print(sampler.edges);
-  print(sampler.edges.size());
-  print(sampler.centres);
-  print(sampler.centres.size());
-  print(sampler.pdf_values);
-  print(sampler.max_box_values);
-
-  return;
-
-  std::vector<double> args = {0.53, 0.2};
-  print("interp testing");
-  print_1d(args);
-  print(sampler.interpolators[0](args));
-  args = {0.67, 0.};
-  print_1d(args);
-  print(sampler.interpolators[0](args));
-
-  print(sampler.second_discrete_cdf);
-
-  dxarray bounds2 = {{-2, -2}, {2, 2}};
-  dxarray axes_step_bounds = {{-1 + 0.1, 1 - 0.2}, {-1 + 0.1, 1 - 0.2}};
-
-  auto clipr = xt::clip(axes_step_bounds, xt::amin(bounds2, {0}),
-                        xt::amax(bounds2, {0}));
-
-  print("clipping");
-  print(clipr);
-  print(xt::amin(bounds2, {0}));
-
-  print_1d(sampler.sample(args, pdf));
-
-  args = {0., 0.};
-
-  dvect sample_results;
-  dvect sample;
-  size_t samples = 1000;
+  std::vector<unsigned long int> sr_shape = {N, 2};
+  dxarray sample_results = xt::empty<double>(sr_shape);
 
   print("sampling 2D");
   double start_s = std::chrono::duration_cast<std::chrono::milliseconds>(
                        std::chrono::system_clock::now().time_since_epoch())
                        .count();
-  for (size_t i = 0; i < samples; ++i) {
-    sample = sampler.sample(args, pdf);
-    sample_results.push_back(sample[0]);
-    sample_results.push_back(sample[1]);
-  }
-  double end_s = std::chrono::duration_cast<std::chrono::milliseconds>(
-                     std::chrono::system_clock::now().time_since_epoch())
-                     .count();
-  double time_s = (end_s - start_s) / 1000.;
-  print("time taken:");
-  print(time_s);
-  print("per evaluation");
-  print(time_s / ((double)samples));
 
-  const std::vector<size_t> s_shape{samples, 2};
-  plot_hist(sample_results, s_shape);
-}
-
-void testing_2d_redux() {
-  // pdf params
-  pdf_data data;
-  struct pdf_data *data_ptr = &data;
-  data.centre = dvect{0.0, 0.0};
-  data.width = 0.2;
-
-  // random walker position
-  dvect pos = {0., 0.};
-
-  double (*pdf)(const dvect &, dvect &, void *) = gauss;
-
-  print("Initialising 2D sampler");
-  Sampler2D sampler(70, pdf, data_ptr);
-  print("Finished Initialising");
-
-  dvect sample_results;
   dvect sample;
-  size_t samples = 500000;
-
-  print("sampling 2D");
-  double start_s = std::chrono::duration_cast<std::chrono::milliseconds>(
-                       std::chrono::system_clock::now().time_since_epoch())
-                       .count();
-  for (size_t i = 0; i < samples; ++i) {
-    sample = sampler.sample(pos, pdf);
-    sample_results.push_back(sample[0]);
-    sample_results.push_back(sample[1]);
+  for (size_t i = 0; i < N; ++i) {
+    sample = sampler.sample(start_pos, pdf);
+    xt::row(sample_results, i) = xt::adapt(sample);
   }
   double end_s = std::chrono::duration_cast<std::chrono::milliseconds>(
                      std::chrono::system_clock::now().time_since_epoch())
@@ -849,10 +808,10 @@ void testing_2d_redux() {
   print("time taken:");
   print(time_s);
   print("per evaluation");
-  print(time_s / ((double)samples));
+  print(time_s / ((double)N));
 
-  const std::vector<size_t> s_shape{samples, 2};
-  plot_hist(sample_results, s_shape);
+  // sample_results.reshape(s_shape);
+  return sample_results;
 }
 
 #endif
