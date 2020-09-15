@@ -110,6 +110,7 @@ ENV/
 *.png
 output*/*
 shape1.jpg
+*.pdf
 *.zip
 
 # Compiled.
