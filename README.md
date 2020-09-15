@@ -8,7 +8,13 @@ Random walk data is generated using `C++` and analysed using `Python 3`.
 
 For required `Python` packages (and `xtensor`, which is required for the `C++` code) see `requirements.txt`.
 
-For the `C++` code, the [`xtensor`](https://xtensor.readthedocs.io/en/latest/installation.html), [`xtensor-python`](https://github.com/xtensor-stack/xtensor-python), [`nlopt`](https://github.com/stevengj/nlopt), (?([`cnpy`](https://github.com/rogersce/cnpy))), and (already installed via conda as xtensor-python dependency?([`pybind11`](https://github.com/pybind/pybind11))) libraries are required.
+For the `C++` code, the following dependencies are required:
+ - [`xtensor`](https://xtensor.readthedocs.io/en/latest/installation.html) (may be installed via conda)
+ - [`xtensor-python`](https://github.com/xtensor-stack/xtensor-python) (may be installed via conda)
+ - [`nlopt`](https://github.com/stevengj/nlopt)
+ - [`boost`](https://www.boost.org/)
+
+You might have to run `ldconfig` post-installation on Linux.
 
 Installation (C++ code compilation)
 -----------------------------------
