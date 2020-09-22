@@ -342,9 +342,8 @@ class Funky(object):
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    plt.close("all")
-    plt.ion()
-
+    # plt.close("all")
+    # plt.ion()
     # 1D case
     pdfs_args_1D = [
         (Tophat_1D, {"width": 0.7, "centre": 0.3}),

@@ -15,7 +15,11 @@ Within `bounded_rand_walkers.cpp`:
 
 # Installation
 
-For required `Python` packages (and `xtensor`, which is required for the `C++` code) see `requirements.txt`.
+For required `Python` packages (and both `xtensor` and `xtensor-python`, which are required for the `C++` code) see `requirements.yaml`.
+They can be installed into a new `conda` environment using:
+```bash
+conda env create --file requirements.yaml
+```
 
 For the `C++` code, the following dependencies are required:
  - [`xtensor`](https://xtensor.readthedocs.io/en/latest/installation.html) (may be installed via conda)
@@ -24,6 +28,16 @@ For the `C++` code, the following dependencies are required:
  - [`boost`](https://www.boost.org/)
 
 You might have to run `ldconfig` post-installation on Linux.
+
+Jupyter notebook extensions:
+```bash
+jupyter nbextensions_configurator enable --user
+```
+
+To install Jupyterlab Code Formatter (more details at (https://jupyterlab-code-formatter.readthedocs.io/en/latest/installation.html):
+ - `jupyter labextension install @ryantam626/jupyterlab_code_formatter`
+ - `conda install -c conda-forge jupyterlab_code_formatter`
+ - `jupyter serverextension enable --py jupyterlab_code_formatter`
 
 ## Installation (C++ code compilation)
 

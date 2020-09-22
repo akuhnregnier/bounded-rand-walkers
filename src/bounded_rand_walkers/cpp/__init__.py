@@ -18,7 +18,6 @@ from _bounded_rand_walkers_cpp import *
 
 from ..utils import get_centres
 from .boundaries import *
-from .data_reading import *
 
 # Rename the original function since we will be defining our own version here.
 cpp_generate_data = generate_data

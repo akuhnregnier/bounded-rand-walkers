@@ -5,8 +5,11 @@ channels:
 dependencies:
   - cython=0.29.21
   - joblib=0.16.0
+  - jupyter_nbextensions_configurator=0.4.1
   - jupyterlab=2.2.8
   - matplotlib=3.3.2
+  - nbdime=2.0.0
+  - nodejs=14.11.0
   - numba=0.51.2
   - numpy=1.19.1
   - pandas=1.1.2
@@ -25,4 +28,3 @@ dependencies:
   - pip:
     - git+https://github.com/akuhnregnier/clean_ipynb.git@working#egg=clean_ipynb
     - git+https://github.com/akuhnregnier/jupyter-notebook-tools.git@master#egg=jupyter-notebook-tools
-    - jupyterlab-code-formatter>=1.2.4
