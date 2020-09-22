@@ -34,75 +34,20 @@
 
 namespace py = pybind11;
 
-auto get_triangle_bounds() {
-  // bounds with x coords in the first column and y coords in the second
-  // has to be given in clockwise order!
-  vect_dvect triangle_vect;
-  triangle_vect.push_back(dvect{0, 0});
-  triangle_vect.push_back(dvect{0, 1});
-  triangle_vect.push_back(dvect{1, 0});
-  triangle_vect.push_back(dvect{0, 0});
-  return triangle_vect;
-}
-
-auto get_weird_bounds() {
-  // bounds with x coords in the first column and y coords in the second
-  // has to be given in clockwise order!
-  vect_dvect weird_bounds_vect;
-  weird_bounds_vect.push_back({0.1, 0.3});
-  weird_bounds_vect.push_back({0.25, 0.98});
-  weird_bounds_vect.push_back({0.9, 0.9});
-  weird_bounds_vect.push_back({0.7, 0.4});
-  weird_bounds_vect.push_back({0.4, 0.05});
-  weird_bounds_vect.push_back({0.1, 0.3});
-  return weird_bounds_vect;
-}
-
-auto get_circle_bounds() {
-  // bounds with x coords in the first column and y coords in the second
-  // has to be given in clockwise order!
-  vect_dvect circle_bounds_vect;
-  circle_bounds_vect.push_back({1.00000000e+00, 0.00000000e+00});
-  circle_bounds_vect.push_back({9.87688341e-01, 1.56434465e-01});
-  circle_bounds_vect.push_back({9.51056516e-01, 3.09016994e-01});
-  circle_bounds_vect.push_back({8.91006524e-01, 4.53990500e-01});
-  circle_bounds_vect.push_back({8.09016994e-01, 5.87785252e-01});
-  circle_bounds_vect.push_back({7.07106781e-01, 7.07106781e-01});
-  circle_bounds_vect.push_back({5.87785252e-01, 8.09016994e-01});
-  circle_bounds_vect.push_back({4.53990500e-01, 8.91006524e-01});
-  circle_bounds_vect.push_back({3.09016994e-01, 9.51056516e-01});
-  circle_bounds_vect.push_back({1.56434465e-01, 9.87688341e-01});
-  circle_bounds_vect.push_back({6.12323400e-17, 1.00000000e+00});
-  circle_bounds_vect.push_back({-1.56434465e-01, 9.87688341e-01});
-  circle_bounds_vect.push_back({-3.09016994e-01, 9.51056516e-01});
-  circle_bounds_vect.push_back({-4.53990500e-01, 8.91006524e-01});
-  circle_bounds_vect.push_back({-5.87785252e-01, 8.09016994e-01});
-  circle_bounds_vect.push_back({-7.07106781e-01, 7.07106781e-01});
-  circle_bounds_vect.push_back({-8.09016994e-01, 5.87785252e-01});
-  circle_bounds_vect.push_back({-8.91006524e-01, 4.53990500e-01});
-  circle_bounds_vect.push_back({-9.51056516e-01, 3.09016994e-01});
-  circle_bounds_vect.push_back({-9.87688341e-01, 1.56434465e-01});
-  circle_bounds_vect.push_back({-1.00000000e+00, 1.22464680e-16});
-  circle_bounds_vect.push_back({-9.87688341e-01, -1.56434465e-01});
-  circle_bounds_vect.push_back({-9.51056516e-01, -3.09016994e-01});
-  circle_bounds_vect.push_back({-8.91006524e-01, -4.53990500e-01});
-  circle_bounds_vect.push_back({-8.09016994e-01, -5.87785252e-01});
-  circle_bounds_vect.push_back({-7.07106781e-01, -7.07106781e-01});
-  circle_bounds_vect.push_back({-5.87785252e-01, -8.09016994e-01});
-  circle_bounds_vect.push_back({-4.53990500e-01, -8.91006524e-01});
-  circle_bounds_vect.push_back({-3.09016994e-01, -9.51056516e-01});
-  circle_bounds_vect.push_back({-1.56434465e-01, -9.87688341e-01});
-  circle_bounds_vect.push_back({-1.83697020e-16, -1.00000000e+00});
-  circle_bounds_vect.push_back({1.56434465e-01, -9.87688341e-01});
-  circle_bounds_vect.push_back({3.09016994e-01, -9.51056516e-01});
-  circle_bounds_vect.push_back({4.53990500e-01, -8.91006524e-01});
-  circle_bounds_vect.push_back({5.87785252e-01, -8.09016994e-01});
-  circle_bounds_vect.push_back({7.07106781e-01, -7.07106781e-01});
-  circle_bounds_vect.push_back({8.09016994e-01, -5.87785252e-01});
-  circle_bounds_vect.push_back({8.91006524e-01, -4.53990500e-01});
-  circle_bounds_vect.push_back({9.51056516e-01, -3.09016994e-01});
-  circle_bounds_vect.push_back({9.87688341e-01, -1.56434465e-01});
-  return circle_bounds_vect;
+vect_dvect bounds_to_vect(xt::pyarray<double> &vertices) {
+  /* Vertices are given in as a pyarray. Convert these to a vector of vectors.
+   */
+  vect_dvect vert_vect;
+  dvect vertex;
+  for (size_t i = 0; i < vertices.shape()[0]; ++i) {
+    // for (size_t j=0; j<2; ++j) {vertex.push_back(xt::view(vertices, i, j));}
+    for (size_t j = 0; j < 2; ++j) {
+      vertex.push_back(vertices(i, j));
+    }
+    vert_vect.push_back(vertex);
+    vertex.clear();
+  }
+  return vert_vect;
 }
 
 typedef Int2Type<1> one_d;
@@ -123,10 +68,10 @@ SamplerBase *get_sampler(two_d d, size_t blocks,
 }
 
 std::vector<xt::pyarray<double>>
-generate_data(size_t samples = 1000, std::string pdf_name = "gauss",
-              dvect centre = {0.0, 0.0}, double width = 0.2,
-              double decay_rate = 1, double exponent = 1, double binsize = 0.1,
-              size_t blocks = 50, int seed = -1) {
+generate_data(xt::pyarray<double> &bounds_vertices, size_t samples = 1000,
+              std::string pdf_name = "gauss", dvect centre = {0.0, 0.0},
+              double width = 0.2, double decay_rate = 1, double exponent = 1,
+              double binsize = 0.1, size_t blocks = 50, int seed = -1) {
   // blocks: Used for the rejection sampler.
   // seed: To initialise the random number generator. Giving -1 (default)
   // yields a different initialisation upon every call.
@@ -142,8 +87,8 @@ generate_data(size_t samples = 1000, std::string pdf_name = "gauss",
 
   // Configuration START
   const size_t dims = 2;
-  vect_dvect bounds = get_circle_bounds(); // only needed for `dims=2`
-  std::string bounds_name = "circle";
+  vect_dvect bounds =
+      bounds_to_vect(bounds_vertices); // only needed for `dims=2`
 
   double (*pdf)(const dvect &, dvect &, void *) = get_pdf(pdf_name);
 
@@ -521,9 +466,10 @@ PYBIND11_MODULE(_bounded_rand_walkers_cpp, m) {
   dvect default_start_pos = {0.0, 0.0};
 
   m.def("generate_data", generate_data, "Generate random walker data.",
-        "samples"_a = 1000, "pdf_name"_a = "gauss", "centre"_a = default_centre,
-        "width"_a = default_width, "decay_rate"_a = 1, "exponent"_a = 1,
-        "binsize"_a = 0.1, "blocks"_a = 50, "seed"_a = -1);
+        "bounds_vertices"_a, "samples"_a = 1000, "pdf_name"_a = "gauss",
+        "centre"_a = default_centre, "width"_a = default_width,
+        "decay_rate"_a = 1, "exponent"_a = 1, "binsize"_a = 0.1,
+        "blocks"_a = 50, "seed"_a = -1);
 
   m.def("interp_1d_test", interp_1d_test, "1D interpolation test.");
 

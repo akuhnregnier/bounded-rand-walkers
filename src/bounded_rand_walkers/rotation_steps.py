@@ -170,7 +170,7 @@ def Pdf_Transform(step, f, geometry):
         )
 
 
-def get_pdf_transform_shaper(steps, geometry):
+def get_pdf_transform_shaper(steps, geometry="circle"):
     """
     For given intrinsic step sizes, get the shaper function at those radial
     distances from the centre.
@@ -182,7 +182,9 @@ def get_pdf_transform_shaper(steps, geometry):
     if geometry == "1Dseg":
         return (1 - np.abs(steps)) * 0.5 * (np.sign(1 - np.abs(steps)) + 1)
 
-    if geometry == "1circle":
+    # old: 1circle
+
+    if geometry == "circle":
         shaper = np.zeros_like(steps, dtype=np.float64)
         mask = steps < 2.0
         shaper[mask] = 2 * np.arccos(steps[mask] / 2) - 0.5 * np.sqrt(

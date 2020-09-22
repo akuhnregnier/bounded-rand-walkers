@@ -121,3 +121,8 @@ shape1.jpg
 
 # Version file.
 _version.py
+
+# Cached files.
+cache/
+# Cache dir symlink.
+cache

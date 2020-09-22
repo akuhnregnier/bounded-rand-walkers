@@ -33,7 +33,7 @@ if __name__ == "__main__":
 import matplotlib.pyplot as plt
 
 from .c_rot_steps import rot_steps
-from .cpp.data_reading import get_cpp_binned_2D
+from .cpp.data_reading import get_binned_2D
 from .data_generation import circle_points, multi_random_walker, weird_bounds
 from .functions import Funky, Gaussian
 from .rad_interp import radial_interp

@@ -54,9 +54,10 @@ if __name__ == "__main__":
     mpl.rc("text", usetex=True)
     mpl.rc("font", family="serif", size=15)
 
-    plot_dir = "plots"
-    if not os.path.isdir(plot_dir):
-        os.makedirs(plot_dir)
+    # XXX:
+    # plot_dir = "plots"
+    # if not os.path.isdir(plot_dir):
+    #     os.makedirs(plot_dir)
 
     dl = 1.0
     ndiv = int(40 / dl)

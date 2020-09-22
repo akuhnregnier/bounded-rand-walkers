@@ -5,6 +5,7 @@ from numba import float64, int64, njit
 from numba.experimental import jitclass
 
 
+# Re-define `get_centres` here since we need a jitted version.
 @njit
 def get_centres(edges):
     """Get bin centres from edges."""

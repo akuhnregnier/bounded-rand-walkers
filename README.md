@@ -4,6 +4,15 @@ Generation of bounded random walks and analysis thereof.
 
 Random walk data is generated using `C++` and analysed using `Python 3`.
 
+# Usage
+
+## Data Generation
+
+The `bounded_rand_walkers.cpp` sub-package contains compiled code for fast data generation, and a Python module meant for coordinating this process and reading (and binning) the resulting saved data files.
+Within `bounded_rand_walkers.cpp`:
+ - `generate_data`: Generate random walk data using one of a set of pre-defined pdfs in either 1D or 2D and a selection of pre-defined boundaries for 2D.
+ - `get_binned_2D`: Iteratively load saved data files generated using `generate_data`, while aggregating the results using binning.
+
 # Installation
 
 For required `Python` packages (and `xtensor`, which is required for the `C++` code) see `requirements.txt`.
@@ -16,8 +25,7 @@ For the `C++` code, the following dependencies are required:
 
 You might have to run `ldconfig` post-installation on Linux.
 
-Installation (C++ code compilation)
------------------------------------
+## Installation (C++ code compilation)
 
 **On Unix (Linux, OS X)**
 

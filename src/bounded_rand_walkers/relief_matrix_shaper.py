@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import math
 import os
+from time import time
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -147,8 +148,8 @@ if __name__ == "__main__":
     plt.close("all")
     order_divisions = 140
 
-    shape = "weird"
-    # shape = 'square'
+    # shape = "weird"
+    shape = "square"
     if shape == "weird":
         vertices = np.array([0.1, 0.3, 0.25, 0.98, 0.9, 0.9, 0.7, 0.4, 0.4, 0.05])
     elif shape == "square":
@@ -161,9 +162,9 @@ if __name__ == "__main__":
     plt.xlim(0, 1)
     plt.ylim(0, 1)
     plt.gca().set_aspect("equal")
-    plt.savefig(
-        os.path.join(output_dir, "{:}_boundary.pdf".format(shape)), bbox_inches="tight"
-    )
+    # plt.savefig(
+    #     os.path.join(output_dir, "{:}_boundary.pdf".format(shape)), bbox_inches="tight"
+    # )
 
     vertices = vertices.reshape(int(len(vertices) / 2), 2)
 
@@ -179,7 +180,9 @@ if __name__ == "__main__":
     cell_area = (xs[1] - xs[0]) * (ys[1] - ys[0])
     #####
 
+    start = time()
     X, Y, Z = gen_shaper2D(order_divisions, vertices)
+    print("gen_shaper2D:", time() - start)
 
     plt.figure(figsize=(7.5, 3.0))
     if shape == "weird":
@@ -197,9 +200,9 @@ if __name__ == "__main__":
         plt.gca().set_aspect("equal")
         plt.xlabel("x (steps)")
         plt.ylabel("y (steps)")
-        plt.savefig(
-            os.path.join(output_dir, "improvedA1shaper.pdf"), bbox_inches="tight"
-        )
+        # plt.savefig(
+        #     os.path.join(output_dir, "improvedA1shaper.pdf"), bbox_inches="tight"
+        # )
     elif shape == "square":
         CS = plt.contour(
             get_centres(xs),
@@ -214,9 +217,11 @@ if __name__ == "__main__":
         plt.gca().set_aspect("equal")
         plt.xlabel("x (steps)")
         plt.ylabel("y (steps)")
-        plt.savefig(os.path.join(output_dir, "Shaper2Dsquare.pdf"), bbox_inches="tight")
+        # plt.savefig(os.path.join(output_dir, "Shaper2Dsquare.pdf"), bbox_inches="tight")
 
+    start = time()
     X2, Y2, Z2 = gen_shaper2D_alt(order_divisions, vertices)
+    print("gen_shaper2D_alt:", time() - start)
 
     # normalise
     Z /= np.sum(Z * cell_area)
@@ -239,3 +244,4 @@ if __name__ == "__main__":
     print((np.min(Z - Z2)))
     print((np.max(Z - Z2)))
     print((np.std(Z - Z2)))
+    plt.show()
