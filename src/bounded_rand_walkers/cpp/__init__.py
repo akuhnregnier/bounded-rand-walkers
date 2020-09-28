@@ -12,15 +12,19 @@ from warnings import warn
 
 import matplotlib.pyplot as plt
 import numpy as np
-from tqdm import tqdm
+from joblib import Memory
+from tqdm.auto import tqdm
 
 from _bounded_rand_walkers_cpp import *
 
-from ..utils import get_centres
+from ..utils import cache_dir, get_centres
 from .boundaries import *
 
 # Rename the original function since we will be defining our own version here.
 cpp_generate_data = generate_data
+
+
+memory = Memory(cache_dir, verbose=0)
 
 
 def get_cached_filename(
@@ -359,6 +363,85 @@ def get_binned_2D(
     f_t_r_numerical /= np.sum(f_t_r_numerical * f_t_r_length)
 
     return g_numerical, f_t_numerical, f_t_r_numerical
+
+
+@memory.cache
+def get_binned_data(
+    filenames, n_bins, max_step_length=8 ** 0.5, g_bounds=(-2, 2), f_bounds=(-2, 2)
+):
+    """Get binned data.
+
+    Parameters
+    ----------
+    filenames : iterable of pathlib.Path
+        Filenames to load data from.
+    n_bins : int
+        Number of bins (per axis).
+    max_step_length : float
+        Maximum expected step length.
+    g_bounds : tuple of float
+        Position bounds.
+    f_bounds : tuple of float
+        Step size bounds.
+
+    Returns
+    -------
+    g_x_edges : 1D array
+        Position x-axis bin edges.
+    g_y_edges : 1D array
+        Position y-axis bin edges.
+    g_x_centres : 1D array
+        Position x-axis bin centres.
+    g_y_centres : 1D array
+        Position y-axis bin centres.
+    f_t_x_edges : 1D array
+        Step size distribution x-axis bin edges.
+    f_t_y_edges : 1D array
+        Step size distribution y-axis bin edges.
+    f_t_x_centres : 1D array
+        Step size distribution x-axis bin centres.
+    f_t_y_centres : 1D array
+        Step size distribution y-axis bin centres.
+    f_t_r_edges : 1D array
+        Step size distribution radial bin edges.
+    f_t_r_centres : 1D array
+        Step size distribution radial bin centres.
+    g_numerical : 2D array
+        Binned positions.
+    f_t_numerical : 2D array
+        Binned step sizes.
+    f_t_r_numerical : 1D array
+        Radially binned step sizes.
+
+    """
+    # Position binning.
+    g_x_edges = g_y_edges = np.linspace(*g_bounds, n_bins + 1)
+    g_x_centres = g_y_centres = get_centres(g_x_edges)
+    # Step size binning (transformed).
+    f_t_x_edges = f_t_y_edges = np.linspace(*f_bounds, n_bins + 1)
+    f_t_x_centres = f_t_y_centres = get_centres(f_t_x_edges)
+    # Step size binning (transformed) - radially.
+    f_t_r_edges = np.linspace(0, max_step_length, n_bins + 1)
+    f_t_r_centres = get_centres(f_t_r_edges)
+
+    g_numerical, f_t_numerical, f_t_r_numerical = get_binned_2D(
+        filenames, g_x_edges, g_y_edges, f_t_x_edges, f_t_y_edges, f_t_r_edges
+    )
+    return (
+        g_x_edges,
+        g_y_edges,
+        g_x_centres,
+        g_y_centres,
+        f_t_x_edges,
+        f_t_y_edges,
+        f_t_x_centres,
+        f_t_y_centres,
+        f_t_r_edges,
+        f_t_r_centres,
+        g_numerical,
+        f_t_numerical,
+        f_t_r_numerical,
+    )
 
 
 def test_1d(

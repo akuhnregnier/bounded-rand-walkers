@@ -1,121 +1,21 @@
 # -*- coding: utf-8 -*-
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-from joblib import Memory
 from scipy.interpolate import RegularGridInterpolator
 
 from bounded_rand_walkers.cpp import (
     bound_map,
     funky,
     generate_data,
-    get_binned_2D,
     get_cached_filename,
 )
 from bounded_rand_walkers.rad_interp import exact_radii_interp, inv_exact_radii_interp
 from bounded_rand_walkers.relief_matrix_shaper import gen_shaper2D
 from bounded_rand_walkers.rotation_steps import get_pdf_transform_shaper
-from bounded_rand_walkers.utils import get_centres
-
-cache_dir = Path(__file__).parent / "cache"
-memory = Memory(cache_dir)
-
-
-@memory.cache
-def get_binned_data(filenames, n_bins):
-    """Get binned data.
-
-    Parameters
-    ----------
-    filenames : iterable of pathlib.Path
-        Filenames to load data from.
-    n_bins : int
-        Number of bins (per axis).
-
-    Returns
-    -------
-    g_x_edges : 1D array
-        Position x-axis bin edges.
-    g_y_edges : 1D array
-        Position y-axis bin edges.
-    g_x_centres : 1D array
-        Position x-axis bin centres.
-    g_y_centres : 1D array
-        Position y-axis bin centres.
-    f_t_x_edges : 1D array
-        Step size distribution x-axis bin edges.
-    f_t_y_edges : 1D array
-        Step size distribution y-axis bin edges.
-    f_t_x_centres : 1D array
-        Step size distribution x-axis bin centres.
-    f_t_y_centres : 1D array
-        Step size distribution y-axis bin centres.
-    f_t_r_edges : 1D array
-        Step size distribution radial bin edges.
-    f_t_r_centres : 1D array
-        Step size distribution radial bin centres.
-    g_numerical : 2D array
-        Binned positions.
-    f_t_numerical : 2D array
-        Binned step sizes.
-    f_t_r_numerical : 1D array
-        Radially binned step sizes.
-
-    """
-    # Position binning.
-    g_x_edges = g_y_edges = np.linspace(-2, 2, n_bins + 1)
-    g_x_centres = g_y_centres = get_centres(g_x_edges)
-    # Step size binning (transformed).
-    f_t_x_edges = f_t_y_edges = np.linspace(-2, 2, n_bins + 1)
-    f_t_x_centres = f_t_y_centres = get_centres(f_t_x_edges)
-    # Step size binning (transformed) - radially.
-    f_t_r_edges = np.linspace(0, 8 ** 0.5, n_bins + 1)
-    f_t_r_centres = get_centres(f_t_r_edges)
-
-    g_numerical, f_t_numerical, f_t_r_numerical = get_binned_2D(
-        filenames, g_x_edges, g_y_edges, f_t_x_edges, f_t_y_edges, f_t_r_edges
-    )
-    return (
-        g_x_edges,
-        g_y_edges,
-        g_x_centres,
-        g_y_centres,
-        f_t_x_edges,
-        f_t_y_edges,
-        f_t_x_centres,
-        f_t_y_centres,
-        f_t_r_edges,
-        f_t_r_centres,
-        g_numerical,
-        f_t_numerical,
-        f_t_r_numerical,
-    )
-
-
-def approx_edges(x):
-    """Approximate bin edges from bin centres."""
-    diffs = np.diff(x)
-    return np.array(
-        [x[0] - diffs[0] / 2] + list(x[:-1] + diffs / 2) + [x[-1] + diffs[-1] / 2]
-    )
-
-
-def normalise(x, y):
-    """Normalise y such that it integrates to 1 over x."""
-    if x.size == y.size:
-        # Approximate bin edges.
-        edges = approx_edges(x)
-    else:
-        edges = x
-
-    integral = np.sum(np.diff(edges) * y)
-    return y / integral
-
+from bounded_rand_walkers.utils import cache_dir, get_centres, normalise
 
 if __name__ == "__main__":
-    cache_dir.mkdir(exist_ok=True)
-
     # Generate a single set of data.
 
     pdf_kwargs = dict(width=2.0)

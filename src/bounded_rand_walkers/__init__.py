@@ -13,6 +13,6 @@ from . import (
     rejection_sampling,
     relief_matrix_shaper,
     rotation_steps,
-    shaperGeneral2D,
+    shaper_general,
     utils,
 )

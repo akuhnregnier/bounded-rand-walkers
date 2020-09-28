@@ -4,7 +4,7 @@ from math import ceil
 
 import numpy as np
 from scipy.interpolate import griddata
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from bounded_rand_walkers.utils import get_centres
 

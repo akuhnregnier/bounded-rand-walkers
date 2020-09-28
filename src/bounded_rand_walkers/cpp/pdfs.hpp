@@ -25,6 +25,7 @@ inline double s_funky(const dvect &x, dvect centre, double width) {
   double frequency = 3.7;
   double grad = 1.;
 
+  // Calculate distance to centre.
   dvect squared;
   for (size_t i = 0; i < x.size(); ++i) {
     squared.push_back(std::pow((x[i] - centre[i]), 2.));
@@ -48,29 +49,27 @@ inline double s_funky(const dvect &x, dvect centre, double width) {
     arg = distance * frequency;
     prob = std::abs(_sinc(arg));
     prob *= (1 + (5 * distance));
-  } else if ((distance > ((1 / 3.) * width)) &&
-             (distance <= (2 / 3.) * width)) {
-    constant = std::abs(_sinc((1 / 3.) * width * frequency)) *
-               (1 + 5 * (1 / 3.) * width);
-    prob = constant * (1 + grad * (distance - ((1 / 3.) * width)));
-  } else if (distance > ((2 / 3.) * width)) {
-    constant = std::abs(_sinc((1 / 3.) * width * frequency)) *
-               (1 + 5 * (1 / 3.) * width) * (1 + grad * (1 / 3.) * width);
+  } else if ((distance > (width / 3.)) && (distance <= (2 * width / 3.))) {
+    constant = std::abs(_sinc(width * frequency / 3.)) * (1 + 5 * width / 3.);
+    prob = constant * (1 + grad * (distance - (width / 3.)));
+  } else if (distance > (2 * width / 3.)) {
+    constant = std::abs(_sinc((width * frequency / 3.))) *
+               (1 + 5 * (width / 3.)) * (1 + grad * (width / 3.));
 
     // pdf params are specified here
     data.centre = dvect{
-        (2 / 3.) * width,
+        2 * width / 3.,
     };
     data.exponent = 0.25;
     data.binsize = 0.001;
     pos = {
-        (2 / 3.) * width,
+        2 * width / 3.,
     };
     scale = power(pos, dummy, data_ptr);
     pos = {
         distance,
     };
-    prob = power(pos, dummy, data_ptr) / (scale * constant);
+    prob = (power(pos, dummy, data_ptr) / scale) * constant;
   }
   return prob;
 }

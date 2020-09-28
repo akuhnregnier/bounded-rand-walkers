@@ -99,13 +99,6 @@ language = "C++"
 ext_modules += cythonize(
     [
         Extension(
-            "bounded_rand_walkers.c_rot_steps",
-            sources=["src/bounded_rand_walkers/c_rot_steps.pyx"],
-            include_dirs=include_dirs,
-            extra_compile_args=compile_args,
-            language=language,
-        ),
-        Extension(
             "bounded_rand_walkers.c_g2D",
             sources=["src/bounded_rand_walkers/c_g2D.pyx"],
             include_dirs=include_dirs,

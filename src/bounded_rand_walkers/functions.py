@@ -23,17 +23,21 @@ class Tophat_1D(object):
     def __init__(self, width=0.5, centre=0.0):
         """Tophat uniform pdf.
 
-        The distribution is not normalised.
-        The distribution has a total width ``extent`` in the 1D case,
+        Note that the distribution is not normalised.
 
-        Args:
-            x (float): In the 1D case, the x-values to
-                calculate the function value for.
+        Parameters
+        ----------
+        width : float
+            Total tophat width.
+        centre : float
+            Tophat centre.
+
         """
         self.width = width
         self.centre = centre
 
     def pdf(self, x):
+        """Sample the pdf at `x`."""
         if np.abs(x[0] - self.centre) < (self.width / 2.0):
             return 1.0
         else:
@@ -53,22 +57,24 @@ class Tophat_2D(object):
     def __init__(self, extent=0.5, x_centre=0.0, y_centre=0.0, type_2D=0):
         """Tophat uniform pdf.
 
-        The distribution is not normalised.
-        The distribution has a diameter ``extent`` in the
-        'circularly-symmetric' 2D case, and a square shape with side length
-        ``extent`` in the 'square' case.
+        Note that the distribution is not normalised.
 
-        Args:
-            extent (float): The extent of the distribution. See above for
-                details.
-            x_centre (float): The centre of the distribution in the
-                x-dimension.
-            y_centre (float): The centre of the distribution in the
-                y-dimension.
-            type_2D (int): If ``type_2D is 0 ('circularly-symmetric')``, the
-                distribution is circular in the 2D plane.
-                If ``type_2D is 1 ('square')``, the
-                distribution is square in the 2D plane.
+        The distribution has a diameter `extent` in the
+        'circularly-symmetric' 2D case, and a square shape with side length
+        `extent` in the 'square' case.
+
+        Parameters
+        ----------
+        extent : float
+            The extent of the distribution. See above for details.
+        x_centre : float
+            The centre of the distribution in the x-dimension.
+        y_centre : float
+            The centre of the distribution in the y-dimension.
+        type_2D : int
+            If 0 is given ('circularly-symmetric'), the distribution is circular in
+            the 2D plane. If 1 is given ('square'), the distribution is square in the
+            2D plane.
 
         """
         self.extent = extent
@@ -77,21 +83,7 @@ class Tophat_2D(object):
         self.type_2D = type_2D
 
     def pdf(self, pos):
-        """Tophat uniform pdf.
-
-        The distribution is not normalised.
-        The distribution has a diameter ``extent`` in the
-        'circularly-symmetric' 2D case, and a square shape with side length
-        ``extent`` in the 'square' case.
-
-        Args:
-            x (float): The (x, y) value for which to calculate
-                the pdf value.
-
-        Returns:
-            p (float): The probability at the point ``(x, y)``.
-
-        """
+        """Sample the pdf at `pos` (x, y)."""
         x = pos[0]
         y = pos[1]
         if self.type_2D == 0:
@@ -110,8 +102,6 @@ class Tophat_2D(object):
                 return 0.0
         else:
             return -1.0
-            # raise NotImplementedError('type_2D value {:} not implemented.'
-            #                           .format(self.type_2D))
 
 
 spec = [
@@ -279,8 +269,10 @@ spec = [
 
 @jitclass(spec)
 class Funky(object):
-    def __init__(self, centre=0.0, width=1.0):
+    def __init__(self, centre=None, width=1.0):
         """"""
+        if centre is None:
+            centre = np.array([0.0])
         self.centre = centre
         self.width = width
         self.frequency = 3.7

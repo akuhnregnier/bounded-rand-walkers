@@ -34,6 +34,13 @@ Jupyter notebook extensions:
 jupyter nbextensions_configurator enable --user
 ```
 
+JupyterLab ipywidgets:
+```sh
+conda install ipywidgets
+jupyter nbextension enable --py widgetsnbextension
+jupyter labextension install @jupyter-widgets/jupyterlab-manager
+```
+
 To install Jupyterlab Code Formatter (more details at (https://jupyterlab-code-formatter.readthedocs.io/en/latest/installation.html):
  - `jupyter labextension install @ryantam626/jupyterlab_code_formatter`
  - `conda install -c conda-forge jupyterlab_code_formatter`
