@@ -22,6 +22,21 @@ weird_bounds = np.array([[0.1, 0.3], [0.25, 0.98], [0.9, 0.9], [0.7, 0.4], [0.4,
 
 
 def circle_points(radius=1.0, samples=20):
+    """Generate an array of (x, y) coordinates arranged in a circle.
+
+    Parameters
+    ----------
+    radius : float
+        Circle radius.
+    samples : int
+        How many points to generate along the circle.
+
+    Returns
+    -------
+    points : array of shape (`samples`, 2)
+        Points along the circle.
+
+    """
     angles = np.linspace(0, 2 * np.pi, samples, endpoint=False)
     x = (np.cos(angles) * radius).reshape(-1, 1)
     y = (np.sin(angles) * radius).reshape(-1, 1)
@@ -46,19 +61,23 @@ class DelaunayArray(np.ndarray):
 
 
 def in_bounds(position, bounds):
-    """
-    Test whether the given ``position`` is within the given ``bounds``.
+    """Test whether the given `position` is within the given `bounds`.
 
-    Args:
-        position (numpy.ndarray): Position to test.
-        bounds (DelaunayArray): The bounds for the random walker,
-            given as an array. The shape of the array dictates
-            the dimensionality of the problem.
-            A 1D array containing two values represents the
-            lower and upper boundaries (in that order) of the
-            1D problem.
-            For the 2D problem, the boundary is given as a 2D array,
-            where each row contains the (x, y) coordinates of a point.
+    Parameters
+    ----------
+    position : array
+        Position to test.
+    bounds : DelaunayArray
+        The bounds for the random walker, given as an array. The shape of the array
+        dictates the dimensionality of the problem. A 1D array containing two values
+        represents the lower and upper boundaries (in that order) of the 1D problem.
+        For the 2D problem, the boundary is given as a 2D array, where each row
+        contains the (x, y) coordinates of a point.
+
+    Returns
+    -------
+    present : bool
+        True if `position` is within `bounds`.
 
     """
     if bounds.shape[1] > 1:
@@ -71,17 +90,18 @@ def in_bounds(position, bounds):
 def format_time(time_value):
     """Sensible string formatting of a time variable.
 
-    Output units range from seconds ('s') to minutes ('m')
-    and hours ('h'), depending on the magnitude of the
-    input ``time_value``.
+    Output units range from seconds ('s') to minutes ('m') and hours ('h'), depending
+    on the magnitude of the input `time_value`.
 
-    Args:
-        time_value (float): The time value in seconds
-            that is to be formatted.
+    Parameters
+    ----------
+    time_value : float
+        The time value in seconds that is to be formatted.
 
-    Returns:
-        tuple of float, str: The converted time value,
-            and its associated units are returned.
+    Returns
+    -------
+    formatted : tuple of float, str
+        The converted time value and its associated units.
 
     """
     units = "s"
@@ -102,8 +122,8 @@ def format_time(time_value):
 
 def random_walker(f_i, bounds, steps=int(1e2), sampler=None, blocks=50):
     """
-    Trace a random walker given the ``bounds`` and the given
-    intrinsic step size distribution ``f_i``.
+    Trace a random walker given the `bounds` and the given
+    intrinsic step size distribution `f_i`.
     If a step would lead outside of the boundaries, reject this step
     and choose another one until the boundaries are satisfied.
     (This effectively normalises the pdf given the truncation at the
@@ -119,8 +139,8 @@ def random_walker(f_i, bounds, steps=int(1e2), sampler=None, blocks=50):
         f_i (function): The intrinsic step size distribution,
             given as a pdf (probability distribution function).
             The function should return a probability for
-            each step size ``l``, where ``l`` should be
-            between 0 and 1. For a 1D problem, ``f_i`` should take
+            each step size `l`, where `l` should be
+            between 0 and 1. For a 1D problem, `f_i` should take
             one argument, whereas for a 2D problem, it should take
             two arguments.
         bounds (numpy.ndarray): The bounds for the random walker,
@@ -132,12 +152,12 @@ def random_walker(f_i, bounds, steps=int(1e2), sampler=None, blocks=50):
             For the 2D problem, the boundary is given as a 2D array,
             where each row contains the (x, y) coordinates of a point.
         steps (int): The number of steps to take. The function will return
-            ``steps`` number of step sizes. Defaults to ``int(1e4)``.
+            `steps` number of step sizes. Defaults to `int(1e4)`.
 
     Returns:
-        numpy.ndarray: 1D array of length ``steps``, containing the
+        numpy.ndarray: 1D array of length `steps`, containing the
         step sizes obtained by executing the random walker simulation.
-        If ``return_positions`` is True, returns a tuple of the above
+        If `return_positions` is True, returns a tuple of the above
         array and an array containing the positions of the random
         walker.
 
@@ -258,21 +278,21 @@ def random_walker(f_i, bounds, steps=int(1e2), sampler=None, blocks=50):
 def multi_random_walker(n_processes, f_i, bounds, steps=int(1e2), blocks=50):
     """Generate random walks in multiple processes concurrently.
 
-    If the ``n_processes==1``, the ``random_walker`` function is called in
+    If the `n_processes==1`, the `random_walker` function is called in
     the standard way, as if it was called directly.
 
     Args:
         n_processes (int): The number of processes to run in parallel. The
             generated data will be joined together at the end.
 
-    For an explanation of the other arguments, see ``random_walker``.
+    For an explanation of the other arguments, see `random_walker`.
 
     Note that the generated position series have no causal relationship -
     they are completely random, since each random_walker execution has no
     information about any of the other executions run in parallel.
     Therefore, generating steps from the returned positions produces an
     error at the point where the different datasets are joined together.
-    However, this error will approach 0 as ``steps`` is increased, since
+    However, this error will approach 0 as `steps` is increased, since
     the ratio of 'contiguous' data to erroneous data (at the boundary of
     the contiguous random walks) increases.
 
