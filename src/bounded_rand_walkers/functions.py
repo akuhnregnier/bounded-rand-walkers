@@ -116,13 +116,16 @@ class Power(object):
     def __init__(self, centre=np.array([0.0]), exponent=1.0, binsize=0.001):
         """A rotationally symmetric power law distribution.
 
-        Args:
-            centre: Center of the power law. For a 2D distribution, give a
-                numpy array of x, y position (ie. [x, y]) of the centre of the
-                exponential. For the 1D distribution, give a 1-element
-                numpy array.
-            exponent: characteristic exponent of the probability decay.
-            binsize= scale of UV cutoff, should have scale of hist binsize
+        Parameters
+        ----------
+        centre : array
+            Center of the power law. For a 2D distribution, give a numpy array of x, y
+            position (ie. [x, y]) of the centre of the exponential. For the 1D
+            distribution, give a 1-element numpy array.
+        exponent : float
+            Characteristic exponent of the probability decay.
+        binsize : float
+            Scale of UV cutoff, should have scale of hist binsize.
 
         """
         self.centre = centre
@@ -132,13 +135,16 @@ class Power(object):
     def pdf(self, pos):
         """Calculate the probability at a point.
 
-        Args:
-            *args: The coordinates of the points of interest. For the 1D
-                case, call like pdf(x). In the 2D case, give coordinates
-                like pdf(x, y).
+        Parameters
+        ----------
+        *args :
+            The coordinates of the points of interest. For the 1D case, call like
+            pdf(x). In the 2D case, give coordinates like pdf(x, y).
 
-        Returns:
-            prob: probability at the given point
+        Returns
+        -------
+        prob : float
+            Probability at the given point.
 
         """
 
@@ -172,11 +178,13 @@ class Gaussian(object):
     def __init__(self, centre=np.array([0.0]), width=1.0):
         """A Gaussian distribution.
 
-        Args:
-            centre: Centre of the Gaussian. For a 2D distribution, give a
-                list of x, y position (ie. [x, y]) of the centre of the
-                Gaussian.
-            width: Used to scale the Gaussian.
+        Parameters
+        ----------
+        centre : array
+            Centre of the Gaussian. For a 2D distribution, give a list of x, y
+            position (ie. [x, y]) of the centre of the Gaussian.
+        width : float
+            Used to scale the Gaussian.
 
         """
         self.centre = centre
@@ -185,13 +193,16 @@ class Gaussian(object):
     def pdf(self, pos):
         """Calculate the probability at a point.
 
-        Args:
-            *args: The coordinates of the points of interest. For the 1D
-                case, call like pdf(x). In the 2D case, give coordinates
-                like pdf(x, y).
+        Parameters
+        ----------
+        *args :
+            The coordinates of the points of interest. For the 1D case, call like
+            pdf(x). In the 2D case, give coordinates like pdf(x, y).
 
-        Returns:
-            prob: probability at the given point
+        Returns
+        -------
+        prob : float
+            Probability at the given point.
 
         """
         if len(pos) == 1:
@@ -216,14 +227,15 @@ spec = [
 @jitclass(spec)
 class Exponential(object):
     def __init__(self, centre=0.0, decay_rate=1.0):
-        """
-        A rotationally symmentric exponential distribution.
+        """A rotationally symmetric exponential distribution.
 
-        Args:
-            centre: Center of the exponential. For a 2D distribution, give a
-                list of x, y position (ie. [x, y]) of the centre of the
-                exponential.
-            decay_rate: the constant governing the decay of the exponential.
+        Parameters
+        ----------
+        centre : array
+            Center of the exponential. For a 2D distribution, give a list of x, y
+            position (ie. [x, y]) of the centre of the exponential.
+        decay_rate : float
+            The constant governing the decay of the exponential.
 
         """
 
@@ -231,16 +243,18 @@ class Exponential(object):
         self.decay_rate = decay_rate
 
     def pdf(self, pos):
-        """
-        Calculates the probability at a point.
+        """Calculate the probability at a point.
 
-        Args:
-            *args: The coordinates of the points of interest. For the 1D
-                case, call like pdf(x). In the 2D case, give coordinates
-                like pdf(x, y).
+        Parameters
+        ----------
+        *args :
+            The coordinates of the points of interest. For the 1D case, call like
+            pdf(x). In the 2D case, give coordinates like pdf(x, y).
 
-        Returns:
-            prob: probability at the given point
+        Returns
+        -------
+        prob : float
+            Probability at the given point.
 
         """
 
@@ -329,70 +343,3 @@ class Funky(object):
                 prob = power_law.pdf(np.array([position])) / scale * const2
 
         return prob
-
-
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
-    # plt.close("all")
-    # plt.ion()
-    # 1D case
-    pdfs_args_1D = [
-        (Tophat_1D, {"width": 0.7, "centre": 0.3}),
-        (Gaussian, {"centre": np.array([0.7]), "width": 0.3}),
-        (Power, {"centre": np.array([0.5]), "exponent": 1.0, "binsize": 0.5}),
-        (Exponential, {"centre": np.array([0.0]), "decay_rate": 1.0}),
-    ]
-    x = np.linspace(-1, 1, 10000)
-    for PDFClass, kwargs in pdfs_args_1D:
-        print((PDFClass, kwargs))
-        p = [PDFClass(**kwargs).pdf(np.array([v])) for v in x]
-        plt.figure()
-        plt.title(PDFClass.__name__)
-        plt.plot(x, p)
-    plt.show()
-    plt.figure()
-    a = Funky(centre=np.array([0.5, 0.5]), width=2.0)
-    x = [np.sqrt(2) * i / 100.0 for i in range(200)]
-    y = [a.pdf(np.array([i / 100.0, i / 100.0])) for i in range(200)]
-    # y = [a.pdf(i/100) for i in range(100)]
-    plt.plot(x, y)
-    plt.title("funky")
-
-    # 2D case
-    pdfs_args_2D = [
-        (Tophat_2D, {"extent": 0.7, "x_centre": 0.3, "y_centre": 0.1, "type_2D": 0}),
-        (Gaussian, {"centre": np.array((0.0, 0.5)), "width": 1.0}),
-        (
-            Power,
-            {
-                "centre": np.array((0.5, -0.5)),
-                "exponent": 0.2,
-                "binsize": 0.8,
-            },
-        ),
-        (
-            Exponential,
-            {
-                "centre": np.array([0.5, -0.5]),
-                "decay_rate": 0.5,
-            },
-        ),
-    ]
-    x_edges = np.linspace(-1, 1, 200)
-    y_edges = np.linspace(-1, 1, 200)
-    x_centres = get_centres(x_edges)
-    y_centres = get_centres(y_edges)
-    x, y = np.meshgrid(x_centres, y_centres)
-    C = np.zeros_like(x, dtype=np.float64)
-    for PDFClass, kwargs in pdfs_args_2D:
-        print((PDFClass, kwargs))
-        instance = PDFClass(**kwargs)
-        for i in range(x.shape[0]):
-            for j in range(x.shape[1]):
-                C[i, j] = instance.pdf(np.array([x[i, j], y[i, j]]))
-        plt.figure()
-        plt.title(PDFClass.__name__)
-        plt.pcolormesh(x, y, C)
-        plt.gca().set_aspect("equal")
-    plt.show()

@@ -495,4 +495,7 @@ PYBIND11_MODULE(_bounded_rand_walkers_cpp, m) {
 
   m.def("funky", s_funky, "Funky pdf.", "x"_a, "centre"_a = default_centre,
         "width"_a = default_width);
+
+  m.def("funky2", s_funky2, "Funky pdf with 2x scaling.", "x"_a,
+        "centre"_a = default_centre, "width"_a = default_width);
 }

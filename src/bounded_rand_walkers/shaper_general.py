@@ -19,7 +19,7 @@ memory = Memory(cache_dir)
 # Define shaper functions that use analytic results.
 
 
-def square_shaper(x, y, side_length=2):
+def square_shaper(x, y, side_length=1):
     """Shaper function for a square with a given side length.
 
     Parameters
@@ -216,7 +216,7 @@ def gen_rad_shaper_exact(shaper_radii, vertices, verbose=True):
             # Retrieve shaper function (function of (x, y)).
             shaper_func = shaper_map[vertices]
         else:
-            vertices = bound_map[vertices]
+            vertices = bound_map[vertices]()
 
     if shaper_func is None:
         shaper = np.empty(shaper_radii.size)

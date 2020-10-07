@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Averaging of a 2D distribution to a 1D 'slice'."""
 from math import ceil
+from numbers import Integral, Real
 
 import numpy as np
 from scipy.interpolate import griddata
@@ -18,7 +19,15 @@ def rotation(x, y, angle):
     return x_rot, y_rot
 
 
-def exact_radii_interp(data, x_centres, y_centres, normalisation="multiply"):
+def exact_radii_interp(
+    data,
+    x_centres,
+    y_centres,
+    normalisation="multiply",
+    bin_samples=None,
+    # XXX:
+    mode=1,
+):
     """Averaging of data at all bin centre radii.
 
     Parameters
@@ -32,6 +41,13 @@ def exact_radii_interp(data, x_centres, y_centres, normalisation="multiply"):
     normalisation : {'multiply', 'none'}
         If 'multiply' (default), data is multiplied by the radii to yield integrated
         values as opposed to densities.
+    bin_samples : None, int, or float
+        The number of samples per bin. If None, samples will be returned for all
+        unique radii. Giving an int results in bins containing at least this many
+        samples (if there are more than `bin_samples` samples in `data`), with the
+        last two bins being joined to satisfy this constraint. If a float is given,
+        it will be interpreted as a fraction of the total number of samples in `data`,
+        where each bin will contain at least this number of samples (see above).
 
     Returns
     -------
@@ -53,18 +69,85 @@ def exact_radii_interp(data, x_centres, y_centres, normalisation="multiply"):
     unique_radii = np.unique(grid_radii)
 
     sampled = np.empty(unique_radii.size)
+    n_samples = np.empty(unique_radii.size, dtype=np.int64)
 
     total = 0
     for i, radius in enumerate(unique_radii):
         # Alternative normalisation: do not multiply by the radius.
         matched = np.isclose(grid_radii, radius, rtol=0, atol=1e-17)
-        total += np.sum(matched)
+
+        n_matched = np.sum(matched)
+        n_samples[i] = n_matched
+        total += n_matched
+
         if normalisation == "none":
             sampled[i] = np.average(data[matched])
         else:
             sampled[i] = np.average(data[matched]) * radius
 
     assert total == grid_radii.size, "Each bin should only be assigned a value once."
+
+    # Now combine bins if requested.
+    if isinstance(bin_samples, Real):
+        # Use the given fraction.
+        bin_samples = ceil(bin_samples * data.size)
+
+    if isinstance(bin_samples, Integral):
+        # Use the given number of samples per bin.
+        combined = []
+        combined_radii = []
+
+        agg_vals = []
+        agg_rads = []
+        agg_samples = []
+        n_agg = 0
+        prev_n = 0
+        for (i, (value, radius, n_bin)) in enumerate(
+            zip(sampled, unique_radii, n_samples)
+        ):
+            agg_rads.append(radius)
+            agg_vals.append(value)
+            agg_samples.append(n_bin)
+            n_agg += n_bin
+
+            if n_agg >= bin_samples:
+                # If the required number of samples has been reached, combine the
+                # individual values into a single new bin.
+
+                if mode == 1:
+                    combined_radii.append(np.average(agg_rads, weights=agg_samples))
+                    combined.append(np.average(agg_vals, weights=agg_samples))
+                elif mode == 2:
+                    combined_radii.append(np.average(agg_rads, weights=agg_rads))
+                    combined.append(np.average(agg_vals, weights=agg_rads))
+                elif mode == 3:
+                    combined_radii.append(np.mean(agg_rads))
+                    combined.append(np.mean(agg_vals))
+
+                # Reset the variables keeping track of the progress.
+                agg_rads = []
+                agg_vals = []
+                agg_samples = []
+
+                # Store the previous count in case the last two bins need to be
+                # combined, so that the proper weights can be used.
+                prev_n = n_agg
+                n_agg = 0
+
+        if n_agg > 0:
+            # If data is left over that wasn't combined previously, add this to the
+            # last bin with the proper weighting.
+
+            # Compute the new average as usual.
+            new_rad = np.average(agg_rads, weights=agg_samples)
+            new_val = np.average(agg_vals, weights=agg_samples)
+
+            # Now combine with the last bin.
+            combined_radii[-1] = np.average(
+                [combined_radii[-1], new_rad], weights=[prev_n, n_agg]
+            )
+            combined[-1] = np.average([combined[-1], new_val], weights=[prev_n, n_agg])
+        return np.array(combined_radii), np.array(combined)
 
     return unique_radii, sampled
 

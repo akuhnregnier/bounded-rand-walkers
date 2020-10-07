@@ -80,6 +80,20 @@ double funky(const dvect &x, dvect &grad_dummy, void *my_func_data) {
   return s_funky(x, centre_vect, width);
 }
 
+inline double s_funky2(const dvect &x, dvect centre, double width) {
+  dvect scaled;
+  for (int i = 0; i < x.size(); ++i) {
+    scaled.push_back(2 * x[i]);
+  }
+  return s_funky(scaled, centre, width);
+}
+
+double funky2(const dvect &x, dvect &grad_dummy, void *my_func_data) {
+  dvect centre_vect = ((pdf_data *)my_func_data)->centre;
+  double width = ((pdf_data *)my_func_data)->width;
+  return s_funky2(x, centre_vect, width);
+}
+
 double exponential(const dvect &x, dvect &grad, void *my_func_data) {
   dvect centre_vect = ((pdf_data *)my_func_data)->centre;
   double decay_rate = ((pdf_data *)my_func_data)->decay_rate;
@@ -183,8 +197,9 @@ double arbitrary(const dvect &x, dvect &grad, void *my_func_data) {
 }
 
 std::unordered_map<std::string, pdf_func *> pdf_map = {
-    {"funky", funky}, {"arbitrary", arbitrary}, {"exponential", exponential},
-    {"gauss", gauss}, {"power", power},         {"tophat", tophat},
+    {"funky", funky},   {"arbitrary", arbitrary}, {"exponential", exponential},
+    {"gauss", gauss},   {"power", power},         {"tophat", tophat},
+    {"funky2", funky2},
 };
 
 pdf_func *get_pdf(std::string pdf_name) {

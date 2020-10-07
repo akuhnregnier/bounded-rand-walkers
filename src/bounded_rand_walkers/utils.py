@@ -102,18 +102,23 @@ def get_centres(bin_edges):
 
 
 def stats(data1, data2, weights=None):
-    """
-    This function calculates the mean difference between the input data sets
-    and the standard deviation of this mean.
+    """Calculate the mean difference between data sets and its standard deviation.
 
-    Args:
-        data1: 1D array of dataset 1
-        data2: 2D array of dataset 2
-        weights: The wheights of each data point. The default are no weights.
+    Parameters
+    ----------
+    data1 : array
+        Dataset 1.
+    data2 : array
+        Datast 2.
+    weights : array or None
+        The weights of each data point.
 
-    Returns:
-        weighted_stats.mean: mean difference between data sets
-        weighted_stats.std_mean: standard dev. of mean difference
+    Returns
+    -------
+    mean : float
+        Mean difference between data sets.
+    std_mean : float
+        Standard deviation of the mean difference.
 
     """
     if len(data1) != len(data2):

@@ -11,7 +11,7 @@ from scipy import integrate
 from scipy.spatial import Delaunay
 
 from .c_g2D import c_g2D_func
-from .data_generation import DelaunayArray, in_bounds, weird_bounds
+from .data_generation import DelaunayArray, in_bounds
 from .utils import get_centres
 
 
@@ -78,7 +78,7 @@ def gRadialCircle(r, f):
     )
 
 
-def g2D(f, xs_edges, ys_edges, bounds=weird_bounds):
+def g2D(f, xs_edges, ys_edges, bounds):
     """2D position probability."""
     print("G2D")
     bounds = DelaunayArray(bounds, Delaunay(bounds))
@@ -100,7 +100,7 @@ def g2D(f, xs_edges, ys_edges, bounds=weird_bounds):
     return g_values
 
 
-if __name__ == "__main__2":
+if __name__ == "__main__":
     # must be run from iPython!!
     from IPython import get_ipython
 
@@ -119,7 +119,7 @@ if __name__ == "__main__2":
     )
 
 
-if __name__ == "__main__1":
+if __name__ == "__main__":
     N = 500000
     pos_data2D = np.random.uniform(0, 1, size=(2, N))
     rot_steps_data = rot_steps(pos_data2D)

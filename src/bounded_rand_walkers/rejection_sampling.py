@@ -12,20 +12,21 @@ from .utils import get_centres
 
 class Sampler(object):
     def __init__(self, pdf, dimensions, blocks=100, bounds=None):
-        """
+        """Initialise sampler.
 
-        Args:
-            pdf is called like pdf(x, y, z, ...) depending on the number of
-                dimensions.
+        Notes
+        ----------
+        pdf is called like pdf(x, y, z, ...) depending on the number of
+            dimensions.
 
-            dimensions: Used to define
-                array of bounds, eg.
-                np.array([[-1],
-                          [1]])
-                in 1D (from 0 to 1) or
-                np.array([[-2, -2],
-                          [2, 2]])
-                for a 2D square boundary with corners at (0, 0) and (1, 1)
+        dimensions: Used to define
+            array of bounds, eg.
+            np.array([[-1],
+                      [1]])
+            in 1D (from 0 to 1) or
+            np.array([[-2, -2],
+                      [2, 2]])
+            for a 2D square boundary with corners at (0, 0) and (1, 1).
 
         """
         self.logger = logging.getLogger(__name__)
@@ -40,7 +41,7 @@ class Sampler(object):
             self.bounds = bounds
         self.dims = dimensions
 
-        # sample the input pdf at ``blocks`` positions
+        # sample the input pdf at `blocks` positions
         self.pdf_values = np.zeros([blocks] * self.dims, dtype=np.float64)
         self.centres_list = []  # the block (bin) centres in each dimension
         self.edges_list = []  # the block (bin) edges in each dimension
@@ -61,7 +62,7 @@ class Sampler(object):
 
         # within each grid domain, find the maximum pdf value, which will
         # form the basis for getting the 'g' function below.
-        # Get an envelope of the pdf, ``g`` using ``self.blocks`` uniform pdfs
+        # Get an envelope of the pdf, `g` using `self.blocks` uniform pdfs
         # that across their specific intervals always have a value that is at
         # least that of the pdf in the same interval.
 
@@ -86,8 +87,8 @@ class Sampler(object):
             target_value = self.pdf_values[indices]
             for x0_indices in np.ndindex(edges_array.squeeze().shape):
                 x0 = [edges_array[j, k] for k, j in enumerate(x0_indices)]
-                # now perform the function minimization from ``min_edges`` to
-                # ``max_edges``, in order to find the maximum in that range.
+                # now perform the function minimization from `min_edges` to
+                # `max_edges`, in order to find the maximum in that range.
                 # This is achieved by minimizing -1 * pdf.
                 self.logger.debug("calling at:{:}".format(x0))
                 x_max = optimize.fmin_tnc(
@@ -141,7 +142,7 @@ class Sampler(object):
 
         bounds = np.zeros((2, dimensions), dtype=np.float64)
         for i, axes_indices in enumerate(non_zero_indices):
-            # ``axes_indices`` contains the indices for one axis, which
+            # `axes_indices` contains the indices for one axis, which
             # contribute to the bounds array in one column.
             min_i, max_i = np.min(axes_indices), np.max(axes_indices)
             bounds[0, i] = self.edges_list[i][min_i]
@@ -159,25 +160,24 @@ class Sampler(object):
         self.lin_interp_cdf()
 
     def lin_interp_cdf(self):
-        """Get linear interpolation for every block in terms of the
-        inverted CDF, ie. an interpolation of probability vs position.
-        This should be done separately for each dimension.
+        """Get linear interpolation for every block in terms of the inverted CDF, ie.
+        an interpolation of probability vs position. This should be done separately
+        for each dimension.
 
-        These interpolators will be used in order to get from a randomly
-        sampled probability to the corresponding position, which is then
-        distributed according the to discrete pdf given by max_box_values.
-        A comparison with the actual pdf at that point along with another
-        randomly sampled number then completes to sampling process.
+        These interpolators will be used in order to get from a randomly sampled
+        probability to the corresponding position, which is then distributed according
+        the to discrete pdf given by max_box_values. A comparison with the actual pdf
+        at that point along with another randomly sampled number then completes to
+        sampling process.
 
-        What was described above produces samples across the entire region
-        described by the given ``bounds``. This is akin to sampling step
-        sizes for a square domain if the walker is at the centre of the
-        box. In order to further restrict the possible outputs of the
-        sampling, it would be required to restrict the possible values
-        returned by the linear interpolators. This can be done by defining
-        inverse interpolators, that, given the bounds of the step sizes,
-        give the bounds of the probabilities, which can then be used to
-        restrict the probabilities with which the positions are sampled.
+        What was described above produces samples across the entire region described
+        by the given `bounds`. This is akin to sampling step sizes for a square
+        domain if the walker is at the centre of the box. In order to further restrict
+        the possible outputs of the sampling, it would be required to restrict the
+        possible values returned by the linear interpolators. This can be done by
+        defining inverse interpolators, that, given the bounds of the step sizes, give
+        the bounds of the probabilities, which can then be used to restrict the
+        probabilities with which the positions are sampled.
 
         """
         self.interpolators = []
@@ -304,7 +304,7 @@ class Sampler(object):
             interpolator_index = np.where(coord >= edges)[0][-1]
             centre_indices.append(interpolator_index)
 
-        # check that the probabilities in ``probs`` are indeed lower than
+        # check that the probabilities in `probs` are indeed lower than
         # those returned by the original pdf
         pdf_val = self.pdf(np.array(output))
         max_box_val = self.max_box_values[tuple(centre_indices)]

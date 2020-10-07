@@ -19,48 +19,45 @@ def _new_shaper2D(x_shift, y_shift, relief_matrix, x0, y0):
     )
 
 
-def gen_shaper2D(order_divisions, vertices, verbose=True):
+def gen_shaper2D(vertices, x_edges, y_edges, verbose=True):
+    """Generate shaper function in 2D."""
     bounds = DelaunayArray(vertices, Delaunay(vertices))
     CoM = np.array([np.mean(vertices[:, 0]), np.mean(vertices[:, 1])])
 
-    # Upper - lower limits of boundary, as defined in plot.
-    x0 = 2
-    y0 = 2
-
-    # So that we have no bias in case of asymmetric shape.
-    divisions_x = order_divisions
-    # divisions_y = order_divisions * int(float(y0) / float(x0))
-    divisions_y = order_divisions
-
-    xs = np.linspace(CoM[0] - x0, CoM[0] + x0, divisions_x + 1)
-    ys = np.linspace(CoM[1] - y0, CoM[1] + y0, divisions_y + 1)
+    # All calculations are performed relative to the 'CoM' (centre of the bounds).
+    # Therefore the bounds do not have to be 'centred' at 0.
+    xs = x_edges + CoM[0]
+    ys = y_edges + CoM[1]
 
     xs_centres = get_centres(xs)
     ys_centres = get_centres(ys)
 
-    relief_matrix = np.zeros((divisions_y, divisions_x), dtype=np.int)
+    x_divisions = xs_centres.shape[0]
+    y_divisions = ys_centres.shape[0]
 
-    # Replace 0s with 1s in 2d matrix when inside boundary.
+    x0 = np.max(x_edges)
+    assert np.isclose(x0, np.abs(np.min(x_edges)))
+    y0 = np.max(y_edges)
+    assert np.isclose(y0, np.abs(np.min(y_edges)))
+
+    # True (1) when inside boundary.
+    relief_matrix = np.zeros((x_divisions, y_divisions), dtype=np.int64)
     for i, yi in enumerate(ys_centres):
         for j, xj in enumerate(xs_centres):
             relief_matrix[i, j] = in_bounds(np.array([xj, yi]), bounds)
 
-    Z = np.zeros_like(relief_matrix, dtype=np.float64)
+    shaper = np.zeros_like(relief_matrix, dtype=np.float64)
 
     for i, xi in enumerate(
         tqdm(xs_centres, desc="Generating shaper", smoothing=0, disable=not verbose)
     ):
         for j, yi in enumerate(ys_centres):
-            Z[i, j] = _new_shaper2D(
-                i - int(divisions_x / 2),
-                j - int(divisions_y / 2),
+            shaper[i, j] = _new_shaper2D(
+                i - int(x_divisions / 2),
+                j - int(y_divisions / 2),
                 relief_matrix,
                 x0,
                 y0,
             )
 
-    xsG = xs - CoM[0]
-    ysG = ys - CoM[1]
-    X, Y = np.meshgrid(xsG, ysG, indexing="ij")
-
-    return X, Y, Z
+    return shaper

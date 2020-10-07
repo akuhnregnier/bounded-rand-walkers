@@ -9,7 +9,7 @@ the second column. The last returned vertex will always equal the first.
 import numpy as np
 
 
-def square(centre=(0, 0), side=2):
+def square(centre=(0, 0), side=1):
     """Square boundary.
 
     Parameters
@@ -101,4 +101,8 @@ def circle(centre=(0, 0), radius=1.0, N=30):
     return vertices
 
 
-bound_map = {"square": square, "triangle": triangle, "circle": circle}
+def weird():
+    return np.array([[0.1, 0.3], [0.25, 0.98], [0.9, 0.9], [0.7, 0.4], [0.4, 0.05]])
+
+
+bound_map = {"square": square, "triangle": triangle, "circle": circle, "weird": weird}
