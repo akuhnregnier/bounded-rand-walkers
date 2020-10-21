@@ -1,3 +1,8 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-blueviolet)](https://github.com/akuhnregnier/bounded-rand-walkers/blob/master/LICENSE)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
+[![Build Status](https://travis-ci.com/akuhnregnier/bounded-rand-walkers.svg?branch=master)](https://travis-ci.com/akuhnregnier/bounded-rand-walkers)
+[![codecov](https://codecov.io/gh/akuhnregnier/bounded-rand-walkers/branch/master/graph/badge.svg)](https://codecov.io/gh/akuhnregnier/bounded-rand-walkers)
+
 # bounded-rand-walkers
 
 Generation of bounded random walks and analysis thereof.
@@ -5,6 +10,8 @@ Generation of bounded random walks and analysis thereof.
 Random walk data is generated using `C++` and analysed using `Python 3`.
 
 # Usage
+
+For detailed examples, please see [examples](https://github.com/akuhnregnier/bounded-rand-walkers/blob/master/examples).
 
 ## Data Generation
 
@@ -15,21 +22,40 @@ Within `bounded_rand_walkers.cpp`:
 
 # Installation
 
-For required `Python` packages (and both `xtensor` and `xtensor-python`, which are required for the `C++` code) see `requirements.yaml`.
-They can be installed into a new `conda` environment using:
+### Python dependencies
+
+For required `Python` packages (and both `xtensor` and `xtensor-python` which are required for the `C++` code) see `requirements.yaml`.
+It is recommended to install the required packages into a new `conda` environment using:
 ```bash
 conda env create --file requirements.yaml
 ```
+Followed by
+```bash
+pip install ./bounded-rand-walkers
+```
+where `bounded-rand-walkers` refers to the directory containing this repository.
+
+### C++ dependencies
 
 For the `C++` code, the following dependencies are required:
- - [`xtensor`](https://xtensor.readthedocs.io/en/latest/installation.html) (may be installed via conda)
- - [`xtensor-python`](https://github.com/xtensor-stack/xtensor-python) (may be installed via conda)
+ - [`xtensor`](https://xtensor.readthedocs.io/en/latest/installation.html) (installed via `conda`)
+ - [`xtensor-python`](https://github.com/xtensor-stack/xtensor-python) (installed via `conda`)
  - [`nlopt`](https://github.com/stevengj/nlopt)
  - [`boost`](https://www.boost.org/)
 
-You might have to run `ldconfig` post-installation on Linux.
+On Linux, `nlopt` and `boost` can usually be installed using your package manager.
+You may need to run `ldconfig` post-installation.
 
-Jupyter notebook extensions:
+Using `Ubuntu`, for example, `nlopt` and `boost` can be installed using
+```bash
+sudo apt-get install libnlopt-cxx-dev libboost-all-dev
+sudo ldconfig
+```
+
+### Jupyter notebook extensions:
+
+Jupyter notebook extensions may be installed using the commands below.
+
 ```bash
 jupyter nbextensions_configurator enable --user
 ```

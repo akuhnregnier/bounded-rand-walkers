@@ -203,12 +203,12 @@ xt::pyarray<double> return_pdf(unsigned long int N) {
     pos = {
         x[i],
     };
-    y[i] = (funky(pos, dummy, data_ptr));
+    y[i] = (freehand(pos, dummy, data_ptr));
   }
   return y;
 }
 
-xt::pyarray<double> funky2(xt::pyarray<double> &x) {
+xt::pyarray<double> freehand2(xt::pyarray<double> &x) {
   dvect dummy{};
 
   // Create struct that holds the pdf parameters.
@@ -246,8 +246,8 @@ xt::pyarray<double> funky2(xt::pyarray<double> &x) {
     //     std::cout << el << " ";
     // std::cout << std::endl;
 
-    // y[i] = funky(x_vect, dummy, data_ptr);
-    y[i] = funky(dvect(x_i.begin(), x_i.end()), dummy, data_ptr);
+    // y[i] = freehand(x_vect, dummy, data_ptr);
+    y[i] = freehand(dvect(x_i.begin(), x_i.end()), dummy, data_ptr);
     i++;
   }
 
@@ -480,19 +480,22 @@ PYBIND11_MODULE(_bounded_rand_walkers_cpp, m) {
   m.def("testing_1d", &testing_1d, "1D sampling test.", "N"_a = 1000,
         "pdf_name"_a = "gauss", "start_pos"_a = 0, "centre"_a = default_centre,
         "width"_a = default_width, "decay_rate"_a = 1, "exponent"_a = 1,
-        "binsize"_a = 0.1, "blocks"_a = 2000);
+        "binsize"_a = 0.1, "blocks"_a = 100, "seed"_a = -1);
 
   m.def("testing_2d", testing_2d, "2D sampling test.", "N"_a = 1000,
         "pdf_name"_a = "gauss", "start_pos"_a = default_start_pos,
         "centre"_a = default_centre, "width"_a = default_width,
-        "decay_rate"_a = 1, "exponent"_a = 1, "binsize"_a = 0.1,
-        "blocks"_a = 100);
+        "decay_rate"_a = 1, "exponent"_a = 1, "binsize"_a = 0.1, "blocks"_a = 2,
+        "seed"_a = -1);
 
   m.def("call_func", call_func, "Call specified pdf.");
 
   m.def("gauss", s_gauss, "Gaussian pdf.", "x"_a, "width"_a = default_width,
         "centre"_a = default_centre);
 
-  m.def("funky", s_funky, "Funky pdf.", "x"_a, "centre"_a = default_centre,
-        "width"_a = default_width);
+  m.def("freehand", s_freehand, "Freehand pdf.", "x"_a,
+        "centre"_a = default_centre, "width"_a = default_width);
+
+  m.def("freehand2", s_freehand2, "Freehand pdf with 2x scaling.", "x"_a,
+        "centre"_a = default_centre, "width"_a = default_width);
 }

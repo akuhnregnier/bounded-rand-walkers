@@ -24,12 +24,6 @@ repos:
             entry: clang-format -i
             language: system
             files: \.(cpp|hpp|h|c)$
-          - id: pytest
-            name: pytest
-            entry: pytest -m "not slow" --ignore-glob='**/func_code.py'
-            pass_filenames: false
-            language: system
-            verbose: true
     - repo: https://github.com/pre-commit/pre-commit-hooks
       rev: v2.2.1
       hooks:
@@ -46,3 +40,11 @@ repos:
           - id: debug-statements
           - id: fix-encoding-pragma
           - id: trailing-whitespace
+    - repo: local
+      hooks:
+          - id: pytest
+            name: pytest
+            entry: pytest -m "not slow" --ignore-glob='**/func_code.py'
+            pass_filenames: false
+            language: system
+            verbose: true

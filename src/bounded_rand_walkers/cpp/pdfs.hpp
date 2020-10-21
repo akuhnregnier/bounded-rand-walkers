@@ -21,7 +21,7 @@ double power(const dvect &x, dvect &grad, void *my_func_data);
 
 double _sinc(const double x) { return std::sin(pi * x) / (pi * x); }
 
-inline double s_funky(const dvect &x, dvect centre, double width) {
+inline double s_freehand(const dvect &x, dvect centre, double width) {
   double frequency = 3.7;
   double grad = 1.;
 
@@ -74,10 +74,24 @@ inline double s_funky(const dvect &x, dvect centre, double width) {
   return prob;
 }
 
-double funky(const dvect &x, dvect &grad_dummy, void *my_func_data) {
+double freehand(const dvect &x, dvect &grad_dummy, void *my_func_data) {
   dvect centre_vect = ((pdf_data *)my_func_data)->centre;
   double width = ((pdf_data *)my_func_data)->width;
-  return s_funky(x, centre_vect, width);
+  return s_freehand(x, centre_vect, width);
+}
+
+inline double s_freehand2(const dvect &x, dvect centre, double width) {
+  dvect scaled;
+  for (int i = 0; i < x.size(); ++i) {
+    scaled.push_back(2 * x[i]);
+  }
+  return s_freehand(scaled, centre, width);
+}
+
+double freehand2(const dvect &x, dvect &grad_dummy, void *my_func_data) {
+  dvect centre_vect = ((pdf_data *)my_func_data)->centre;
+  double width = ((pdf_data *)my_func_data)->width;
+  return s_freehand2(x, centre_vect, width);
 }
 
 double exponential(const dvect &x, dvect &grad, void *my_func_data) {
@@ -183,8 +197,13 @@ double arbitrary(const dvect &x, dvect &grad, void *my_func_data) {
 }
 
 std::unordered_map<std::string, pdf_func *> pdf_map = {
-    {"funky", funky}, {"arbitrary", arbitrary}, {"exponential", exponential},
-    {"gauss", gauss}, {"power", power},         {"tophat", tophat},
+    {"freehand", freehand},
+    {"arbitrary", arbitrary},
+    {"exponential", exponential},
+    {"gauss", gauss},
+    {"power", power},
+    {"tophat", tophat},
+    {"freehand2", freehand2},
 };
 
 pdf_func *get_pdf(std::string pdf_name) {

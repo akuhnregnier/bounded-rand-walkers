@@ -5,14 +5,12 @@ from ._version import version as __version__
 del _version
 
 from . import (
-    c_g2D,
     cpp,
     data_generation,
     functions,
+    position_density,
     rad_interp,
     rejection_sampling,
-    relief_matrix_shaper,
-    rotation_steps,
-    shaper_general,
+    shaper_generation,
     utils,
 )

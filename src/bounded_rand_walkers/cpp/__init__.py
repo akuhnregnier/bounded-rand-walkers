@@ -5,6 +5,7 @@ Mainly, the code speeds up random walker data generation.
 
 """
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from functools import partial
 from itertools import product
 from numbers import Number
 from pathlib import Path
@@ -23,14 +24,13 @@ from .boundaries import *
 # Rename the original function since we will be defining our own version here.
 cpp_generate_data = generate_data
 
-
 memory = Memory(cache_dir, verbose=0)
 
 
 def get_cached_filename(
     cache_dir=None,
     samples=1000,
-    pdf_name="funky",
+    pdf_name="freehand",
     bound_name="square",
     centre=(0, 0),
     width=0.5,
@@ -115,7 +115,7 @@ def get_cached_filename(
 
 def generate_data(
     samples=1000,
-    pdf_name="funky",
+    pdf_name="freehand",
     bound_name="square",
     centre=(0, 0),
     width=0.5,
@@ -242,12 +242,13 @@ def generate_data(
         # No caching is possible/requested.
         filename = None
 
-    if filename is not None and filename.is_file() and not cache_only:
+    if filename is not None and filename.is_file():
         # Cached data exists.
-        saved = np.load(filename)
-        positions = saved["positions"]
-        steps = saved["steps"]
-        saved.close()
+        if not cache_only:
+            saved = np.load(filename)
+            positions = saved["positions"]
+            steps = saved["steps"]
+            saved.close()
     else:
         # Generate new data.
         positions, steps = cpp_generate_data(
@@ -367,7 +368,12 @@ def get_binned_2D(
 
 @memory.cache
 def get_binned_data(
-    filenames, n_bins, max_step_length=8 ** 0.5, g_bounds=(-2, 2), f_bounds=(-2, 2)
+    filenames,
+    n_bins,
+    max_step_length=8 ** 0.5,
+    g_bounds=(-2, 2),
+    f_bounds=(-2, 2),
+    f_t_r_edges=None,
 ):
     """Get binned data.
 
@@ -383,6 +389,9 @@ def get_binned_data(
         Position bounds.
     f_bounds : tuple of float
         Step size bounds.
+    f_t_r_edges : 1D array
+        Step size distribution radial bin edges. If given, takes precedence over
+        `max_step_length` when informing which bins to use for radial binning.
 
     Returns
     -------
@@ -421,7 +430,8 @@ def get_binned_data(
     f_t_x_edges = f_t_y_edges = np.linspace(*f_bounds, n_bins + 1)
     f_t_x_centres = f_t_y_centres = get_centres(f_t_x_edges)
     # Step size binning (transformed) - radially.
-    f_t_r_edges = np.linspace(0, max_step_length, n_bins + 1)
+    if f_t_r_edges is None:
+        f_t_r_edges = np.linspace(0, max_step_length, n_bins + 1)
     f_t_r_centres = get_centres(f_t_r_edges)
 
     g_numerical, f_t_numerical, f_t_r_numerical = get_binned_2D(
@@ -442,113 +452,3 @@ def get_binned_data(
         f_t_numerical,
         f_t_r_numerical,
     )
-
-
-def test_1d(
-    pdf_name="gauss",
-    bins=200,
-    xlim=(-0.5, 0.5),
-    N=1000000,
-    n_sample=10,
-    blocks=100,
-    **params,
-):
-    pdf = globals()[pdf_name]
-    assert callable(pdf)
-
-    x_edges = np.linspace(*xlim, bins)
-    x_centres = get_centres(x_edges)
-
-    out = np.histogram(
-        testing_1d(start_pos=0.5, pdf_name=pdf_name, blocks=blocks, N=N, **params),
-        bins=x_edges,
-        density=True,
-    )[0]
-    exp = np.zeros(bins - 1)
-
-    # params['width'] *= 1
-
-    for (i, (x_0, x_1)) in enumerate(
-        zip(tqdm(x_edges[:-1], desc="x bins"), x_edges[1:])
-    ):
-        if n_sample > 1:
-            sum_val = 0
-            for p_x in get_centres(np.linspace(x_0, x_1, n_sample + 1)):
-                sum_val += pdf([p_x], **params)
-            exp[i] = sum_val / n_sample
-        else:
-            exp[i] = pdf([(x_0 + x_1) / 2.0], **params)
-
-    # Normalise `exp`.
-    # sum(bin_area * frequency) = 1
-    exp /= np.sum(exp) * np.diff(x_edges)[0]
-
-    fig, axes = plt.subplots(2, 1, sharex=True)
-    axes[0].plot(x_centres, out, label="Sampled")
-    axes[0].plot(x_centres, exp, label="Analytical", linestyle="--")
-    axes[0].legend(loc="best")
-    axes[1].plot(x_centres, out - exp, label="Sampled - Analytical")
-    axes[1].legend(loc="best")
-
-
-def test_2d(
-    pdf_name="gauss",
-    bins=200,
-    xlim=(-1, 1),
-    ylim=(-1, 1),
-    N=100000,
-    n_sample=4,
-    blocks=100,
-    **params,
-):
-    pdf = globals()[pdf_name]
-    assert callable(pdf)
-
-    x_edges = np.linspace(*xlim, bins)
-    y_edges = np.linspace(*ylim, bins)
-
-    out = np.histogram2d(
-        *testing_2d(pdf_name=pdf_name, blocks=blocks, N=N, **params).T,
-        bins=[x_edges, y_edges],
-        density=True,
-    )[0]
-    exp = np.zeros((bins - 1, bins - 1))
-
-    for (i, (x_0, x_1)) in enumerate(
-        zip(tqdm(x_edges[:-1], desc="x bins"), x_edges[1:])
-    ):
-        for (j, (y_0, y_1)) in enumerate(zip(y_edges[:-1], y_edges[1:])):
-            sum_val = 0
-            for p_x, p_y in product(
-                get_centres(np.linspace(x_0, x_1, n_sample + 1)),
-                get_centres(np.linspace(y_0, y_1, n_sample + 1)),
-            ):
-                sum_val += pdf([p_x, p_y], **params)
-            exp[i, j] = sum_val / (n_sample ** 2.0)
-
-    # Normalise `exp`.
-    # sum(bin_area * frequency) = 1
-    exp /= np.sum(exp) * np.diff(x_edges)[0] * np.diff(y_edges)[0]
-
-    cbar_kwargs = dict(shrink=0.5)
-
-    fig, axes = plt.subplots(1, 3, sharex=True, sharey=True, figsize=(11, 6))
-    im0 = axes[0].pcolormesh(x_edges, y_edges, out)
-    axes[0].set_title("Sampler Output")
-    fig.colorbar(im0, ax=axes[0], **cbar_kwargs)
-
-    im1 = axes[1].pcolormesh(x_edges, y_edges, exp)
-    axes[1].set_title("Analytical (bin centres)")
-    fig.colorbar(im1, ax=axes[1], **cbar_kwargs)
-
-    im2 = axes[2].pcolormesh(x_edges, y_edges, out - exp)
-    axes[2].set_title("Sampler - Analytical")
-    fig.colorbar(im2, ax=axes[2], **cbar_kwargs)
-
-    for ax in axes:
-        ax.axis("scaled")
-
-    plt.figure()
-    plt.pcolormesh(x_edges, y_edges, out - exp)
-    plt.colorbar()
-    plt.axis("scaled")

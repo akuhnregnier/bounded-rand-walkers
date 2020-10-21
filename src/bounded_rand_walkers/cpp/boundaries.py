@@ -5,11 +5,14 @@ Vertices are returned in a clockwise order with x coords in the first and y coor
 the second column. The last returned vertex will always equal the first.
 
 """
+from itertools import combinations
 
 import numpy as np
+from scipy.special import comb
+from tqdm.auto import tqdm
 
 
-def square(centre=(0, 0), side=2):
+def square(centre=(0, 0), side=1):
     """Square boundary.
 
     Parameters
@@ -42,7 +45,7 @@ def square(centre=(0, 0), side=2):
     )
 
 
-def triangle(centre=(0, 0), side=2):
+def triangle(centre=(0, 1 / 3 ** 0.5 - 1), side=2):
     """Equilateral triangular boundary.
 
     Parameters
@@ -101,4 +104,54 @@ def circle(centre=(0, 0), radius=1.0, N=30):
     return vertices
 
 
-bound_map = {"square": square, "triangle": triangle, "circle": circle}
+def irregular():
+    return np.array(
+        [[0.1, 0.3], [0.25, 0.98], [0.9, 0.9], [0.7, 0.4], [0.4, 0.05], [0.1, 0.3]]
+    )
+
+
+bound_map = {
+    "square": square,
+    "triangle": triangle,
+    "circle": circle,
+    "irregular": irregular,
+}
+
+
+def get_max_step(vertices, verbose=True):
+    """Determine the maximum step size from the given vertices.
+
+    Parameters
+    ----------
+    vertices : 2D array or str
+        (n, 2) array containing the boundary vertices in a clockwise order. The last
+        vertex (last row) should be equal to the first vertex. If a str is given,
+        vertices will be retrieved from `bound_map`.
+    verbose : bool
+        If true, display progress updates.
+
+    Returns
+    -------
+    max_step : float
+        Maximum step size.
+
+    Raises
+    ------
+    KeyError
+        If `vertices` is a str, but no matching entry is found in `bound_map`.
+
+    """
+    if isinstance(vertices, str):
+        vertices = bound_map[vertices]()
+
+    # Iterate over vertex pairs in order to find the largest step size, ignoring the
+    # last vertex since this will always match the first.
+    steps = []
+    for a, b in tqdm(
+        combinations(vertices[:-1], 2),
+        desc="Calculating step sizes",
+        total=comb(vertices.shape[0] - 1, 2, exact=True),
+        disable=not verbose,
+    ):
+        steps.append(np.sum((a - b) ** 2) ** 0.5)
+    return np.max(steps)

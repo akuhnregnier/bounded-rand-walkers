@@ -618,7 +618,9 @@ xt::pyarray<double> testing_1d(unsigned long int N = 1000,
                                double start_pos = 0, dvect centre = {0.0, 0.0},
                                double width = 0.2, double decay_rate = 1,
                                double exponent = 1, double binsize = 0.1,
-                               long unsigned int blocks = 100) {
+                               long unsigned int blocks = 100, int seed = -1) {
+  set_seed(seed);
+
   // Set up the necessary data structures.
   pdf_data data;
   struct pdf_data *data_ptr = &data;
@@ -771,7 +773,9 @@ xt::pyarray<double>
 testing_2d(unsigned long int N = 1000, std::string pdf_name = "gauss",
            dvect start_pos = {0.0, 0.0}, dvect centre = {0.0, 0.0},
            double width = 0.2, double decay_rate = 1, double exponent = 1,
-           double binsize = 0.1, long unsigned int blocks = 100) {
+           double binsize = 0.1, long unsigned int blocks = 2, int seed = -1) {
+  set_seed(seed);
+
   // Set up the necessary data structures.
   pdf_data data;
   struct pdf_data *data_ptr = &data;

@@ -3,13 +3,8 @@ import os
 import sys
 
 import setuptools
-from Cython.Build import cythonize
-from Cython.Distutils import build_ext
 from setuptools import Extension, setup
-
-# Used to derive xtensor-python BuildExt class.
-# from setuptools.command.build_ext import build_ext
-
+from setuptools.command.build_ext import build_ext
 
 with open("README.md", "r") as f:
     readme = f.read()
@@ -63,7 +58,7 @@ def has_flag(compiler, flagname):
 
 
 def cpp_flag(compiler):
-    """Return the -std=c++14 compiler flag  and errors when the flag is
+    """Return the -std=c++17 compiler flag and errors when the flag is
     no available.
     """
     if has_flag(compiler, "-std=c++17"):
@@ -72,9 +67,6 @@ def cpp_flag(compiler):
         raise RuntimeError("C++17 support required!")
 
 
-compile_args = ["-O3", "-std=c++17"]
-
-# ext_modules = []
 ext_modules = [
     Extension(
         "_bounded_rand_walkers_cpp",
@@ -88,25 +80,10 @@ ext_modules = [
             os.path.join(sys.prefix, "Library", "include"),
         ],
         library_dirs=["/usr/local/lib"],
-        libraries=["nlopt", "m"],
-        language="c++",
+        libraries=["nlopt", "m", "stdc++"],
+        language="C++",
     )
 ]
-
-include_dirs = [str(get_numpy_include())]
-language = "C++"
-
-ext_modules += cythonize(
-    [
-        Extension(
-            "bounded_rand_walkers.c_g2D",
-            sources=["src/bounded_rand_walkers/c_g2D.pyx"],
-            include_dirs=include_dirs,
-            extra_compile_args=compile_args,
-            language=language,
-        ),
-    ]
-)
 
 
 class BuildExt(build_ext):
@@ -137,23 +114,24 @@ setup(
     name="bounded_rand_walkers",
     author="Alexander Kuhn-Regnier",
     author_email="ahk114@ic.ac.uk",
+    license="MIT",
     url="https://github.com/akuhnregnier/bounded-rand-walkers",
     description="Bounded random walker simulation.",
     long_description=readme,
     long_description_content_type="text/markdown",
     ext_modules=ext_modules,
-    install_requires=["pybind11>=2.0.1", "numpy"],
-    cmdclass={"build_ext": build_ext},
     # xtensor-python BuildExt class.
-    # cmdclass={"build_ext": BuildExt},
+    cmdclass={"build_ext": BuildExt},
     zip_safe=False,
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
     setup_requires=["setuptools-scm"],
     use_scm_version=dict(write_to="src/bounded_rand_walkers/_version.py"),
     include_package_data=True,
-    python_requires=">=3.8",
+    python_requires=">=3.7",
     classifiers=[
         "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
     ],
 )

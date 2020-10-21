@@ -3,7 +3,6 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - cython=0.29.21
   - joblib=0.16.0
   - jupyter_nbextensions_configurator=0.4.1
   - jupyterlab=2.2.8
