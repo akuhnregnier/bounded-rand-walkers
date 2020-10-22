@@ -1,0 +1,18 @@
+{
+    "license": "MIT",
+    "upload_type": "software",
+    "creators": [
+        {
+            "affiliation": "Imperial College London",
+            "name": "Alexander Kuhn-Regnier"
+        },
+        {
+            "affiliation": "Imperial College London",
+            "name": "Luca Cocconi"
+        },
+        {
+            "affiliation": "Technische Universität München",
+            "name": "Malte Neuss"
+        }
+    ]
+}
