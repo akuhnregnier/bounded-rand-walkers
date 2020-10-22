@@ -4,15 +4,18 @@
     "creators": [
         {
             "affiliation": "Imperial College London",
-            "name": "Alexander Kuhn-Regnier"
+            "name": "Alexander Kuhn-Regnier",
+            "orcid": "0000-0003-0247-451X"
         },
         {
             "affiliation": "Imperial College London",
-            "name": "Luca Cocconi"
+            "name": "Luca Cocconi",
+            "orcid": "0000-0002-8551-1461"
         },
         {
             "affiliation": "Technische Universität München",
-            "name": "Malte Neuss"
+            "name": "Malte Neuss",
+            "orcid": "0000-0001-7736-3895"
         }
     ]
 }
