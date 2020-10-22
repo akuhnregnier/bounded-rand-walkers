@@ -105,6 +105,7 @@ def circle(centre=(0, 0), radius=1.0, N=30):
 
 
 def irregular():
+    """Irregular convex polygon."""
     return np.array(
         [[0.1, 0.3], [0.25, 0.98], [0.9, 0.9], [0.7, 0.4], [0.4, 0.05], [0.1, 0.3]]
     )

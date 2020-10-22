@@ -275,3 +275,26 @@ def Freehand(centre=None, width=1.0):
         return prob
 
     return pdf
+
+
+def Freehand2(*args, **kwargs):
+    """Scaled version of the `Freehand` pdf."""
+    pdf = Freehand(*args, **kwargs)
+
+    def scaled(pos):
+        """Calculate the probability at a point.
+
+        Parameters
+        ----------
+        pos : array
+            Point (x, y) coordinates.
+
+        Returns
+        -------
+        prob : float
+            Probability at the given point.
+
+        """
+        return pdf(2 * pos)
+
+    return scaled

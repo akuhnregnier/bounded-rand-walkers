@@ -23,6 +23,7 @@ def test_1d(
     seed=-1,
     verbose=True,
     axes=None,
+    return_data=False,
     **params,
 ):
     """1D testing of numerical samplers.
@@ -57,6 +58,14 @@ def test_1d(
         If True, display a progress bar for Python operations (sampling and binning).
     axes : 2-iterable of matplotlib Axes
         Axes to plot onto. If None, a new Figure and new Axes will be created.
+    return_data : bool
+        If True, do not plot sampled data but return it instead.
+
+    Returns
+    -------
+    dict
+        Dictionary containing the sampled data. Only returned if `return_data` is
+        True, in which case no plotting is done.
 
     C++ PDF parameters
     ------------------
@@ -118,6 +127,13 @@ def test_1d(
     # Normalise `exp`.
     exp /= np.sum(exp) * np.diff(x_edges)[0]
 
+    if return_data:
+        # Only return data instead of plotting.
+        data_dict = dict(x_centres=x_centres, sampled_cpp=out, analytical=exp)
+        if python_pdf is not None:
+            data_dict["sampled_py"] = py_out
+        return data_dict
+
     # Plot the comparisons.
     if axes is None:
         fig, axes = plt.subplots(2, 1, sharex=True)
@@ -149,6 +165,7 @@ def test_2d(
     verbose=True,
     fig=None,
     axes=None,
+    return_data=False,
     **params,
 ):
     """2D testing of numerical samplers.
@@ -188,6 +205,8 @@ def test_2d(
         Figure to plot onto. Must be given in combination with `axes`.
     axes : 2-iterable of matplotlib Axes
         Axes to plot onto. If None, a new Figure and new Axes will be created.
+    return_data : bool
+        If True, do not plot sampled data but return it instead.
 
     C++ PDF parameters
     ------------------
@@ -255,6 +274,15 @@ def test_2d(
     exp /= np.sum(exp) * np.diff(x_edges)[0] * np.diff(y_edges)[0]
 
     cbar_kwargs = dict(shrink=0.5)
+
+    if return_data:
+        # Only return data instead of plotting.
+        data_dict = dict(
+            x_edges=x_edges, y_edges=y_edges, sampled_cpp=plot_data[0], analytical=exp
+        )
+        if python_pdf is not None:
+            data_dict["sampled_py"] = plot_data[1]
+        return data_dict
 
     # Plot the comparisons.
     if fig is None or axes is None:

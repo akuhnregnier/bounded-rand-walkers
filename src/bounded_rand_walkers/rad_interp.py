@@ -4,9 +4,6 @@ from math import ceil
 from numbers import Integral, Real
 
 import numpy as np
-from scipy.interpolate import griddata
-
-from bounded_rand_walkers.utils import get_centres
 
 
 def rotation(x, y, angle):
@@ -23,6 +20,14 @@ def rotation(x, y, angle):
     -------
     x_rot, y_rot : float
         Rotated position.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> np.allclose(rotation(0, 1, np.pi), [0, -1])
+    True
+    >>> np.allclose(rotation(0, 1, np.pi / 2), [-1, 0])
+    True
 
     """
     sin_angle = np.sin(angle)
@@ -227,9 +232,13 @@ def inv_exact_radii_interp(
         If `radii` are not sorted in ascending order and unique.
     ValueError
         If `normalisation` is not in {'divide', 'none'}.
+    RuntimeError
+        If a bin was assigned a value multiple times. This should never happen as it
+        invalidates the output data.
 
     """
-    if not np.all(np.isclose(radii, np.unique(radii))):
+    unique_radii = np.unique(radii)  # Also sorted in ascending order.
+    if not np.allclose(radii, unique_radii) or unique_radii.shape[0] == 1:
         raise ValueError("radii should be sorted in ascending order and unique.")
 
     if not normalisation in ("divide", "none"):
@@ -251,87 +260,10 @@ def inv_exact_radii_interp(
         else:
             data[matched] = single_rad_data / radius
 
-    assert total == grid_radii.size, "Each bin should only be assigned a value once."
+        # Ensure these radii can never be matched again.
+        grid_radii[matched] = -1
+
+    if total != grid_radii.size:
+        raise RuntimeError("Each bin should only be assigned a value once.")
 
     return data
-
-
-def radial_interp(
-    data, x_centres, y_centres, num_rad_factor=2.0, num_points_factor=2.0
-):
-    """Radial averaging of binned 2D data along concentric circles.
-
-    Parameters
-    ----------
-    data : 2D array
-        Data array.
-    x_centres : 1D array
-        x-coordinate bin centres.
-    y_centres : 1D array
-        y-coordinate bin centres.
-    num_rad_factor : float
-        Ratio between the maximum radius divided by the minimum bin width (i.e. the
-        smallest difference between bin centres out of the x and y bins) and the
-        number of concentric circles used to sample the distribution.
-    num_points_factor : float
-        Ratio between the radius of the sampling circles divided by the minimum bin
-        width (i.e. the smallest difference between bin centres out of the x and y
-        bins) and the number of points along each circle.
-
-    Returns
-    -------
-    radii : 1D array
-        Radii at which sampling was carried out.
-    sampled : 1D array
-        Sampled values along the concentric circles.
-
-    """
-    fill_val = -9.0
-
-    # Create x and y arrays.
-    pos_arrays = np.meshgrid(x_centres, y_centres, indexing="ij")
-
-    pos = np.empty((data.size, 2))
-    pos[:, 0] = pos_arrays[0].ravel()  # x positions.
-    pos[:, 1] = pos_arrays[1].ravel()  # y positions.
-
-    max_x = np.max(np.abs(pos[:, 0]))
-    max_y = np.max(np.abs(pos[:, 1]))
-    max_rad = np.sqrt(max_x ** 2 + max_y ** 2)
-
-    # Calculate the points at which to interpolate the binned data.
-    smallest_width = min(np.min(np.diff(x_centres)), np.min(np.diff(y_centres)))
-    # Number of concentric circles.
-    num_rad = ceil((max_rad / smallest_width) * num_rad_factor)
-    radii = get_centres(np.linspace(0, max_rad, num_rad + 1))
-    # Number of points along each of those circles.
-    num_points = np.ceil(
-        (2 * np.pi * radii / smallest_width) * num_points_factor
-    ).astype(np.int64)
-
-    points = []
-    for radius, n_point in zip(radii, num_points):
-        # Rotate around z axis.
-        for angle in np.linspace(0, 2 * np.pi, n_point, endpoint=False):
-            points.append(rotation(radius, 0.0, angle))
-    points = np.array(points)
-
-    # Carry out interpolation along the concentric circles.
-    interp_points = griddata(pos, data.ravel(), points, fill_value=fill_val)
-
-    # Aggregate points at the same radius over concentric circles.
-    avg = np.empty(num_rad)
-    circle_boundaries = np.append(0, np.cumsum(num_points))
-    for (i, (circ_start, circ_end)) in enumerate(
-        zip(circle_boundaries[:-1], circle_boundaries[1:])
-    ):
-        values = interp_points[circ_start:circ_end]
-        valid = ~np.isclose(values, fill_val)
-        if np.any(valid):
-            # Alternative normalisation: do not multiply by the radius.
-
-            # Average here instead of summing in order to avoid the effect of invalid
-            # elements.
-            avg[i] = np.average(values[valid]) * radii[i]
-
-    return radii, avg

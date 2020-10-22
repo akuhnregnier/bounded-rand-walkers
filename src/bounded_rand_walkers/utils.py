@@ -5,7 +5,6 @@ from pathlib import Path
 import numpy as np
 from numba import njit
 from scipy.spatial import Delaunay
-from statsmodels.stats.weightstats import DescrStatsW
 
 cache_dir = (Path("~") / ".cache" / "bounded_rand_walkers").expanduser()
 cache_dir.mkdir(exist_ok=True)
@@ -171,57 +170,6 @@ def get_centres(bin_edges):
     return bin_centres
 
 
-def stats(data1, data2, weights=None):
-    """Calculate the mean difference between data sets and its standard deviation.
-
-    Parameters
-    ----------
-    data1 : array
-        Dataset 1.
-    data2 : array
-        Datast 2.
-    weights : array or None
-        The weights of each data point.
-
-    Returns
-    -------
-    mean : float
-        Mean difference between data sets.
-    std_mean : float
-        Standard deviation of the mean difference.
-
-    """
-    if len(data1) != len(data2):
-        raise Exception("Two data sets have different lengths")
-
-    abs_difference = np.abs(data2 - data1)
-    weighted_stats = DescrStatsW(abs_difference, weights=weights)
-
-    return weighted_stats.mean, weighted_stats.std_mean
-
-
-def plot_name_clean(name):
-    """Clean up filename strings."""
-    replace_pairs = [
-        ("{", "_"),
-        ("}", "_"),
-        ("(", "_"),
-        (")", "_"),
-        (":", "_"),
-        ("'", ""),
-        (",", "_"),
-        (".", "_"),
-        (" ", "_"),
-        ("__", "_"),
-        ("__", "_"),
-        ("__", "_"),
-        ("_png", ".png"),
-    ]
-    for i, j in replace_pairs:
-        name = name.replace(i, j)
-    return name
-
-
 class DelaunayArray(np.ndarray):
     """Array subclass to facilitate 2D bounds checking."""
 
@@ -262,30 +210,9 @@ def in_bounds(position, bounds):
         True if `position` is within `bounds`.
 
     """
+    position = np.asarray(position)
     if bounds.shape[1] > 1:
         # More than 1D.
         return np.all(bounds.tri.find_simplex(position) != -1)
     else:
         return (position >= bounds[0]) and (position < bounds[1])
-
-
-def circle_points(radius=1.0, samples=20):
-    """Generate an array of (x, y) coordinates arranged in a circle.
-
-    Parameters
-    ----------
-    radius : float
-        Circle radius.
-    samples : int
-        How many points to generate along the circle.
-
-    Returns
-    -------
-    points : array of shape (`samples`, 2)
-        Points along the circle.
-
-    """
-    angles = np.linspace(0, 2 * np.pi, samples, endpoint=False)
-    x = (np.cos(angles) * radius).reshape(-1, 1)
-    y = (np.sin(angles) * radius).reshape(-1, 1)
-    return np.hstack((x, y))

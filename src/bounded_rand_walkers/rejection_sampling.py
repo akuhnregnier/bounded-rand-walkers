@@ -29,13 +29,13 @@ class Sampler(object):
             `dimensions`.
         seed : int
             Random number generator seed. If -1, no seed will be used and results will
-            vary from run to run. Pass a `seed` > 0 for repeatable results.
+            vary from run to run. Pass `seed` > -1 for repeatable results.
 
         """
         self.logger = logging.getLogger(__name__)
         self.logger.debug("starting init")
         self.rng = np.random.default_rng(
-            seed if seed is not None and seed > 0 else None
+            seed if seed is not None and seed > -1 else None
         )
         self.pdf = pdf
         if bounds is None:

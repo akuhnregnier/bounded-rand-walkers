@@ -344,6 +344,11 @@ def get_binned_2D(
             warn(f"Filename '{filename}' was not found.")
             continue
 
+        if ignore_initial >= positions.shape[0]:
+            warn(
+                "'ignore_initial' exceeds the number of samples. Ignoring all samples."
+            )
+
         # Bin the position data.
         g_numerical += np.histogram2d(
             *positions.T, bins=[g_x_edges, g_y_edges], normed=False
