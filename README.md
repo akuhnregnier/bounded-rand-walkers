@@ -2,6 +2,7 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 [![Build Status](https://travis-ci.com/akuhnregnier/bounded-rand-walkers.svg?branch=master)](https://travis-ci.com/akuhnregnier/bounded-rand-walkers)
 [![codecov](https://codecov.io/gh/akuhnregnier/bounded-rand-walkers/branch/master/graph/badge.svg)](https://codecov.io/gh/akuhnregnier/bounded-rand-walkers)
+[![DOI](https://zenodo.org/badge/110843243.svg)](https://zenodo.org/badge/latestdoi/110843243)
 
 # bounded-rand-walkers
 
