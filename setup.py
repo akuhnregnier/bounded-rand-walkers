@@ -78,8 +78,9 @@ ext_modules = [
             get_numpy_include(),
             os.path.join(sys.prefix, "include"),
             os.path.join(sys.prefix, "Library", "include"),
+            "/opt/homebrew/include",
         ],
-        library_dirs=["/usr/local/lib"],
+        library_dirs=["/usr/local/lib", "/opt/homebrew/lib"],
         libraries=["nlopt", "m", "stdc++"],
         language="C++",
     )

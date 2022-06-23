@@ -80,6 +80,10 @@ To install Jupyterlab Code Formatter (more details at (https://jupyterlab-code-f
  - clone this repository
  - `pip install ./bounded-random-walkers`
 
+On OS X, verify that the `ARCHFLAGS` environment variable is set accordingly, e.g.
+```ARCHFLAGS="-arch arm64"```
+for M1 chips.
+
 **On Windows (Requires Visual Studio 2015)**
 
  - For Python 3.5:
