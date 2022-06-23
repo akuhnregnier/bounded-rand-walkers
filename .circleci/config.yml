@@ -1,0 +1,41 @@
+version: 2.1
+orbs:
+  python: circleci/python@2.0.3
+  codecov: codecov/codecov@3.1.1
+
+jobs:
+  build-and-test:
+    docker:
+      - image: cimg/python:3.8.12
+    steps:
+      - checkout
+      - run:
+          name: Run
+          command: |
+            # Install C++ dependencies.
+            sudo apt-get update
+            sudo apt-get -y install libnlopt-cxx-dev libboost-all-dev
+            sudo ldconfig
+            # Install conda.
+            wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+            bash miniconda.sh -b -p $HOME/miniconda
+            source "$HOME/miniconda/etc/profile.d/conda.sh"
+            hash -r
+            conda config --set always_yes yes --set changeps1 no
+            conda update -q conda
+            # Useful for debugging any issues with conda
+            conda info -a
+            # Create the new environment.
+            conda env create --file "requirements.yaml"
+            conda activate random-walkers
+            conda env list
+            # Install into the now active environment.
+            pip install -e .
+            # Run tests.
+            pytest --cov-report=xml
+      - codecov/upload
+
+workflows:
+  main:
+    jobs:
+      - build-and-test

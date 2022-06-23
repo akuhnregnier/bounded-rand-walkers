@@ -1,7 +1,7 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-blueviolet)](https://github.com/akuhnregnier/bounded-rand-walkers/blob/master/LICENSE)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
-[![Build Status](https://travis-ci.com/akuhnregnier/bounded-rand-walkers.svg?branch=master)](https://travis-ci.com/akuhnregnier/bounded-rand-walkers)
+[![CircleCI](https://circleci.com/gh/akuhnregnier/bounded-rand-walkers/tree/master.svg?style=shield)](https://circleci.com/gh/akuhnregnier/bounded-rand-walkers/?branch=master)
 [![codecov](https://codecov.io/gh/akuhnregnier/bounded-rand-walkers/branch/master/graph/badge.svg)](https://codecov.io/gh/akuhnregnier/bounded-rand-walkers)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blueviolet)](https://github.com/akuhnregnier/bounded-rand-walkers/blob/master/LICENSE)
 [![DOI](https://zenodo.org/badge/110843243.svg)](https://zenodo.org/badge/latestdoi/110843243)
 
 # bounded-rand-walkers
